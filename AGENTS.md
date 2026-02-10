@@ -25,10 +25,16 @@ uv run pytest tests/test_redliner.py -v
 uv run pytest tests/test_redliner.py::TestSingleModify::test_modify_produces_tracked_changes -v
 
 # Lint
-uv run ruff check src/ tests/
+uvx ruff check src/ tests/
 
 # Auto-fix lint
-uv run ruff check src/ tests/ --fix
+uvx ruff check src/ tests/ --fix
+
+# Type check
+uvx ty check src/ tests/
+
+# Run the MCP server (stdio transport)
+uv run docx-mcp-server
 ```
 
 Test fixtures (`.docx` files) are auto-generated on first run by a session-scoped
@@ -140,6 +146,7 @@ src/docx_mcp/
   redliner.py       Main orchestrator: apply_redlines()
   validator.py      Structural validation checks
   cli.py            CLI: apply, convert, validate subcommands
+  server.py         MCP server: tools, resource, stdio entry point
   handlers/
     modify.py       Word-level tracked changes on existing paragraphs
     delete.py       Full paragraph deletion markup
@@ -152,6 +159,20 @@ src/docx_mcp/
 - Fragment IDs are 1-based paragraph indices in `<w:body>`.
 - Handler functions take positional params then keyword-only `id_manager` and `config`.
 - Pseudo-Markdown format: `**bold**`, `_italic_`, `__underline__`.
+
+### MCP Server
+
+The server (`server.py`) wraps the core engine as MCP tools via FastMCP 2.x:
+
+- **5 tools**: `extract_fragments`, `apply_changes`, `apply_changes_from_file`,
+  `validate_document_tool`, `diff_fragments`.
+- **1 resource template**: `docx-fragments://{document_path}` (URL-encoded path).
+- **Transport**: stdio (for local CLI integration).
+- All file I/O uses filesystem paths (not base64 blobs).
+- `ChangeParam` is a Pydantic model for tool input validation.
+- `TypeAdapter(list[ChangeParam])` validates changes loaded from JSON files.
+- Error handling: `ToolError` for all client-facing errors.
+- Tests use FastMCP's in-memory `Client(mcp)` pattern with `pytest-asyncio`.
 
 ## Test Conventions
 

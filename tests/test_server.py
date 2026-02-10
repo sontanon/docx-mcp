@@ -1,0 +1,604 @@
+"""Tests for the MCP server (tools and resource)."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from urllib.parse import quote
+from zipfile import ZipFile
+
+import pytest
+from fastmcp import Client
+
+from docx_mcp.server import mcp
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+pytestmark = pytest.mark.anyio
+
+
+def _text(result) -> str:
+    """Extract the text content from a CallToolResult."""
+    return result.content[0].text
+
+
+def _is_valid_docx(path: Path) -> bool:
+    """Return True if *path* is a valid .docx ZIP containing document.xml."""
+    if not path.exists():
+        return False
+    try:
+        with ZipFile(path) as zf:
+            return "word/document.xml" in zf.namelist()
+    except Exception:
+        return False
+
+
+def _write_changes_json(tmp_path: Path, changes: list[dict] | dict) -> Path:
+    """Write a changes structure to a JSON file and return the path."""
+    p = tmp_path / "changes.json"
+    p.write_text(json.dumps(changes), encoding="utf-8")
+    return p
+
+
+# ---------------------------------------------------------------------------
+# extract_fragments
+# ---------------------------------------------------------------------------
+
+
+class TestExtractFragments:
+    async def test_tagged_format(self, simple_5para_path):
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(simple_5para_path)},
+            )
+        text = _text(result)
+        assert "<f=1>" in text
+        assert "<f=5>" in text
+        assert "</f=1>" in text
+
+    async def test_json_format(self, simple_5para_path):
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(simple_5para_path), "format": "json"},
+            )
+        data = json.loads(_text(result))
+        assert isinstance(data, list)
+        assert len(data) == 5
+        assert data[0]["fragment_id"] == 1
+        assert "text" in data[0]
+
+    async def test_file_not_found(self):
+        async with Client(mcp) as client:
+            with pytest.raises(Exception, match="File not found"):
+                await client.call_tool(
+                    "extract_fragments",
+                    {"document_path": "/nonexistent/file.docx"},
+                )
+
+    async def test_formatted_document(self, formatted_runs_path):
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(formatted_runs_path)},
+            )
+        text = _text(result)
+        # Formatted doc should contain pseudo-Markdown markers
+        assert "<f=1>" in text
+
+
+# ---------------------------------------------------------------------------
+# apply_changes
+# ---------------------------------------------------------------------------
+
+
+class TestApplyChanges:
+    async def test_single_modify(self, simple_5para_path, tmp_path):
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "modify",
+                            "new_text": "The Modified Seller shall transfer the goods.",
+                            "justification": "Updated party name.",
+                        },
+                    ],
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "1 change(s)" in text
+        assert "1 modify" in text
+        assert str(output) in text
+        assert _is_valid_docx(output)
+
+    async def test_single_delete(self, simple_5para_path, tmp_path):
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes": [
+                        {
+                            "fragment_id": 2,
+                            "change_type": "delete",
+                            "justification": "Removed redundant clause.",
+                        },
+                    ],
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "1 delete" in text
+        assert _is_valid_docx(output)
+
+    async def test_single_append(self, simple_5para_path, tmp_path):
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes": [
+                        {
+                            "fragment_id": 3,
+                            "change_type": "append_after",
+                            "new_text": "The foregoing shall survive termination.",
+                            "justification": "Added survival provision.",
+                        },
+                    ],
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "1 append_after" in text
+        assert _is_valid_docx(output)
+
+    async def test_multiple_change_types(self, simple_5para_path, tmp_path):
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "modify",
+                            "new_text": "Modified paragraph one.",
+                            "justification": "Edit first paragraph.",
+                        },
+                        {
+                            "fragment_id": 3,
+                            "change_type": "delete",
+                            "justification": "Remove third paragraph.",
+                        },
+                        {
+                            "fragment_id": 5,
+                            "change_type": "append_after",
+                            "new_text": "A new final paragraph.",
+                            "justification": "Add conclusion.",
+                        },
+                    ],
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "3 change(s)" in text
+        assert _is_valid_docx(output)
+
+    async def test_default_output_path(self, simple_5para_path):
+        expected = simple_5para_path.parent / "simple_5para_redlined.docx"
+        try:
+            async with Client(mcp) as client:
+                result = await client.call_tool(
+                    "apply_changes",
+                    {
+                        "document_path": str(simple_5para_path),
+                        "changes": [
+                            {
+                                "fragment_id": 1,
+                                "change_type": "delete",
+                                "justification": "Test default path.",
+                            },
+                        ],
+                    },
+                )
+            text = _text(result)
+            assert "simple_5para_redlined.docx" in text
+            assert _is_valid_docx(expected)
+        finally:
+            expected.unlink(missing_ok=True)
+
+    async def test_validation_included_by_default(self, simple_5para_path, tmp_path):
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "delete",
+                            "justification": "Test validation.",
+                        },
+                    ],
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "Validation:" in text
+
+    async def test_validation_disabled(self, simple_5para_path, tmp_path):
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "delete",
+                            "justification": "Test no validation.",
+                        },
+                    ],
+                    "output_path": str(output),
+                    "validate": False,
+                },
+            )
+        text = _text(result)
+        assert "Validation:" not in text
+
+    async def test_invalid_fragment_id(self, simple_5para_path, tmp_path):
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            with pytest.raises(Exception, match="fragment_id=99"):
+                await client.call_tool(
+                    "apply_changes",
+                    {
+                        "document_path": str(simple_5para_path),
+                        "changes": [
+                            {
+                                "fragment_id": 99,
+                                "change_type": "delete",
+                                "justification": "Bad ID.",
+                            },
+                        ],
+                        "output_path": str(output),
+                    },
+                )
+
+    async def test_file_not_found(self, tmp_path):
+        async with Client(mcp) as client:
+            with pytest.raises(Exception, match="File not found"):
+                await client.call_tool(
+                    "apply_changes",
+                    {
+                        "document_path": "/nonexistent/file.docx",
+                        "changes": [
+                            {
+                                "fragment_id": 1,
+                                "change_type": "delete",
+                                "justification": "Test.",
+                            },
+                        ],
+                    },
+                )
+
+    async def test_custom_author(self, simple_5para_path, tmp_path):
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "delete",
+                            "justification": "Test author.",
+                        },
+                    ],
+                    "output_path": str(output),
+                    "author": "Jane Doe",
+                },
+            )
+        assert _is_valid_docx(output)
+        # Verify author is in the output XML
+        from docx_mcp.document import DocxDocument
+        from docx_mcp.namespaces import qn
+
+        doc = DocxDocument(path=output)
+        # Find any tracked change element with the custom author
+        found = False
+        for el in doc.document_tree.iter():
+            if el.get(qn("w", "author")) == "Jane Doe":
+                found = True
+                break
+        assert found, "Custom author not found in tracked changes"
+
+
+# ---------------------------------------------------------------------------
+# apply_changes_from_file
+# ---------------------------------------------------------------------------
+
+
+class TestApplyChangesFromFile:
+    async def test_basic_file(self, simple_5para_path, tmp_path):
+        changes_file = _write_changes_json(
+            tmp_path,
+            [
+                {
+                    "fragment_id": 1,
+                    "change_type": "modify",
+                    "new_text": "Paragraph one modified via file.",
+                    "justification": "Test file-based apply.",
+                },
+            ],
+        )
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes_from_file",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes_file": str(changes_file),
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "1 change(s)" in text
+        assert _is_valid_docx(output)
+
+    async def test_dict_wrapper(self, simple_5para_path, tmp_path):
+        changes_file = _write_changes_json(
+            tmp_path,
+            {
+                "changes": [
+                    {
+                        "fragment_id": 2,
+                        "change_type": "delete",
+                        "justification": "Test dict wrapper.",
+                    },
+                ],
+            },
+        )
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes_from_file",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes_file": str(changes_file),
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "1 change(s)" in text
+        assert _is_valid_docx(output)
+
+    async def test_changes_file_not_found(self, simple_5para_path):
+        async with Client(mcp) as client:
+            with pytest.raises(Exception, match="Changes file not found"):
+                await client.call_tool(
+                    "apply_changes_from_file",
+                    {
+                        "document_path": str(simple_5para_path),
+                        "changes_file": "/nonexistent/changes.json",
+                    },
+                )
+
+    async def test_invalid_json(self, simple_5para_path, tmp_path):
+        bad_file = tmp_path / "bad.json"
+        bad_file.write_text("not valid json {{{", encoding="utf-8")
+        async with Client(mcp) as client:
+            with pytest.raises(Exception, match="Invalid JSON"):
+                await client.call_tool(
+                    "apply_changes_from_file",
+                    {
+                        "document_path": str(simple_5para_path),
+                        "changes_file": str(bad_file),
+                    },
+                )
+
+    async def test_invalid_change_schema(self, simple_5para_path, tmp_path):
+        changes_file = _write_changes_json(
+            tmp_path,
+            [
+                {"fragment_id": "not_an_int", "change_type": "bogus"},
+            ],
+        )
+        async with Client(mcp) as client:
+            with pytest.raises(Exception, match="Invalid changes"):
+                await client.call_tool(
+                    "apply_changes_from_file",
+                    {
+                        "document_path": str(simple_5para_path),
+                        "changes_file": str(changes_file),
+                    },
+                )
+
+    async def test_dict_without_changes_key(self, simple_5para_path, tmp_path):
+        changes_file = _write_changes_json(tmp_path, {"data": []})
+        async with Client(mcp) as client:
+            with pytest.raises(Exception, match="no 'changes' key"):
+                await client.call_tool(
+                    "apply_changes_from_file",
+                    {
+                        "document_path": str(simple_5para_path),
+                        "changes_file": str(changes_file),
+                    },
+                )
+
+
+# ---------------------------------------------------------------------------
+# validate_document
+# ---------------------------------------------------------------------------
+
+
+class TestValidateDocument:
+    async def test_clean_file(self, simple_5para_path):
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "validate_document_tool",
+                {"document_path": str(simple_5para_path)},
+            )
+        text = _text(result)
+        assert "passed" in text
+        assert "0 errors" in text
+
+    async def test_redlined_file(self, simple_5para_path, tmp_path):
+        # First create a redlined file
+        output = tmp_path / "redlined.docx"
+        async with Client(mcp) as client:
+            await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "modify",
+                            "new_text": "Changed text for validation test.",
+                            "justification": "Test.",
+                        },
+                    ],
+                    "output_path": str(output),
+                    "validate": False,
+                },
+            )
+            # Now validate it
+            result = await client.call_tool(
+                "validate_document_tool",
+                {"document_path": str(output)},
+            )
+        text = _text(result)
+        assert "passed" in text
+
+    async def test_file_not_found(self):
+        async with Client(mcp) as client:
+            with pytest.raises(Exception, match="File not found"):
+                await client.call_tool(
+                    "validate_document_tool",
+                    {"document_path": "/nonexistent/file.docx"},
+                )
+
+
+# ---------------------------------------------------------------------------
+# diff_fragments
+# ---------------------------------------------------------------------------
+
+
+class TestDiffFragments:
+    async def test_identical_documents(self, simple_5para_path):
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "diff_fragments",
+                {
+                    "original_path": str(simple_5para_path),
+                    "modified_path": str(simple_5para_path),
+                },
+            )
+        text = _text(result)
+        assert "unchanged" in text
+        # All 5 fragments should be unchanged
+        assert text.count("unchanged") == 5
+
+    async def test_modified_document(self, simple_5para_path, tmp_path):
+        # Create a modified version
+        output = tmp_path / "modified.docx"
+        async with Client(mcp) as client:
+            await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "modify",
+                            "new_text": "Completely different text here.",
+                            "justification": "Test diff.",
+                        },
+                    ],
+                    "output_path": str(output),
+                    "validate": False,
+                },
+            )
+        # The redlined version has tracked changes XML, so the text
+        # representation will differ. Just verify the tool runs without error.
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "diff_fragments",
+                {
+                    "original_path": str(simple_5para_path),
+                    "modified_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "Fragment 1:" in text
+
+    async def test_different_length_documents(self, simple_5para_path, nda_skeleton_path):
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "diff_fragments",
+                {
+                    "original_path": str(simple_5para_path),
+                    "modified_path": str(nda_skeleton_path),
+                },
+            )
+        text = _text(result)
+        # NDA has more paragraphs than simple_5para, so we should see "added"
+        assert "added" in text or "modified" in text
+
+    async def test_file_not_found(self, simple_5para_path):
+        async with Client(mcp) as client:
+            with pytest.raises(Exception, match="File not found"):
+                await client.call_tool(
+                    "diff_fragments",
+                    {
+                        "original_path": str(simple_5para_path),
+                        "modified_path": "/nonexistent/file.docx",
+                    },
+                )
+
+
+# ---------------------------------------------------------------------------
+# Resource: docx://{document_path}/fragments
+# ---------------------------------------------------------------------------
+
+
+class TestFragmentsResource:
+    async def test_read_resource(self, simple_5para_path):
+        encoded = quote(str(simple_5para_path), safe="")
+        uri = f"docx-fragments://{encoded}"
+        async with Client(mcp) as client:
+            contents = await client.read_resource(uri)
+        assert len(contents) > 0
+        text = contents[0].text
+        assert "<f=1>" in text
+        assert "<f=5>" in text
+
+    async def test_resource_matches_tool(self, simple_5para_path):
+        """Resource output should match the extract_fragments tool output."""
+        encoded = quote(str(simple_5para_path), safe="")
+        uri = f"docx-fragments://{encoded}"
+        async with Client(mcp) as client:
+            resource_contents = await client.read_resource(uri)
+            tool_result = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(simple_5para_path)},
+            )
+        resource_text = resource_contents[0].text
+        tool_text = _text(tool_result)
+        assert resource_text == tool_text

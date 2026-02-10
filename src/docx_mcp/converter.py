@@ -82,6 +82,43 @@ def _unescape_markdown(text: str) -> str:
     return text
 
 
+# Regex that strips our pseudo-Markdown formatting wrappers.
+# Handles bold (**…**), underline (__…__), and italic (_…_).
+# Must be applied iteratively (outermost first) because wrappers nest.
+_BOLD_RE = re.compile(r"\*\*(.+?)\*\*", re.DOTALL)
+_UNDERLINE_RE = re.compile(r"__(.+?)__", re.DOTALL)
+_ITALIC_RE = re.compile(r"(?<![\\])_(.+?)(?<![\\])_", re.DOTALL)
+
+
+def pseudo_markdown_to_raw(text: str) -> str:
+    """Convert pseudo-Markdown text back to raw (plain) text.
+
+    Strips formatting wrappers (``**bold**``, ``__underline__``,
+    ``_italic_``) and reverses escape sequences (``\\*`` → ``*``,
+    ``\\_`` → ``_``, ``\\\\`` → ``\\``).
+
+    This is the inverse of the formatting applied by
+    :func:`paragraph_to_pseudo_markdown`, modulo whitespace normalisation.
+
+    Args:
+        text: Pseudo-Markdown text.
+
+    Returns:
+        Plain text with formatting markers and escapes removed.
+    """
+    # Strip wrappers outermost-first: bold → underline → italic.
+    # Iterate until stable because nested wrappers need multiple passes.
+    for _pass in range(5):
+        prev = text
+        text = _BOLD_RE.sub(r"\1", text)
+        text = _UNDERLINE_RE.sub(r"\1", text)
+        text = _ITALIC_RE.sub(r"\1", text)
+        if text == prev:
+            break
+
+    return _unescape_markdown(text)
+
+
 def _wrap_formatting(text: str, *, bold: bool, italic: bool, underline: bool) -> str:
     """Wrap text in pseudo-Markdown formatting markers.
 
@@ -101,16 +138,21 @@ def _wrap_formatting(text: str, *, bold: bool, italic: bool, underline: bool) ->
     return result
 
 
-def _extract_run_text(run: etree._Element) -> str:
+def _extract_run_text(run: etree._Element, *, include_del_text: bool = False) -> str:
     """Extract text content from a <w:r> element.
 
     Concatenates all <w:t> children. Handles <w:br/> as newline
     and <w:tab/> as tab (though tabs are rare in legal docs).
+
+    When *include_del_text* is True, ``<w:delText>`` elements are also
+    included.  This is needed for tracked-change-aware extraction where
+    the paragraph contains ``<w:del>`` wrappers with ``<w:delText>``
+    instead of ``<w:t>``.
     """
     parts: list[str] = []
     for child in run:
         tag = etree.QName(child.tag).localname if isinstance(child.tag, str) else None
-        if tag == "t" and child.text:
+        if (tag == "t" and child.text) or (tag == "delText" and include_del_text and child.text):
             parts.append(child.text)
         elif tag == "br":
             parts.append("\n")
@@ -119,7 +161,32 @@ def _extract_run_text(run: etree._Element) -> str:
     return "".join(parts)
 
 
-def paragraph_to_pseudo_markdown(paragraph: etree._Element) -> str:
+def _format_run(run: etree._Element, *, include_del_text: bool = False) -> str:
+    """Extract text from a run and apply pseudo-Markdown formatting.
+
+    Returns the escaped and formatting-wrapped text for a single
+    ``<w:r>`` element.  Returns an empty string if the run has no text.
+    """
+    text = _extract_run_text(run, include_del_text=include_del_text)
+    if not text:
+        return ""
+
+    rpr_list = xpath(run, "w:rPr")
+    rpr = rpr_list[0] if rpr_list else None
+
+    bold = _is_bold(rpr)
+    italic = _is_italic(rpr)
+    underline = _is_underline(rpr)
+
+    escaped = _escape_markdown(text)
+    return _wrap_formatting(escaped, bold=bold, italic=italic, underline=underline)
+
+
+def paragraph_to_pseudo_markdown(
+    paragraph: etree._Element,
+    *,
+    markup: bool = False,
+) -> str:
     """Convert a single <w:p> element to pseudo-Markdown text.
 
     Walks the runs, extracts text and formatting, and produces a
@@ -128,28 +195,55 @@ def paragraph_to_pseudo_markdown(paragraph: etree._Element) -> str:
     Unicode characters (smart quotes, em-dashes, etc.) are preserved as-is.
     Markdown syntax characters (* and _) in the source text are escaped.
     Multiple consecutive spaces are collapsed to single spaces.
+
+    When *markup* is True, tracked changes are included:
+
+    - Inserted runs (inside ``<w:ins>``) are wrapped with ``++…++``.
+    - Deleted runs (inside ``<w:del>``) are wrapped with ``~~…~~``.
+
+    This allows round-trip validation of redlined documents.  When
+    *markup* is False (the default), only direct ``<w:r>`` children
+    of the paragraph are processed, giving the "original" view.
     """
     segments: list[str] = []
 
-    for run in xpath(paragraph, "w:r"):
-        text = _extract_run_text(run)
-        if not text:
-            continue
+    if not markup:
+        # Original behaviour: only direct <w:r> children.
+        for run in xpath(paragraph, "w:r"):
+            formatted = _format_run(run)
+            if formatted:
+                segments.append(formatted)
+    else:
+        # Tracked-change-aware: walk all children in document order.
+        for child in paragraph:
+            tag = etree.QName(child.tag).localname if isinstance(child.tag, str) else ""
 
-        # Get formatting
-        rpr_list = xpath(run, "w:rPr")
-        rpr = rpr_list[0] if rpr_list else None
+            if tag == "r":
+                # Direct run (unchanged text)
+                formatted = _format_run(child)
+                if formatted:
+                    segments.append(formatted)
 
-        bold = _is_bold(rpr)
-        italic = _is_italic(rpr)
-        underline = _is_underline(rpr)
+            elif tag == "ins":
+                # Inserted region — collect all runs inside <w:ins>
+                ins_parts: list[str] = []
+                for run in xpath(child, "w:r"):
+                    formatted = _format_run(run)
+                    if formatted:
+                        ins_parts.append(formatted)
+                if ins_parts:
+                    segments.append(f"++{''.join(ins_parts)}++")
 
-        # Escape markdown syntax characters in the raw text
-        escaped = _escape_markdown(text)
-
-        # Wrap with formatting markers
-        formatted = _wrap_formatting(escaped, bold=bold, italic=italic, underline=underline)
-        segments.append(formatted)
+            elif tag == "del":
+                # Deleted region — collect all runs inside <w:del>
+                # Deleted runs use <w:delText> instead of <w:t>
+                del_parts: list[str] = []
+                for run in xpath(child, "w:r"):
+                    formatted = _format_run(run, include_del_text=True)
+                    if formatted:
+                        del_parts.append(formatted)
+                if del_parts:
+                    segments.append(f"~~{''.join(del_parts)}~~")
 
     result = "".join(segments)
 
@@ -162,11 +256,15 @@ def paragraph_to_pseudo_markdown(paragraph: etree._Element) -> str:
 
 def document_to_fragments(
     paragraphs: list[etree._Element],
+    *,
+    markup: bool = False,
 ) -> list[tuple[int, str]]:
     """Convert a list of paragraph elements to (fragment_id, pseudo_markdown) pairs.
 
     Args:
         paragraphs: List of <w:p> elements (typically from DocxDocument.paragraphs).
+        markup: When True, include tracked-change markers (``++…++`` for
+            insertions, ``~~…~~`` for deletions).
 
     Returns:
         List of (fragment_id, pseudo_markdown) tuples, 1-indexed.
@@ -174,7 +272,7 @@ def document_to_fragments(
     """
     fragments: list[tuple[int, str]] = []
     for i, para in enumerate(paragraphs, start=1):
-        md = paragraph_to_pseudo_markdown(para)
+        md = paragraph_to_pseudo_markdown(para, markup=markup)
         fragments.append((i, md))
     return fragments
 

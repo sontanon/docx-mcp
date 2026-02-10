@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from lxml import etree
 
+from docx_mcp.converter import paragraph_to_pseudo_markdown
 from docx_mcp.document import DocxDocument
 from docx_mcp.handlers.append import handle_append_after
 from docx_mcp.handlers.delete import handle_delete
@@ -442,8 +443,6 @@ class TestHandlersWithFixtures:
         fmap = doc.fragment_map()
         para = fmap[1]  # First paragraph
 
-        from docx_mcp.converter import paragraph_to_pseudo_markdown
-
         old_text = paragraph_to_pseudo_markdown(para)
 
         # Change something
@@ -462,3 +461,231 @@ class TestHandlersWithFixtures:
 
         data = doc.to_bytes()
         assert len(data) > 0
+
+
+# ===================================================================
+# Modify handler: escaped character regression tests (Bug 1 fix)
+# ===================================================================
+
+
+class TestModifyWithEscapedCharacters:
+    """Regression tests for the garbled output bug.
+
+    When a paragraph contains literal underscores (common in legal docs
+    for fill-in-the-blank fields), the pseudo-Markdown escapes them as
+    ``\\_``.  The old modify handler diffed pseudo-Markdown against raw
+    run text, causing alignment failures that produced garbled single-
+    character runs.
+
+    After the fix, the handler diffs raw text vs raw text.  The new_text
+    param may still be pseudo-Markdown (with ``\\_`` escapes), which
+    ``pseudo_markdown_to_raw()`` converts back before diffing.
+    """
+
+    def test_modify_paragraph_with_underscores(self):
+        """Modify a paragraph containing literal underscores without garbling."""
+        p = _make_paragraph(("Name: ________", None))
+        mgr = IdManager()
+        ids = handle_modify(
+            p,
+            "Full Name: \\_\\_\\_\\_\\_\\_\\_\\_",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+
+        assert len(ids) >= 1  # At least one tracked change
+
+        # Verify the insertion contains "Full"
+        ins_texts = []
+        for i in xpath(p, "w:ins"):
+            for t in i.iter(qn("w", "t")):
+                if t.text:
+                    ins_texts.append(t.text)
+        assert "Full" in "".join(ins_texts)
+
+        # Verify the underscores survive as EQUAL text (not garbled)
+        equal_texts = []
+        for r in xpath(p, "w:r"):
+            for t in r.iter(qn("w", "t")):
+                if t.text:
+                    equal_texts.append(t.text)
+        combined_equal = "".join(equal_texts)
+        assert "____" in combined_equal
+
+    def test_modify_preserves_long_underscore_fill(self):
+        """A fill-in-the-blank like ____________ should not be garbled."""
+        underscores = "_" * 20
+        p = _make_paragraph((f"Party: {underscores} agrees", None))
+        mgr = IdManager()
+
+        # New text keeps the underscores but changes "Party" to "Seller"
+        escaped_underscores = "\\_" * 20
+        new_text = f"Seller: {escaped_underscores} agrees"
+
+        ids = handle_modify(p, new_text, id_manager=mgr, config=_default_config())
+        assert len(ids) >= 2
+
+        # Collect all text content from the modified paragraph
+        all_text = []
+        for el in p.iter():
+            tag = etree.QName(el.tag).localname if isinstance(el.tag, str) else ""
+            if tag in ("t", "delText") and el.text:
+                all_text.append(el.text)
+        combined = "".join(all_text)
+
+        # The underscores should appear as a contiguous block, not garbled
+        assert underscores in combined
+
+    def test_modify_no_change_with_underscores(self):
+        """If new_text matches old text (after stripping), no changes should occur."""
+        p = _make_paragraph(("Name: ________", None))
+        mgr = IdManager()
+        # Pass the exact escaped equivalent — should produce no diff
+        ids = handle_modify(
+            p,
+            "Name: \\_\\_\\_\\_\\_\\_\\_\\_",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+        assert ids == []
+
+    def test_modify_with_asterisks_in_text(self):
+        """Literal asterisks in original text should not cause garbling."""
+        p = _make_paragraph(("Clause 5 * important *", None))
+        mgr = IdManager()
+        ids = handle_modify(
+            p,
+            "Clause 5 \\* critical \\*",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+
+        assert len(ids) >= 2
+
+        ins_texts = []
+        for i in xpath(p, "w:ins"):
+            for t in i.iter(qn("w", "t")):
+                if t.text:
+                    ins_texts.append(t.text)
+        assert "critical" in "".join(ins_texts)
+
+    def test_modify_round_trip_via_markup(self):
+        """After modification, markup=True extraction should show tracked changes."""
+        p = _make_paragraph(("The Company shall provide notice", None))
+        mgr = IdManager()
+        handle_modify(
+            p,
+            "The Company shall provide written notice",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+
+        # Extract with markup=True
+        md = paragraph_to_pseudo_markdown(p, markup=True)
+        assert "++written++" in md or "++written " in md or "++ written++" in md
+        # The unchanged parts should still be there
+        assert "The" in md
+        assert "Company" in md
+        assert "notice" in md
+
+
+# ===================================================================
+# Modify handler: tab whitespace regression tests (Bug 4 fix)
+# ===================================================================
+
+
+class TestModifyWithTabs:
+    """Regression tests for the tab-alignment garbling bug.
+
+    Real legal documents use <w:tab/> elements for clause numbering
+    (e.g. ``\\t\\t1.\\tThe term...``).  The tokenizer normalises these to
+    spaces, but ``map_diff_to_runs()`` must align diff text (with spaces)
+    against original run text (with tabs) without garbling.
+    """
+
+    @staticmethod
+    def _make_tabbed_paragraph() -> etree._Element:
+        """Build a paragraph with ``<w:tab/>`` elements like a real NDA clause.
+
+        Structure: <w:tab/> | <w:tab/>1. | <w:tab/>The term means all info.
+        Raw text: ``\\t\\t1.\\tThe term means all info.``
+        """
+        p = etree.Element(qn("w", "p"))
+
+        r0 = etree.SubElement(p, qn("w", "r"))
+        etree.SubElement(r0, qn("w", "tab"))
+
+        r1 = etree.SubElement(p, qn("w", "r"))
+        etree.SubElement(r1, qn("w", "tab"))
+        t1 = etree.SubElement(r1, qn("w", "t"))
+        t1.text = "1."
+
+        r2 = etree.SubElement(p, qn("w", "r"))
+        etree.SubElement(r2, qn("w", "tab"))
+        t2 = etree.SubElement(r2, qn("w", "t"))
+        t2.text = "The term means all info."
+
+        return p
+
+    def test_modify_tabbed_paragraph_no_garbling(self):
+        """Modifying a tabbed paragraph should not produce garbled output."""
+        p = self._make_tabbed_paragraph()
+        mgr = IdManager()
+        ids = handle_modify(
+            p,
+            "1. The term means all relevant info.",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+
+        assert len(ids) >= 1
+
+        # Collect all text from the paragraph
+        all_text = []
+        for el in p.iter():
+            tag = etree.QName(el.tag).localname if isinstance(el.tag, str) else ""
+            if tag in ("t", "delText") and el.text:
+                all_text.append(el.text)
+        combined = "".join(all_text)
+
+        # Should contain the unchanged parts and the insertion
+        assert "1." in combined
+        assert "The term means all" in combined
+        assert "relevant" in combined
+        assert "info." in combined
+
+        # Should NOT have garbled single-character words
+        words = combined.split()
+        single_chars = [w for w in words if len(w) == 1 and w not in ("1",)]
+        assert len(single_chars) <= 2, f"Too many single-char words: {single_chars}"
+
+    def test_modify_tabbed_paragraph_preserves_tabs(self):
+        """Tabs in the original paragraph should be preserved after modification."""
+        p = self._make_tabbed_paragraph()
+        mgr = IdManager()
+        handle_modify(
+            p,
+            "1. The term means all relevant info.",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+
+        # Extract with markup to see the result
+        md = paragraph_to_pseudo_markdown(p, markup=True)
+        assert "++relevant++" in md or "++relevant " in md or "++ relevant++" in md
+
+    def test_no_change_tabbed_paragraph(self):
+        """If new_text matches the tabbed paragraph content, no changes occur."""
+        p = self._make_tabbed_paragraph()
+        mgr = IdManager()
+        # The raw text is "\t\t1.\tThe term means all info."
+        # After pseudo_markdown_to_raw, "1. The term means all info." becomes
+        # "1. The term means all info." which tokenizes the same way as the
+        # original (tabs are stripped by tokenizer).
+        ids = handle_modify(
+            p,
+            "1. The term means all info.",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+        assert ids == []

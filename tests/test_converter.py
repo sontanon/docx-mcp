@@ -11,8 +11,10 @@ from docx_mcp.converter import (
     document_to_fragments,
     fragments_to_tagged_text,
     paragraph_to_pseudo_markdown,
+    pseudo_markdown_to_raw,
 )
 from docx_mcp.document import DocxDocument
+from docx_mcp.namespaces import XML
 
 
 class TestEscapeMarkdown:
@@ -193,3 +195,203 @@ class TestFragmentsToTaggedText:
         fragments = [(1, "This is **bold** text.")]
         result = fragments_to_tagged_text(fragments)
         assert result == "<f=1>This is **bold** text.</f=1>"
+
+
+# ===================================================================
+# pseudo_markdown_to_raw tests
+# ===================================================================
+
+
+class TestPseudoMarkdownToRaw:
+    def test_plain_text_unchanged(self):
+        assert pseudo_markdown_to_raw("Hello world") == "Hello world"
+
+    def test_strips_bold(self):
+        assert pseudo_markdown_to_raw("**bold**") == "bold"
+
+    def test_strips_italic(self):
+        assert pseudo_markdown_to_raw("_italic_") == "italic"
+
+    def test_strips_underline(self):
+        assert pseudo_markdown_to_raw("__underline__") == "underline"
+
+    def test_strips_nested_bold_underline(self):
+        assert pseudo_markdown_to_raw("**__bold underline__**") == "bold underline"
+
+    def test_strips_nested_bold_italic(self):
+        assert pseudo_markdown_to_raw("**_bold italic_**") == "bold italic"
+
+    def test_strips_all_three_nested(self):
+        assert pseudo_markdown_to_raw("**___bold italic underline___**") == "bold italic underline"
+
+    def test_unescapes_underscores(self):
+        assert pseudo_markdown_to_raw("\\_name\\_") == "_name_"
+
+    def test_unescapes_asterisks(self):
+        assert pseudo_markdown_to_raw("\\*star\\*") == "*star*"
+
+    def test_unescapes_backslashes(self):
+        assert pseudo_markdown_to_raw("path\\\\to") == "path\\to"
+
+    def test_mixed_formatting_and_escapes(self):
+        text = "The **Seller** shall deliver the \\_goods\\_ within __thirty days__."
+        expected = "The Seller shall deliver the _goods_ within thirty days."
+        assert pseudo_markdown_to_raw(text) == expected
+
+    def test_multiple_underscores_escaped(self):
+        """The NDA bug scenario: literal underscores escaped in pseudo-Markdown."""
+        # Four literal underscores become four escaped underscores
+        text = "\\_\\_\\_\\_"
+        assert pseudo_markdown_to_raw(text) == "____"
+
+    def test_long_underscore_fill_escaped(self):
+        """Simulate a fill-in-the-blank like ____________ in a legal doc."""
+        raw_underscores = "_" * 12
+        escaped = _escape_markdown(raw_underscores)
+        assert pseudo_markdown_to_raw(escaped) == raw_underscores
+
+    def test_round_trip_plain(self):
+        """pseudo_markdown_to_raw(escape(text)) should return original text."""
+        original = "Section 5.1: obligations of the _underscore_ party"
+        escaped = _escape_markdown(original)
+        assert pseudo_markdown_to_raw(escaped) == original
+
+    def test_empty_string(self):
+        assert pseudo_markdown_to_raw("") == ""
+
+    def test_preserves_unicode(self):
+        text = "\u201cQuoted\u201d \u2014 \u00a7 5.1"
+        assert pseudo_markdown_to_raw(text) == text
+
+
+# ===================================================================
+# paragraph_to_pseudo_markdown with markup=True
+# ===================================================================
+
+
+def _make_tracked_change_paragraph() -> etree._Element:
+    """Build a paragraph with <w:ins> and <w:del> tracked changes.
+
+    Structure: "The " + DEL("quick ") + INS("slow ") + "brown fox"
+    """
+    W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    nsmap = {"w": W}
+
+    p = etree.Element(f"{{{W}}}p", nsmap=nsmap)
+
+    # Plain run: "The "
+    r1 = etree.SubElement(p, f"{{{W}}}r")
+    t1 = etree.SubElement(r1, f"{{{W}}}t")
+    t1.text = "The "
+    t1.set(f"{{{XML}}}space", "preserve")
+
+    # Deleted region: "quick "
+    del_el = etree.SubElement(p, f"{{{W}}}del")
+    del_el.set(f"{{{W}}}id", "1")
+    del_el.set(f"{{{W}}}author", "Test")
+    del_el.set(f"{{{W}}}date", "2026-01-01T00:00:00Z")
+    dr = etree.SubElement(del_el, f"{{{W}}}r")
+    dt = etree.SubElement(dr, f"{{{W}}}delText")
+    dt.text = "quick "
+    dt.set(f"{{{XML}}}space", "preserve")
+
+    # Inserted region: "slow "
+    ins_el = etree.SubElement(p, f"{{{W}}}ins")
+    ins_el.set(f"{{{W}}}id", "2")
+    ins_el.set(f"{{{W}}}author", "Test")
+    ins_el.set(f"{{{W}}}date", "2026-01-01T00:00:00Z")
+    ir = etree.SubElement(ins_el, f"{{{W}}}r")
+    it = etree.SubElement(ir, f"{{{W}}}t")
+    it.text = "slow "
+    it.set(f"{{{XML}}}space", "preserve")
+
+    # Plain run: "brown fox"
+    r2 = etree.SubElement(p, f"{{{W}}}r")
+    t2 = etree.SubElement(r2, f"{{{W}}}t")
+    t2.text = "brown fox"
+
+    return p
+
+
+class TestParagraphToPseudoMarkdownMarkup:
+    """Tests for paragraph_to_pseudo_markdown with markup=True."""
+
+    def test_markup_false_ignores_tracked_changes(self):
+        p = _make_tracked_change_paragraph()
+        md = paragraph_to_pseudo_markdown(p, markup=False)
+        # Default mode should only see direct <w:r> children
+        assert "quick" not in md
+        assert "slow" not in md
+        assert "The" in md
+        assert "brown fox" in md
+
+    def test_markup_true_shows_tracked_changes(self):
+        p = _make_tracked_change_paragraph()
+        md = paragraph_to_pseudo_markdown(p, markup=True)
+        assert "~~quick~~" in md or "~~quick ~~" in md
+        assert "++slow++" in md or "++slow ++" in md
+        assert "The" in md
+        assert "brown fox" in md
+
+    def test_markup_true_insertion_markers(self):
+        p = _make_tracked_change_paragraph()
+        md = paragraph_to_pseudo_markdown(p, markup=True)
+        # The inserted text should be wrapped in ++…++
+        assert "++" in md
+        # Extract the content between ++ markers
+        import re
+
+        ins_match = re.search(r"\+\+(.+?)\+\+", md)
+        assert ins_match is not None
+        assert "slow" in ins_match.group(1)
+
+    def test_markup_true_deletion_markers(self):
+        p = _make_tracked_change_paragraph()
+        md = paragraph_to_pseudo_markdown(p, markup=True)
+        # The deleted text should be wrapped in ~~…~~
+        assert "~~" in md
+        import re
+
+        del_match = re.search(r"~~(.+?)~~", md)
+        assert del_match is not None
+        assert "quick" in del_match.group(1)
+
+    def test_markup_true_with_bold_in_insertion(self):
+        """Inserted text with formatting should have both markers."""
+        W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+        nsmap = {"w": W}
+        p = etree.Element(f"{{{W}}}p", nsmap=nsmap)
+
+        ins_el = etree.SubElement(p, f"{{{W}}}ins")
+        ins_el.set(f"{{{W}}}id", "1")
+        ins_el.set(f"{{{W}}}author", "Test")
+        ins_el.set(f"{{{W}}}date", "2026-01-01T00:00:00Z")
+        r = etree.SubElement(ins_el, f"{{{W}}}r")
+        rpr = etree.SubElement(r, f"{{{W}}}rPr")
+        etree.SubElement(rpr, f"{{{W}}}b")
+        t = etree.SubElement(r, f"{{{W}}}t")
+        t.text = "Important"
+
+        md = paragraph_to_pseudo_markdown(p, markup=True)
+        assert "++**Important**++" in md
+
+
+# ===================================================================
+# document_to_fragments with markup
+# ===================================================================
+
+
+class TestDocumentToFragmentsMarkup:
+    def test_markup_false_is_default(self, simple_5para_path: Path):
+        doc = DocxDocument(path=simple_5para_path)
+        frags_default = document_to_fragments(doc.paragraphs)
+        frags_explicit = document_to_fragments(doc.paragraphs, markup=False)
+        assert frags_default == frags_explicit
+
+    def test_markup_true_passes_through(self, simple_5para_path: Path):
+        """On an unmodified doc, markup=True should give the same result."""
+        doc = DocxDocument(path=simple_5para_path)
+        frags_plain = document_to_fragments(doc.paragraphs, markup=False)
+        frags_markup = document_to_fragments(doc.paragraphs, markup=True)
+        # On a clean doc with no tracked changes, results should be identical
+        assert frags_plain == frags_markup

@@ -25,6 +25,7 @@ from docx_mcp.converter import (
     document_to_fragments,
     fragments_to_tagged_text,
     paragraph_to_pseudo_markdown,
+    pseudo_markdown_to_raw,
 )
 from docx_mcp.document import DocxDocument
 from docx_mcp.models import Change, ChangeType, DiffChunk, DiffOp, RedlineConfig
@@ -43,5 +44,6 @@ __all__ = [
     "document_to_fragments",
     "fragments_to_tagged_text",
     "paragraph_to_pseudo_markdown",
+    "pseudo_markdown_to_raw",
     "validate_document",
 ]

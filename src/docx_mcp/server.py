@@ -217,6 +217,7 @@ def _apply_and_save(
 def extract_fragments(
     document_path: str,
     format: Literal["tagged", "json"] = "tagged",
+    markup: bool = False,
 ) -> str:
     """Read a .docx file and return its paragraphs as text.
 
@@ -234,15 +235,23 @@ def extract_fragments(
 
     Text uses pseudo-Markdown: **bold**, _italic_, __underline__.
 
+    When *markup* is True, tracked changes are shown inline:
+
+    - Inserted text is wrapped with ``++…++``.
+    - Deleted text is wrapped with ``~~…~~``.
+
+    This is useful for inspecting or validating redlined documents.
+
     Args:
         document_path: Path to the .docx file.
         format: Output format -- "tagged" (default) or "json".
+        markup: Show tracked changes inline (default False).
 
     Returns:
         Fragment text in the requested format.
     """
     doc = _load_document(document_path)
-    fragments = document_to_fragments(doc.paragraphs)
+    fragments = document_to_fragments(doc.paragraphs, markup=markup)
 
     if format == "json":
         data = [{"fragment_id": fid, "text": text} for fid, text in fragments]

@@ -2,23 +2,34 @@
 
 This is the most complex handler.  It:
 
-1. Converts the existing paragraph to pseudo-Markdown (using the converter).
-2. Diffs the old pseudo-Markdown against the new pseudo-Markdown.
-3. Maps the diff chunks back onto the original XML runs.
-4. Rebuilds the paragraph children with proper ``<w:del>`` / ``<w:ins>``
+1. Extracts the raw text from the paragraph's existing XML runs.
+2. Converts the new pseudo-Markdown text to raw text (strips formatting
+   markers and unescapes).
+3. Diffs the old raw text against the new raw text at word granularity.
+4. Maps the diff chunks back onto the original XML runs (character-level
+   alignment).
+5. Rebuilds the paragraph children with proper ``<w:del>`` / ``<w:ins>``
    tracked-change wrappers around the changed regions.
-5. Preserves ``<w:pPr>`` and any non-run children (bookmarks, etc.).
+6. Preserves ``<w:pPr>`` and any non-run children (bookmarks, etc.).
 
 Equal regions are emitted as plain ``<w:r>`` elements (unchanged).
 Deleted regions are wrapped in ``<w:del>`` with ``<w:delText>``.
 Inserted regions are wrapped in ``<w:ins>`` with ``<w:t>``.
+
+.. note::
+
+   The diff operates on **raw text** (not pseudo-Markdown) because
+   ``map_diff_to_runs()`` aligns diff characters against the raw run text
+   from ``extract_runs()``.  Using pseudo-Markdown would introduce
+   formatting markers (``**``, ``_``, ``\\_``) that have no counterpart in
+   the XML run text, causing cascading alignment failures.
 """
 
 from __future__ import annotations
 
 from lxml import etree
 
-from docx_mcp.converter import paragraph_to_pseudo_markdown
+from docx_mcp.converter import pseudo_markdown_to_raw
 from docx_mcp.differ import DmpWordDiffer
 from docx_mcp.id_manager import IdManager
 from docx_mcp.models import DiffOp, RedlineConfig
@@ -28,6 +39,7 @@ from docx_mcp.run_ops import (
     build_run_element,
     build_tracked_change_element,
     extract_runs,
+    get_paragraph_text,
     map_diff_to_runs,
 )
 
@@ -55,21 +67,28 @@ def handle_modify(
     author = config.author
     date = config.date_iso()
 
-    # --- 1. Get old text ---
-    old_text = paragraph_to_pseudo_markdown(paragraph)
+    # --- 1. Get old text (raw, not pseudo-Markdown) ---
+    # The diff must operate on raw text because map_diff_to_runs() aligns
+    # diff characters against the raw run text from extract_runs().
+    # Pseudo-Markdown markers (**bold**, \_escaped\_) would cause alignment
+    # mismatches and garbled output.
+    runs = extract_runs(paragraph)
+    old_text = get_paragraph_text(runs)
 
-    # --- 2. Diff ---
-    diff_chunks = _differ.diff(old_text, new_text)
+    # --- 2. Convert new pseudo-Markdown to raw text for diffing ---
+    new_raw = pseudo_markdown_to_raw(new_text)
+
+    # --- 3. Diff (raw text vs raw text) ---
+    diff_chunks = _differ.diff(old_text, new_raw)
 
     # If no changes, nothing to do
     if all(c.op == DiffOp.EQUAL for c in diff_chunks):
         return []
 
-    # --- 3. Map diff to runs ---
-    runs = extract_runs(paragraph)
+    # --- 4. Map diff to runs ---
     segments = map_diff_to_runs(diff_chunks, runs)
 
-    # --- 4. Rebuild paragraph children ---
+    # --- 5. Rebuild paragraph children ---
     annotation_ids = _rebuild_paragraph(
         paragraph,
         segments,

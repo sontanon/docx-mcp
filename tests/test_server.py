@@ -602,3 +602,82 @@ class TestFragmentsResource:
         resource_text = resource_contents[0].text
         tool_text = _text(tool_result)
         assert resource_text == tool_text
+
+
+# ---------------------------------------------------------------------------
+# extract_fragments with markup mode
+# ---------------------------------------------------------------------------
+
+
+class TestExtractFragmentsMarkup:
+    async def test_markup_on_clean_doc(self, simple_5para_path):
+        """markup=True on a doc with no tracked changes should match default."""
+        async with Client(mcp) as client:
+            result_default = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(simple_5para_path)},
+            )
+            result_markup = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(simple_5para_path), "markup": True},
+            )
+        assert _text(result_default) == _text(result_markup)
+
+    async def test_markup_on_redlined_doc(self, simple_5para_path, tmp_path):
+        """markup=True on a redlined doc should show ++ and ~~ markers."""
+        output = tmp_path / "redlined.docx"
+        async with Client(mcp) as client:
+            # Create a redlined doc with a modify change
+            await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "modify",
+                            "new_text": "The Modified Seller shall transfer the goods.",
+                            "justification": "Test markup extraction.",
+                        },
+                    ],
+                    "output_path": str(output),
+                    "validate": False,
+                },
+            )
+            # Now extract with markup=True
+            result = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(output), "markup": True},
+            )
+        text = _text(result)
+        # Should contain tracked-change markers
+        assert "++" in text  # insertion markers
+        assert "~~" in text  # deletion markers
+
+    async def test_markup_false_on_redlined_doc(self, simple_5para_path, tmp_path):
+        """markup=False on a redlined doc should not show ++ or ~~ markers."""
+        output = tmp_path / "redlined.docx"
+        async with Client(mcp) as client:
+            await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_5para_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "modify",
+                            "new_text": "The Modified Seller shall transfer the goods.",
+                            "justification": "Test markup extraction.",
+                        },
+                    ],
+                    "output_path": str(output),
+                    "validate": False,
+                },
+            )
+            result = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(output), "markup": False},
+            )
+        text = _text(result)
+        assert "++" not in text
+        assert "~~" not in text

@@ -145,6 +145,73 @@ def split_run_at(run_info: RunInfo, offset: int) -> tuple[RunInfo, RunInfo]:
 # ---------------------------------------------------------------------------
 
 
+def _inject_inter_chunk_spaces(chunks: list[DiffChunk]) -> list[DiffChunk]:
+    """Add word-boundary spaces to INSERT chunks between adjacent chunks.
+
+    The differ produces word-level chunks where each chunk's text is
+    ``detokenize(words)`` — words joined by single spaces.  However,
+    **inter-chunk** word boundaries carry no space.  For example, diffing
+    ``"The quick fox"`` → ``"The quick brown fox"`` produces::
+
+        EQUAL("The quick"), INSERT("brown"), EQUAL("fox")
+
+    with no space between "quick" and "brown" or between "brown" and "fox".
+
+    This function adds leading/trailing spaces **only to INSERT chunks**
+    where the boundary with the nearest *new-text-contributing* neighbor
+    (EQUAL or INSERT) has no whitespace.  EQUAL and DELETE chunks are left
+    untouched because their alignment with original run text is handled
+    character-by-character by :func:`map_diff_to_runs`.
+
+    The left boundary check looks backwards past any DELETE chunks to find
+    the last chunk whose text appears in the new document (EQUAL or INSERT).
+    Similarly the right boundary looks forwards past DELETE chunks.
+
+    Returns:
+        A new list of ``DiffChunk`` objects with INSERT spacing fixed.
+    """
+    if not chunks:
+        return chunks
+
+    result: list[DiffChunk] = list(chunks)  # shallow copy
+
+    for i, chunk in enumerate(result):
+        if chunk.op != DiffOp.INSERT:
+            continue
+
+        text = chunk.text
+        if not text:
+            continue
+
+        # Left boundary: find the nearest chunk that contributes to
+        # the new text (EQUAL or INSERT), skipping DELETE chunks.
+        needs_left = False
+        for j in range(i - 1, -1, -1):
+            if result[j].op == DiffOp.DELETE:
+                continue
+            prev_text = result[j].text
+            if prev_text and not prev_text[-1].isspace() and not text[0].isspace():
+                needs_left = True
+            break
+
+        # Right boundary: find the nearest chunk that contributes to
+        # the new text (EQUAL or INSERT), skipping DELETE chunks.
+        needs_right = False
+        for j in range(i + 1, len(result)):
+            if result[j].op == DiffOp.DELETE:
+                continue
+            next_text = result[j].text
+            if next_text and not next_text[0].isspace() and not text[-1].isspace():
+                needs_right = True
+            break
+
+        if needs_left or needs_right:
+            new_text = (" " if needs_left else "") + text + (" " if needs_right else "")
+            result[i] = DiffChunk(op=DiffOp.INSERT, text=new_text)
+
+    return result
+
+
 def map_diff_to_runs(
     diff_chunks: list[DiffChunk],
     runs: list[RunInfo],
@@ -175,6 +242,10 @@ def map_diff_to_runs(
         Ordered list of :class:`TaggedSegment` objects ready to be
         turned into ``<w:r>`` elements.
     """
+    # Pre-process: inject word-boundary spaces between adjacent chunks
+    # whose text abuts without whitespace.
+    diff_chunks = _inject_inter_chunk_spaces(diff_chunks)
+
     # Build the "old text" from diff chunks (EQUAL + DELETE) and
     # the concatenated run text.  They should match after whitespace
     # normalisation; we map character-by-character.
@@ -198,13 +269,36 @@ def map_diff_to_runs(
         if chunk.op == DiffOp.INSERT:
             # Inserted text doesn't exist in the original runs.
             # Inherit formatting from the last seen run.
-            segments.append(
-                TaggedSegment(
-                    text=chunk.text,
-                    op=DiffOp.INSERT,
-                    rpr=clone_rpr(last_rpr),
+            #
+            # After _inject_inter_chunk_spaces, the INSERT text already
+            # has a leading space when needed for left-boundary separation.
+            # However, when original run whitespace is available at the
+            # current position, we prefer to emit it as an EQUAL segment
+            # (preserving the original whitespace character, e.g. a tab)
+            # and strip the synthetic leading space from the INSERT.
+            insert_text = chunk.text
+            if (
+                insert_text
+                and insert_text[0].isspace()
+                and run_pos < len(char_rpr_pairs)
+                and char_rpr_pairs[run_pos][0].isspace()
+            ):
+                # Consume whitespace from the original run text as EQUAL,
+                # and drop the synthetic leading space from the INSERT.
+                ws_char, ws_rpr = char_rpr_pairs[run_pos]
+                segments.append(TaggedSegment(text=ws_char, op=DiffOp.EQUAL, rpr=clone_rpr(ws_rpr)))
+                run_pos += 1
+                last_rpr = ws_rpr
+                insert_text = insert_text[1:]
+
+            if insert_text:
+                segments.append(
+                    TaggedSegment(
+                        text=insert_text,
+                        op=DiffOp.INSERT,
+                        rpr=clone_rpr(last_rpr),
+                    )
                 )
-            )
             continue
 
         # For EQUAL and DELETE: consume characters from both streams
@@ -251,14 +345,21 @@ def map_diff_to_runs(
                     elif dc == rc and rp is not run_rpr:
                         # Character matches but formatting changed — break
                         break
-                    elif dc == " " and rc != " ":
-                        # Diff has a space (word separator) but run doesn't.
-                        # This happens when the original had no space between
-                        # tokens (rare). Skip the diff space.
+                    elif dc.isspace() and rc.isspace() and dc != rc and rp is run_rpr:
+                        # Both whitespace but different (e.g. diff has ' ',
+                        # run has '\t').  Keep the run's original character.
+                        seg_chars.append(rc)
                         chunk_consumed += 1
-                    elif dc != " " and rc == " ":
-                        # Run has a space but diff doesn't.
-                        # Consume the run space as part of this segment.
+                        run_pos += 1
+                    elif dc.isspace() and not rc.isspace():
+                        # Diff has whitespace (word separator) but run doesn't.
+                        # This happens when the original had no space between
+                        # tokens (rare). Skip the diff whitespace.
+                        chunk_consumed += 1
+                    elif not dc.isspace() and rc.isspace():
+                        # Run has whitespace that the diff doesn't see (it was
+                        # normalised during tokenization).  Consume it into the
+                        # current segment as whitespace.
                         seg_chars.append(rc)
                         run_pos += 1
                     else:
@@ -272,16 +373,30 @@ def map_diff_to_runs(
                     )
                 )
 
-            elif diff_char == " " and run_char != " ":
-                # Diff space = word boundary, but run has no space here.
-                # Just skip the diff space.
+            elif diff_char.isspace() and run_char.isspace() and diff_char != run_char:
+                # Both whitespace but different chars (e.g. diff ' ' vs
+                # run '\t').  Consume both, keeping the run's original char.
+                segments.append(
+                    TaggedSegment(
+                        text=run_char,
+                        op=chunk.op,
+                        rpr=clone_rpr(run_rpr),
+                    )
+                )
+                chunk_consumed += 1
+                run_pos += 1
+                last_rpr = run_rpr
+
+            elif diff_char.isspace() and not run_char.isspace():
+                # Diff whitespace = word boundary, but run has no whitespace
+                # here.  Just skip the diff whitespace.
                 chunk_consumed += 1
 
-            elif diff_char != " " and run_char == " ":
+            elif not diff_char.isspace() and run_char.isspace():
                 # Run has whitespace that the diff doesn't see (it was
                 # normalised during tokenization).  Consume it into the
                 # current segment as whitespace.
-                # Emit the space as part of the current op
+                # Emit the whitespace as part of the current op
                 segments.append(
                     TaggedSegment(
                         text=run_char,
@@ -309,14 +424,28 @@ def map_diff_to_runs(
     return _merge_tagged_segments(segments)
 
 
+def _rpr_equal(a: etree._Element | None, b: etree._Element | None) -> bool:
+    """Check whether two ``<w:rPr>`` elements are structurally equal.
+
+    Compares by serialized XML content so that independent deep-copies
+    of the same formatting are considered equal.  Two ``None`` values
+    are equal.
+    """
+    if a is None and b is None:
+        return True
+    if a is None or b is None:
+        return False
+    return etree.tostring(a) == etree.tostring(b)
+
+
 def _merge_tagged_segments(segments: list[TaggedSegment]) -> list[TaggedSegment]:
-    """Merge adjacent segments with the same op and same rPr identity."""
+    """Merge adjacent segments with the same op and structurally equal rPr."""
     if not segments:
         return segments
     merged: list[TaggedSegment] = [segments[0]]
     for seg in segments[1:]:
         prev = merged[-1]
-        if seg.op == prev.op and seg.rpr is prev.rpr:
+        if seg.op == prev.op and _rpr_equal(seg.rpr, prev.rpr):
             merged[-1] = TaggedSegment(
                 text=prev.text + seg.text,
                 op=seg.op,

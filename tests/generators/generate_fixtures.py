@@ -1,0 +1,425 @@
+"""Generate .docx test fixtures programmatically using python-docx.
+
+Run directly:
+    python -m tests.generators.generate_fixtures
+
+Or invoke via the pytest conftest session fixture (automatic).
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from pathlib import Path
+
+from docx import Document
+from docx.enum.text import WD_UNDERLINE
+from docx.oxml.ns import qn
+
+FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "generated"
+
+
+def _ensure_dir() -> Path:
+    FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
+    return FIXTURES_DIR
+
+
+def generate_simple_5para() -> Path:
+    """5 plain-text paragraphs with no formatting."""
+    doc = Document()
+    paragraphs = [
+        "The Seller agrees to deliver the goods within thirty days of execution.",
+        "The Buyer shall make payment in full upon receipt of the goods.",
+        "This Agreement shall be governed by the laws of the State of New York.",
+        "Neither party shall assign this Agreement without prior written consent.",
+        "This Agreement constitutes the entire understanding between the parties.",
+    ]
+    for text in paragraphs:
+        doc.add_paragraph(text)
+    path = _ensure_dir() / "simple_5para.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_formatted_runs() -> Path:
+    """Paragraphs with mixed bold, italic, and underline runs."""
+    doc = Document()
+
+    # Paragraph 1: mixed formatting within a sentence
+    p1 = doc.add_paragraph()
+    p1.add_run("The ")
+    bold_run = p1.add_run("Seller")
+    bold_run.bold = True
+    p1.add_run(" agrees to deliver the ")
+    italic_run = p1.add_run("goods")
+    italic_run.italic = True
+    p1.add_run(" within ")
+    underline_run = p1.add_run("thirty days")
+    underline_run.underline = WD_UNDERLINE.SINGLE
+    p1.add_run(" of execution.")
+
+    # Paragraph 2: bold + italic combination
+    p2 = doc.add_paragraph()
+    p2.add_run("Payment shall be made in ")
+    bi_run = p2.add_run("United States Dollars")
+    bi_run.bold = True
+    bi_run.italic = True
+    p2.add_run(" upon receipt.")
+
+    # Paragraph 3: all plain text (contrast case)
+    doc.add_paragraph("This paragraph has no special formatting and serves as a control case.")
+
+    # Paragraph 4: underline + bold
+    p4 = doc.add_paragraph()
+    p4.add_run("The ")
+    bu_run = p4.add_run("indemnification obligations")
+    bu_run.bold = True
+    bu_run.underline = WD_UNDERLINE.SINGLE
+    p4.add_run(" shall survive termination of this Agreement.")
+
+    # Paragraph 5: multiple formatting switches in one sentence
+    p5 = doc.add_paragraph()
+    p5.add_run("Notwithstanding the ")
+    b = p5.add_run("foregoing")
+    b.bold = True
+    p5.add_run(", the parties ")
+    i = p5.add_run("acknowledge")
+    i.italic = True
+    p5.add_run(" and ")
+    u = p5.add_run("agree")
+    u.underline = WD_UNDERLINE.SINGLE
+    p5.add_run(" to the following terms.")
+
+    path = _ensure_dir() / "formatted_runs.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_nda_skeleton() -> Path:
+    """A realistic NDA skeleton with headings, recitals, numbered sections."""
+    doc = Document()
+
+    doc.add_heading("NON-DISCLOSURE AGREEMENT", level=0)
+
+    doc.add_paragraph(
+        "This Non-Disclosure Agreement (this \u201cAgreement\u201d) is entered into "
+        "as of January 1, 2026 (the \u201cEffective Date\u201d), by and between:"
+    )
+
+    # Parties
+    doc.add_paragraph("ABC Corporation, a Delaware corporation (\u201cDisclosing Party\u201d); and")
+    doc.add_paragraph("XYZ Industries, a California corporation (\u201cReceiving Party\u201d).")
+
+    # Recitals
+    doc.add_heading("RECITALS", level=1)
+    doc.add_paragraph(
+        "WHEREAS, the Disclosing Party possesses certain confidential and proprietary "
+        "information relating to its business operations, technology, and trade secrets;"
+    )
+    doc.add_paragraph(
+        "WHEREAS, the Receiving Party desires to receive such confidential information "
+        "for the purpose of evaluating a potential business relationship;"
+    )
+    doc.add_paragraph(
+        "NOW, THEREFORE, in consideration of the mutual covenants and agreements "
+        "contained herein, the parties agree as follows:"
+    )
+
+    # Sections
+    doc.add_heading("1. DEFINITION OF CONFIDENTIAL INFORMATION", level=2)
+    doc.add_paragraph(
+        "\u201cConfidential Information\u201d means any and all non-public information, "
+        "whether written, oral, electronic, or visual, disclosed by the Disclosing Party "
+        "to the Receiving Party, including but not limited to: trade secrets, business "
+        "plans, financial data, customer lists, technical specifications, and software "
+        "source code."
+    )
+
+    doc.add_heading("2. OBLIGATIONS OF RECEIVING PARTY", level=2)
+    doc.add_paragraph(
+        "The Receiving Party shall: (a)\u00a0hold all Confidential Information in strict "
+        "confidence; (b)\u00a0not disclose any Confidential Information to any third party "
+        "without the prior written consent of the Disclosing Party; and (c)\u00a0use the "
+        "Confidential Information solely for the purpose of evaluating the potential "
+        "business relationship."
+    )
+
+    doc.add_heading("3. TERM AND TERMINATION", level=2)
+    doc.add_paragraph(
+        "This Agreement shall remain in effect for a period of two (2) years from "
+        "the Effective Date. Either party may terminate this Agreement upon thirty (30) "
+        "days\u2019 prior written notice to the other party."
+    )
+
+    doc.add_heading("4. REMEDIES", level=2)
+    doc.add_paragraph(
+        "The Receiving Party acknowledges that any breach of this Agreement may cause "
+        "irreparable harm to the Disclosing Party, and that monetary damages may be "
+        "inadequate. Accordingly, the Disclosing Party shall be entitled to seek "
+        "equitable relief, including injunction and specific performance, in addition "
+        "to all other remedies available at law or in equity."
+    )
+
+    doc.add_heading("5. GOVERNING LAW", level=2)
+    doc.add_paragraph(
+        "This Agreement shall be governed by and construed in accordance with the laws "
+        "of the State of Delaware, without regard to its conflict of laws principles."
+    )
+
+    # Signature block
+    doc.add_paragraph("")  # spacer
+    doc.add_paragraph(
+        "IN WITNESS WHEREOF, the parties have executed this Agreement "
+        "as of the date first written above."
+    )
+
+    path = _ensure_dir() / "nda_skeleton.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_styled_headings() -> Path:
+    """Document with Heading 1, Heading 2, and body text in different styles."""
+    doc = Document()
+
+    doc.add_heading("Master Services Agreement", level=1)
+    doc.add_paragraph("This Master Services Agreement governs the provision of services.")
+
+    doc.add_heading("Scope of Services", level=2)
+    doc.add_paragraph(
+        "The Provider shall perform the services described in each Statement of Work."
+    )
+
+    doc.add_heading("Payment Terms", level=2)
+    doc.add_paragraph("All invoices shall be paid within forty-five (45) days of receipt.")
+
+    doc.add_heading("Intellectual Property", level=1)
+    doc.add_paragraph(
+        "All intellectual property developed during the engagement shall be owned "
+        "by the Client, subject to the Provider\u2019s pre-existing intellectual property rights."
+    )
+
+    path = _ensure_dir() / "styled_headings.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_numbered_list() -> Path:
+    """Document with numbered and bulleted list items."""
+    doc = Document()
+
+    doc.add_paragraph("The following obligations apply:")
+
+    # Numbered list items using List Number style
+    for i, text in enumerate(
+        [
+            "Maintain confidentiality of all proprietary information.",
+            "Return all materials upon termination of the Agreement.",
+            "Notify the Disclosing Party of any unauthorized disclosure.",
+            "Cooperate fully in any investigation of a breach.",
+        ],
+        start=1,
+    ):
+        p = doc.add_paragraph(f"{i}. {text}", style="List Number")  # noqa: F841
+
+    doc.add_paragraph("Additional considerations include:")
+
+    # Bulleted items
+    for text in [
+        "Applicable regulatory requirements",
+        "Industry standard security practices",
+        "Third-party audit requirements",
+    ]:
+        doc.add_paragraph(text, style="List Bullet")
+
+    path = _ensure_dir() / "numbered_list.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_existing_comments() -> Path:
+    """Document with 3 pre-existing comments (manually crafted XML)."""
+    doc = Document()
+
+    doc.add_paragraph("This clause requires further review by outside counsel.")
+    doc.add_paragraph("The indemnification cap should be discussed with the client.")
+    doc.add_paragraph("Standard governing law provision for Delaware entities.")
+
+    # Add comments via raw XML manipulation
+
+    # Create the comments part
+    comments_xml = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        '<w:comment w:id="100" w:author="Senior Partner" w:initials="SP" '
+        'w:date="2026-01-15T09:00:00Z">'
+        "<w:p><w:r><w:t>Please verify this against the latest template.</w:t></w:r></w:p>"
+        "</w:comment>"
+        '<w:comment w:id="101" w:author="Associate" w:initials="AS" '
+        'w:date="2026-01-16T14:30:00Z">'
+        "<w:p><w:r><w:t>Cap amount needs to be confirmed.</w:t></w:r></w:p>"
+        "</w:comment>"
+        '<w:comment w:id="102" w:author="Senior Partner" w:initials="SP" '
+        'w:date="2026-01-17T11:00:00Z">'
+        "<w:p><w:r><w:t>Standard provision, no changes needed.</w:t></w:r></w:p>"
+        "</w:comment>"
+        "</w:comments>"
+    )
+
+    from docx.opc.packuri import PackURI
+    from docx.opc.part import Part
+
+    comments_part = Part(
+        PackURI("/word/comments.xml"),
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
+        comments_xml.encode("utf-8"),
+        doc.part.package,
+    )
+    doc.part.relate_to(
+        comments_part,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+    )
+
+    # Add comment range markers to each paragraph
+    body = doc.element.body
+    paragraphs = body.findall(qn("w:p"))
+    for para, comment_id in zip(paragraphs, [100, 101, 102], strict=False):
+        # Insert commentRangeStart before first run
+        range_start = para.makeelement(qn("w:commentRangeStart"), {qn("w:id"): str(comment_id)})
+        runs = para.findall(qn("w:r"))
+        if runs:
+            runs[0].addprevious(range_start)
+
+            # Insert commentRangeEnd after last run
+            range_end = para.makeelement(qn("w:commentRangeEnd"), {qn("w:id"): str(comment_id)})
+            runs[-1].addnext(range_end)
+
+            # Insert comment reference run
+            ref_run = para.makeelement(qn("w:r"), {})
+            ref_rpr = ref_run.makeelement(qn("w:rPr"), {})
+            ref_style = ref_rpr.makeelement(qn("w:rStyle"), {qn("w:val"): "CommentReference"})
+            ref_rpr.append(ref_style)
+            ref_run.append(ref_rpr)
+            comment_ref = ref_run.makeelement(
+                qn("w:commentReference"), {qn("w:id"): str(comment_id)}
+            )
+            ref_run.append(comment_ref)
+            range_end.addnext(ref_run)
+
+    path = _ensure_dir() / "existing_comments.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_special_chars() -> Path:
+    """Paragraphs with smart quotes, em-dashes, section symbols, non-breaking spaces."""
+    doc = Document()
+
+    # Smart quotes and apostrophes
+    doc.add_paragraph(
+        "The parties to this \u201cAgreement\u201d (as defined herein) "
+        "acknowledge the Seller\u2019s obligations."
+    )
+
+    # Em-dash and en-dash
+    doc.add_paragraph(
+        "The confidentiality period\u2014which begins on the Effective Date\u2014"
+        "shall last for two years. See Sections\u00a01\u20135 for details."
+    )
+
+    # Section symbol and non-breaking spaces
+    doc.add_paragraph(
+        "Pursuant to \u00a7\u00a05.1 of the Agreement, the Receiving Party shall "
+        "comply with all applicable laws."
+    )
+
+    # Ellipsis and other unicode
+    doc.add_paragraph(
+        "The obligations include, without limitation\u2026 maintaining records, "
+        "reporting breaches, and cooperating with audits."
+    )
+
+    # Mixed: smart quotes with formatting
+    p = doc.add_paragraph()
+    p.add_run("The term \u201c")
+    b = p.add_run("Confidential Information")
+    b.bold = True
+    p.add_run("\u201d shall have the meaning set forth in \u00a7\u00a01.")
+
+    path = _ensure_dir() / "special_chars.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_long_paragraph() -> Path:
+    """Single paragraph with ~300 words and mixed formatting."""
+    doc = Document()
+
+    p = doc.add_paragraph()
+
+    p.add_run(
+        "Notwithstanding anything to the contrary contained in this Agreement, "
+        "the Receiving Party acknowledges and agrees that the Confidential Information "
+        "disclosed by the Disclosing Party constitutes valuable trade secrets and "
+        "proprietary information of the Disclosing Party. "
+    )
+    b1 = p.add_run(
+        "The Receiving Party shall exercise at least the same degree of care to "
+        "protect the Confidential Information as it uses to protect its own confidential "
+        "information of a similar nature, but in no event less than reasonable care. "
+    )
+    b1.bold = True
+    p.add_run(
+        "The Receiving Party shall limit access to the Confidential Information to those "
+        "of its employees, agents, and representatives who have a legitimate need to know "
+        "such information for the purposes contemplated by this Agreement, and who have "
+        "been informed of the confidential nature of such information and have agreed to "
+        "be bound by obligations of confidentiality no less restrictive than those "
+        "contained herein. The Receiving Party shall be responsible for any breach of "
+        "this Agreement by any of its employees, agents, or representatives. "
+    )
+    i1 = p.add_run(
+        "In the event that the Receiving Party becomes aware of any unauthorized use "
+        "or disclosure of Confidential Information, it shall promptly notify the "
+        "Disclosing Party in writing and shall cooperate fully with the Disclosing Party "
+        "in investigating and remedying such unauthorized use or disclosure. "
+    )
+    i1.italic = True
+    p.add_run(
+        "The obligations set forth in this Section shall survive the termination or "
+        "expiration of this Agreement for a period of five (5) years from the date "
+        "of disclosure of the relevant Confidential Information, or for so long as "
+        "such Confidential Information remains a trade secret under applicable law, "
+        "whichever period is longer."
+    )
+
+    path = _ensure_dir() / "long_paragraph.docx"
+    doc.save(str(path))
+    return path
+
+
+ALL_GENERATORS: list[tuple[str, Callable[[], Path]]] = [
+    ("simple_5para", generate_simple_5para),
+    ("formatted_runs", generate_formatted_runs),
+    ("nda_skeleton", generate_nda_skeleton),
+    ("styled_headings", generate_styled_headings),
+    ("numbered_list", generate_numbered_list),
+    ("existing_comments", generate_existing_comments),
+    ("special_chars", generate_special_chars),
+    ("long_paragraph", generate_long_paragraph),
+]
+
+
+def generate_all() -> dict[str, Path]:
+    """Generate all test fixtures. Returns a mapping of name -> path."""
+    results = {}
+    for name, gen_fn in ALL_GENERATORS:
+        path = gen_fn()
+        results[name] = path
+        print(f"  Generated: {path}")
+    return results
+
+
+if __name__ == "__main__":
+    print("Generating test fixtures...")
+    paths = generate_all()
+    print(f"\nGenerated {len(paths)} fixtures in {FIXTURES_DIR}")

@@ -59,6 +59,67 @@ docx-mcp apply input.docx changes.json -o output.docx
 docx-mcp validate output.docx
 ```
 
+### MCP server
+
+The library includes an MCP server so that LLM clients (Claude Desktop, Cursor,
+etc.) can redline `.docx` files directly.
+
+```bash
+# Start the server (stdio transport)
+docx-mcp-server
+```
+
+**Configure in Claude Desktop** (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "docx-mcp": {
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/docx-mcp", "docx-mcp-server"]
+    }
+  }
+}
+```
+
+**Configure in Cursor** (`.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "docx-mcp": {
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/docx-mcp", "docx-mcp-server"]
+    }
+  }
+}
+```
+
+#### Tools
+
+| Tool | Description |
+|------|-------------|
+| `extract_fragments` | Read a `.docx` and return paragraphs as tagged text or JSON |
+| `apply_changes` | Apply tracked changes from an inline list and save |
+| `apply_changes_from_file` | Apply tracked changes from a JSON file on disk |
+| `validate_document_tool` | Run structural validation checks |
+| `diff_fragments` | Compare two `.docx` files paragraph-by-paragraph |
+
+#### Resource
+
+| URI | Description |
+|-----|-------------|
+| `docx-fragments://{document_path}` | Browse paragraph fragments (URL-encode the path) |
+
+#### Example workflow
+
+An LLM client would typically:
+
+1. Call `extract_fragments` to read the document and get fragment IDs.
+2. Reason about the content and construct a list of changes.
+3. Call `apply_changes` with the change list to produce a redlined document.
+4. Optionally call `diff_fragments` to compare original vs. redlined output.
+
 ## Concepts
 
 ### Fragments
@@ -165,6 +226,7 @@ src/docx_mcp/
   comments.py        Comment creation and range marker insertion
   redliner.py        Main orchestrator: apply_redlines()
   validator.py       Structural validation checks
+  server.py          MCP server (FastMCP 2.x, stdio transport)
   handlers/
     modify.py        Word-level tracked changes on existing paragraphs
     delete.py        Full paragraph deletion markup
@@ -178,13 +240,16 @@ src/docx_mcp/
 uv run pytest tests/ -v
 
 # Lint
-uv run ruff check src/ tests/
+uvx ruff check src/ tests/
 
 # Auto-fix lint issues
-uv run ruff check src/ tests/ --fix
+uvx ruff check src/ tests/ --fix
+
+# Type check
+uvx ty check src/ tests/
 ```
 
-206 tests covering all modules, handlers, CLI, and validation.
+235 tests covering all modules, handlers, CLI, validation, and MCP server.
 
 ## License
 

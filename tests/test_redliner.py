@@ -345,6 +345,7 @@ class TestWithNdaSkeleton:
         if target_fid is None:
             pytest.skip("No suitable paragraph found in NDA skeleton")
 
+        assert target_fid is not None  # narrowing for type checkers
         old_text = paragraph_to_pseudo_markdown(fmap[target_fid])
         new_text = (
             old_text.replace("shall", "must") if "shall" in old_text else old_text + " (amended)"

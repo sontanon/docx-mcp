@@ -32,6 +32,11 @@ packages = ["src/docx_mcp"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 
+[tool.ty.analysis]
+# lxml is a C-extension without type stubs; diff_match_patch and python-docx
+# also lack stubs.  Suppress unresolved-import for these known packages.
+allowed-unresolved-imports = ["lxml.**", "diff_match_patch.**", "docx.**"]
+
 [tool.ruff]
 target-version = "py313"
 line-length = 100

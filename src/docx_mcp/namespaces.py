@@ -87,4 +87,4 @@ def make_element(ns_prefix: str, local_name: str, **attribs: str) -> etree._Elem
 
 def xpath(element: etree._Element, expr: str) -> list[etree._Element]:
     """Run an XPath expression with the OOXML namespace map."""
-    return element.xpath(expr, namespaces=NSMAP)  # type: ignore[return-value]
+    return element.xpath(expr, namespaces=NSMAP)

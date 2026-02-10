@@ -206,7 +206,7 @@ def _cmd_validate(args: argparse.Namespace) -> int:
     return 1
 
 
-def _parse_changes(raw: list[dict] | dict) -> list[Change]:  # type: ignore[type-arg]
+def _parse_changes(raw: list[dict] | dict) -> list[Change]:
     """Parse a changes JSON structure into Change objects.
 
     Accepts either:

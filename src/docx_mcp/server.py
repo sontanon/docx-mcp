@@ -67,15 +67,89 @@ mcp = FastMCP(
 class ChangeParam(BaseModel):
     """A single tracked change to apply to a document paragraph.
 
-    Attributes:
-        fragment_id: 1-based paragraph index identifying the target.
-        change_type: ``"modify"`` to edit in-place, ``"delete"`` to remove,
-            or ``"append_after"`` to insert a new paragraph after this one.
-        new_text: Replacement text in pseudo-Markdown (``**bold**``,
-            ``_italic_``, ``__underline__``).  Required for modify and
-            append_after; omit for delete.
-        justification: Human-readable reason for the change.  This becomes
-            a Word comment attached to the tracked change.
+    Represents one modification, deletion, or insertion operation targeting a
+    specific paragraph in the document. Fragment IDs come from ``extract_fragments``
+    and are 1-based paragraph indices (top-level ``<w:p>`` elements in ``<w:body>``).
+
+    Font Inheritance (append_after only)
+    -------------------------------------
+
+    When you append a new paragraph, the font family, size, and color are
+    automatically copied from the reference paragraph's first text-bearing run.
+    Bold, italic, and underline formatting from pseudo-Markdown is layered on top
+    of this inherited base. For example, if the reference paragraph uses Times New
+    Roman 12pt, your appended paragraph will also use Times New Roman 12pt, even
+    if you only specify ``**bold**``.
+
+    Blank Line Management
+    ---------------------
+
+    Legal documents typically separate clauses with blank paragraphs. Use:
+
+    - ``blank_lines_before`` / ``blank_lines_after`` when appending to maintain spacing
+    - ``delete_next_blanks`` when deleting a clause that has a trailing blank separator
+
+    All blank lines are marked as tracked insertions/deletions and appear in the
+    redlined document.
+
+    Validation Rules
+    ----------------
+
+    - ``new_text`` is required for ``modify`` and ``append_after``; must be
+      null/omitted for ``delete``
+    - ``blank_lines_before`` / ``blank_lines_after`` only valid with
+      ``append_after`` (error if used with modify/delete)
+    - ``delete_next_blanks`` only valid with ``delete`` (error if used with
+      modify/append_after)
+    - Each paragraph targeted by ``delete_next_blanks`` must be blank
+      (whitespace-only); error if non-blank
+
+    Examples
+    --------
+
+    Modify with pseudo-Markdown formatting::
+
+        {
+          "fragment_id": 3,
+          "change_type": "modify",
+          "new_text": "The Company **shall** provide **written** notice within _thirty (30)_ days.",
+          "justification": "Strengthened obligation and clarified timeline."
+        }
+
+    Delete with trailing blank removal::
+
+        {
+          "fragment_id": 15,
+          "change_type": "delete",
+          "justification": "Removed obsolete governing law clause.",
+          "delete_next_blanks": 1
+        }
+
+    Append with blank line spacing::
+
+        {
+          "fragment_id": 20,
+          "change_type": "append_after",
+          "new_text": "**16. Governing Law.** This Agreement shall be governed by Delaware law.",
+          "justification": "Added Delaware choice of law provision.",
+          "blank_lines_before": 1,
+          "blank_lines_after": 1
+        }
+
+    Attributes
+    ----------
+
+        fragment_id: 1-based paragraph index from ``extract_fragments``.
+        change_type: ``"modify"``, ``"delete"``, or ``"append_after"``.
+        new_text: Replacement text in pseudo-Markdown (``**bold**``, ``_italic_``,
+            ``__underline__``). Required for modify and append_after; must be None for delete.
+        justification: Human-readable reason. Becomes a Word comment attached to the change.
+        blank_lines_before: Blank paragraphs to insert before appended paragraph
+            (append_after only, default 0).
+        blank_lines_after: Blank paragraphs to insert after appended paragraph
+            (append_after only, default 0).
+        delete_next_blanks: Number of trailing blank paragraphs to delete
+            (delete only, default 0).
     """
 
     fragment_id: int = Field(description="1-based paragraph index")
@@ -255,34 +329,76 @@ def extract_fragments(
 ) -> str:
     """Read a .docx file and return its paragraphs as text.
 
-    Each paragraph is identified by a 1-based fragment ID. Use these IDs
-    when constructing changes for ``apply_changes``.
+    This is typically the **first step** in a redlining workflow. Each paragraph
+    is identified by a 1-based fragment ID that you will use to target changes
+    in ``apply_changes``.
 
-    The **tagged** format (default) wraps each paragraph::
+    Fragment IDs are position-based, corresponding to top-level ``<w:p>`` elements
+    in ``<w:body>``. Fragment 1 is the first paragraph, fragment 2 is the second,
+    and so on. These IDs remain stable as long as you don't add/remove paragraphs
+    before your target location.
 
-        <f=1>The Seller shall deliver the goods.</f=1>
-        <f=2>The Buyer shall pay within 30 days.</f=2>
+    Output Formats
+    --------------
 
-    The **json** format returns a JSON array::
+    The **tagged** format (default) wraps each paragraph with XML-like tags::
 
-        [{"fragment_id": 1, "text": "The Seller shall deliver the goods."}]
+        <f=1>**CONFIDENTIALITY AGREEMENT**</f=1>
+        <f=2>This Agreement is entered into as of January 1, 2025.</f=2>
+        <f=3></f=3>
+        <f=4>**1. Definitions.** The following terms have the meanings set forth below.</f=4>
 
-    Text uses pseudo-Markdown: **bold**, _italic_, __underline__.
+    The **json** format returns a JSON array of objects::
 
-    When *markup* is True, tracked changes are shown inline:
+        [
+          {"fragment_id": 1, "text": "**CONFIDENTIALITY AGREEMENT**"},
+          {"fragment_id": 2, "text": "This Agreement is entered into as of January 1, 2025."},
+          {"fragment_id": 3, "text": ""},
+          {
+            "fragment_id": 4,
+            "text": "**1. Definitions.** The following terms have the meanings set forth below."
+          }
+        ]
 
-    - Inserted text is wrapped with ``++…++``.
-    - Deleted text is wrapped with ``~~…~~``.
+    Text Formatting
+    ---------------
 
-    This is useful for inspecting or validating redlined documents.
+    Text uses pseudo-Markdown for inline formatting:
+
+    - ``**bold**``
+    - ``_italic_``
+    - ``__underline__``
+
+    Unicode characters (smart quotes, em dashes, section symbols, non-breaking
+    spaces) are preserved as-is.
+
+    Tracked Changes (markup=True)
+    ------------------------------
+
+    When ``markup=True``, existing tracked changes in the document are shown inline:
+
+    - Inserted text is wrapped with ``++…++``
+    - Deleted text is wrapped with ``~~…~~``
+
+    This is useful for inspecting or validating redlined documents that already
+    contain tracked changes. For clean documents, leave ``markup=False`` (default).
+
+    Typical Workflow
+    ----------------
+
+    1. Call ``extract_fragments`` to see document structure and get fragment IDs
+    2. Identify which paragraphs need changes (by reading the text)
+    3. Construct a list of ``ChangeParam`` objects with appropriate fragment_ids
+    4. Call ``apply_changes`` with the change list
+    5. Open the output file in Microsoft Word to review tracked changes
 
     Args:
-        document_path: Path to the .docx file.
-        format: Output format -- "tagged" (default) or "json".
-        markup: Show tracked changes inline (default False).
+        document_path: Absolute path to the .docx file.
+        format: Output format -- ``"tagged"`` (default) or ``"json"``.
+        markup: Show existing tracked changes inline (default False).
 
     Returns:
-        Fragment text in the requested format.
+        Fragment text in the requested format (string).
     """
     doc = _load_document(document_path)
     fragments = document_to_fragments(doc.paragraphs, markup=markup)
@@ -311,29 +427,127 @@ def apply_changes(
 ) -> str:
     """Apply tracked changes to a .docx file and save the result.
 
-    Produces a Word document with professional tracked changes (``w:ins`` /
-    ``w:del``) and comments, indistinguishable from a lawyer's redline.
+    Produces a Word document with professional tracked changes (``w:ins`` / ``w:del``)
+    and comments, indistinguishable from a lawyer's redline. Opens cleanly in
+    Microsoft Word with the Review tab showing all changes and comments.
 
-    Each change targets a paragraph by its fragment ID (from
-    ``extract_fragments``).  Three change types are supported:
+    Typical Workflow
+    ----------------
 
-    - **modify**: Replace the paragraph text (word-level diff produces
-      fine-grained insertions and deletions).
-    - **delete**: Mark the entire paragraph as deleted.
-    - **append_after**: Insert a new paragraph after the target.
+    1. Call ``extract_fragments`` to see document structure and get fragment IDs
+    2. Identify which paragraphs need changes (by reading the text)
+    3. Construct a list of ``ChangeParam`` objects with appropriate fragment_ids
+    4. Call this tool (``apply_changes``) with the changes list
+    5. Open the output file in Microsoft Word to review tracked changes
 
-    The original file is never overwritten -- output defaults to
-    ``<name>_redlined.docx`` beside the input.
+    Change Types
+    ------------
+
+    - **modify**: Word-level diff produces fine-grained tracked insertions and
+      deletions. For example, changing "shall deliver" to "must deliver immediately"
+      will show "shall" as deleted and "must" as inserted, preserving "deliver".
+
+    - **delete**: Entire paragraph marked as deleted. Use ``delete_next_blanks``
+      to remove trailing blank separator lines along with the deleted clause.
+
+    - **append_after**: New paragraph inserted after the target fragment. The font
+      family, size, and color are automatically inherited from the reference
+      paragraph. Use ``blank_lines_before`` / ``blank_lines_after`` to maintain
+      legal document spacing conventions.
+
+    Font Inheritance
+    ----------------
+
+    When appending new paragraphs (``append_after``), the font family, size, and
+    color are automatically copied from the reference paragraph's first text-bearing
+    run. Pseudo-Markdown formatting (``**bold**``, ``_italic_``, ``__underline__``)
+    is applied on top of the inherited base. For example, if the reference paragraph
+    uses Times New Roman 12pt, your appended paragraph will also use Times New Roman
+    12pt, even if you only specify ``**bold**`` in the ``new_text``.
+
+    Blank Line Management
+    ---------------------
+
+    Legal documents typically separate clauses with blank paragraphs (one blank line
+    between sections). When appending new clauses, set ``blank_lines_before=1`` and/or
+    ``blank_lines_after=1`` to maintain this spacing. When deleting a clause that has
+    a trailing blank separator, set ``delete_next_blanks=1`` to remove it along with
+    the clause itself.
+
+    All blank lines are marked as tracked insertions/deletions and appear in the
+    redlined document.
+
+    Error Handling
+    --------------
+
+    Common errors that will cause this tool to fail:
+
+    - ``fragment_id`` out of range (must be 1..N where N is total paragraph count)
+    - ``new_text`` missing when required (modify/append_after)
+    - ``new_text`` provided for delete (must be null/omitted)
+    - ``delete_next_blanks`` targets a non-blank paragraph (only whitespace-only
+      paragraphs can be deleted this way)
+    - ``blank_lines_before`` / ``blank_lines_after`` used with modify or delete
+      (only valid with append_after)
+    - ``delete_next_blanks`` used with modify or append_after (only valid with
+      delete)
+
+    Example
+    -------
+
+    Applying multiple changes to an NDA::
+
+        changes = [
+            {
+                "fragment_id": 1,
+                "change_type": "modify",
+                "new_text": "**MUTUAL NON-DISCLOSURE AGREEMENT** (Revised 2025)",
+                "justification": "Updated title and year"
+            },
+            {
+                "fragment_id": 35,
+                "change_type": "delete",
+                "justification": "Removed Section 7 (proprietary rights legends)",
+                "delete_next_blanks": 1
+            },
+            {
+                "fragment_id": 39,
+                "change_type": "append_after",
+                "new_text": (
+                    "**18. Amendments.** No amendment shall be effective unless "
+                    "in writing and signed by both parties."
+                ),
+                "justification": "Added amendments clause per legal review",
+                "blank_lines_before": 1,
+                "blank_lines_after": 1
+            }
+        ]
+
+        result = apply_changes(
+            document_path="/path/to/contract.docx",
+            changes=changes,
+            author="Legal AI",
+            validate=True
+        )
+
+        # Result:
+        # "Applied 3 change(s) (1 modify, 1 delete, 1 append_after) to contract.docx.
+        #  Output saved to /path/to/contract_redlined.docx.
+        #  Validation: passed (0 errors, 0 warnings)."
 
     Args:
-        document_path: Path to the input .docx file.
-        changes: List of changes to apply.
-        output_path: Where to save.  Defaults to ``<stem>_redlined.docx``.
-        author: Author name for tracked changes and comments.
-        validate: Run structural validation after applying (default True).
+        document_path: Absolute path to the input .docx file.
+        changes: List of ``ChangeParam`` objects describing the changes to apply.
+        output_path: Where to save the redlined document. Defaults to
+            ``<stem>_redlined.docx`` beside the input file.
+        author: Author name for tracked changes and comments (appears in Word's
+            Review tab). Defaults to "AI Review".
+        validate: Run structural validation after applying changes (default True,
+            recommended). Checks for annotation ID collisions, comment integrity,
+            and tracked-change attributes.
 
     Returns:
-        Summary with change counts, output path, and validation result.
+        Summary string with change counts, output path, and validation result.
     """
     return _apply_and_save(document_path, changes, output_path, author, validate)
 
@@ -355,28 +569,72 @@ def apply_changes_from_file(
 ) -> str:
     """Apply tracked changes from a JSON file to a .docx file.
 
-    Same behaviour as ``apply_changes`` but reads the change list from a
-    JSON file on disk.  Useful for large change sets or pre-prepared review
-    instructions.
+    Same behavior as ``apply_changes`` but reads the change list from a JSON file
+    on disk. This is useful when:
+
+    - You have a large change set that would exceed token limits in a direct tool call
+    - You want to save and reuse a change set across multiple runs
+    - You're working with pre-prepared review instructions from another system
+
+    JSON File Format
+    ----------------
 
     The JSON file must contain either:
 
-    - A JSON array of change objects, or
-    - A JSON object with a ``"changes"`` key containing the array.
+    1. A JSON array of change objects (bare array)::
 
-    Each change object has the fields: ``fragment_id`` (int),
-    ``change_type`` (``"modify"`` / ``"delete"`` / ``"append_after"``),
-    ``new_text`` (string or null), ``justification`` (string).
+        [
+          {
+            "fragment_id": 1,
+            "change_type": "modify",
+            "new_text": "Updated text",
+            "justification": "Reason for change"
+          },
+          {
+            "fragment_id": 5,
+            "change_type": "delete",
+            "justification": "Removed obsolete clause",
+            "delete_next_blanks": 1
+          }
+        ]
+
+    2. A JSON object with a ``"changes"`` key containing the array::
+
+        {
+          "changes": [
+            {
+              "fragment_id": 1,
+              "change_type": "modify",
+              "new_text": "Updated text",
+              "justification": "Reason for change"
+            }
+          ]
+        }
+
+    Each change object supports all fields from ``ChangeParam``:
+
+    - ``fragment_id`` (int, required): 1-based paragraph index
+    - ``change_type`` (string, required): ``"modify"``, ``"delete"``, or ``"append_after"``
+    - ``new_text`` (string or null): Required for modify/append_after, omit for delete
+    - ``justification`` (string, required): Reason for the change
+    - ``blank_lines_before`` (int, optional): Blank paragraphs before (append_after only, default 0)
+    - ``blank_lines_after`` (int, optional): Blank paragraphs after (append_after only, default 0)
+    - ``delete_next_blanks`` (int, optional): Trailing blanks to delete (delete only, default 0)
+
+    The file must be UTF-8 encoded. Path separators and spaces in paths are supported.
 
     Args:
-        document_path: Path to the input .docx file.
-        changes_file: Path to the JSON file with changes.
-        output_path: Where to save.  Defaults to ``<stem>_redlined.docx``.
-        author: Author name for tracked changes and comments.
-        validate: Run structural validation after applying (default True).
+        document_path: Absolute path to the input .docx file.
+        changes_file: Absolute path to the JSON file containing changes.
+        output_path: Where to save the redlined document. Defaults to
+            ``<stem>_redlined.docx`` beside the input file.
+        author: Author name for tracked changes and comments (appears in Word's
+            Review tab). Defaults to "AI Review".
+        validate: Run structural validation after applying changes (default True,
+            recommended).
 
     Returns:
-        Summary with change counts, output path, and validation result.
+        Summary string with change counts, output path, and validation result.
     """
     changes_path = Path(changes_file)
     if not changes_path.exists():
@@ -425,22 +683,55 @@ def apply_changes_from_file(
 def validate_document_tool(document_path: str) -> str:
     """Check a .docx file for structural issues.
 
-    Runs validation checks on the document's OOXML structure:
+    Runs validation checks on the document's OOXML structure to ensure it will
+    open correctly in Microsoft Word and that all tracked changes and comments
+    are properly formed.
 
-    - **Annotation ID isolation** -- tracked-change and comment IDs must
-      not collide across groups.
-    - **Comment integrity** -- every comment must have matching range
-      markers and references.
-    - **Tracked-change attributes** -- ``<w:ins>`` / ``<w:del>`` must
-      carry required ``w:id``, ``w:author``, ``w:date``.
-    - **Package consistency** -- content-type and relationship entries
-      must be present when comments.xml exists.
+    Use this tool:
+
+    - After calling ``apply_changes`` to verify the redlined document is valid
+      (automatically enabled by default via ``validate=True`` parameter)
+    - When debugging a document that won't open correctly in Word
+    - When verifying that an existing redlined document has proper structure
+
+    Validation Checks
+    -----------------
+
+    - **Annotation ID isolation**: Tracked-change and comment IDs must not collide
+      across groups. Each ``<w:ins>``, ``<w:del>``, and ``<w:comment>`` needs a
+      globally unique ID within the document.
+
+    - **Comment integrity**: Every ``<w:comment>`` in comments.xml must have
+      matching ``<w:commentRangeStart>`` / ``<w:commentRangeEnd>`` markers in
+      the document body, and vice versa.
+
+    - **Tracked-change attributes**: Every ``<w:ins>`` and ``<w:del>`` must have
+      required attributes: ``w:id`` (unique ID), ``w:author`` (author name), and
+      ``w:date`` (timestamp).
+
+    - **Package consistency**: Content-type and relationship entries must be
+      present in the .docx ZIP structure when comments.xml exists.
+
+    Example Output
+    --------------
+
+    Success case::
+
+        "Validation: passed (0 errors, 0 warnings)."
+
+    Failure case::
+
+        "Validation: FAILED (2 error(s), 1 warning(s)).
+          Error 1: Annotation ID collision: ID 5 used by both tracked change and comment
+          Error 2: Orphaned comment range: commentRangeStart with id=3 has no matching end
+          Warning 1: Comment with id=7 is not referenced by any comment range"
 
     Args:
-        document_path: Path to the .docx file to validate.
+        document_path: Absolute path to the .docx file to validate.
 
     Returns:
-        Human-readable validation summary.
+        Human-readable validation summary showing pass/fail status, error count,
+        and detailed messages for any issues found.
     """
     doc = _load_document(document_path)
     result = _validate_document(doc)
@@ -462,20 +753,61 @@ def diff_fragments(
     """Compare two .docx files and show paragraph-level text differences.
 
     Extracts the pseudo-Markdown text from each paragraph in both documents,
-    then produces a word-level diff for each fragment position.
+    then produces a word-level diff for each fragment position. This is useful
+    for understanding what changed between two versions of a document.
 
-    Designed for comparing an original document with its edited version
-    (same structure, local edits).  Paragraphs are matched by position
-    (fragment 1 vs fragment 1, etc.) -- this tool does **not** detect
-    paragraph reordering.  For documents with very different structures,
-    the output will show extensive changes.
+    Use this tool:
+
+    - To compare an original document with its redlined version (see what changes
+      were applied)
+    - To verify that ``apply_changes`` produced the expected modifications
+    - To understand differences between two versions of a document
+
+    Important Limitations
+    ---------------------
+
+    Paragraphs are matched **by position** (fragment 1 vs fragment 1, fragment 2
+    vs fragment 2, etc.). This tool does **not** detect paragraph reordering or
+    track moved sections. If the documents have very different structures (different
+    paragraph counts, major reordering), the output will show extensive changes.
+
+    Best used for comparing documents with the same basic structure where you made
+    local edits (word changes, clause deletions, appended sections).
+
+    Output Format
+    -------------
+
+    Each fragment is reported with its change status::
+
+        Fragment 1: unchanged
+        Fragment 2: modified
+          - shall deliver
+          + must deliver immediately
+        Fragment 3: unchanged
+        Fragment 5: deleted (only in original)
+          - This clause is removed.
+        Fragment 10: added (only in modified)
+          + This is a new clause.
+
+    Lines starting with ``-`` show deleted text, ``+`` shows inserted text.
+    Unchanged fragments are listed but their text is omitted for brevity.
+
+    Difference from extract_fragments with markup=True
+    --------------------------------------------------
+
+    - ``extract_fragments`` with ``markup=True`` shows **tracked changes already
+      present in a single document** (existing ``<w:ins>`` / ``<w:del>`` markup)
+
+    - ``diff_fragments`` **compares two separate documents** and computes the
+      differences between their plain text (ignoring any tracked changes)
 
     Args:
-        original_path: Path to the original .docx file.
-        modified_path: Path to the modified .docx file.
+        original_path: Absolute path to the original .docx file.
+        modified_path: Absolute path to the modified .docx file.
 
     Returns:
-        Human-readable diff showing changes per fragment.
+        Human-readable diff showing changes per fragment, with ``-`` for deletions
+        and ``+`` for insertions.
     """
     doc_a = _load_document(original_path)
     doc_b = _load_document(modified_path)

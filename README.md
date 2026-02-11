@@ -136,6 +136,35 @@ Use `docx-mcp convert` to see the fragment map for any document.
 | `delete`       | Entire paragraph marked as deleted                  | No                  |
 | `append_after` | New paragraph inserted after the referenced fragment | Yes                |
 
+#### Blank line management
+
+When appending new paragraphs, you can control surrounding blank lines:
+
+```python
+Change(
+    fragment_id=10,
+    change_type=ChangeType.APPEND_AFTER,
+    new_text="New clause text here.",
+    justification="Added new provision.",
+    blank_lines_before=1,  # Insert 1 blank line before the new paragraph
+    blank_lines_after=1,   # Insert 1 blank line after the new paragraph
+)
+```
+
+When deleting paragraphs, you can remove trailing blank lines automatically:
+
+```python
+Change(
+    fragment_id=15,
+    change_type=ChangeType.DELETE,
+    justification="Removed obsolete clause.",
+    delete_next_blanks=1,  # Also delete the next blank paragraph
+)
+```
+
+All blank lines are marked as tracked insertions/deletions and will appear in
+the redlined document.
+
 ### Pseudo-Markdown
 
 Text content uses a simplified Markdown-like format for inline formatting:
@@ -146,6 +175,11 @@ Text content uses a simplified Markdown-like format for inline formatting:
 
 Unicode characters (smart quotes, em dashes, section symbols, non-breaking
 spaces) are preserved as-is.
+
+**Font inheritance**: When appending new paragraphs, the font family, size, and
+color are automatically copied from the reference paragraph's first text-bearing
+run. Bold, italic, and underline formatting from the pseudo-Markdown is layered
+on top of the inherited base formatting.
 
 ### Changes JSON
 
@@ -169,7 +203,9 @@ The CLI accepts a JSON file containing either a bare array or a
     "fragment_id": 5,
     "change_type": "append_after",
     "new_text": "This Agreement shall be governed by Delaware law.",
-    "justification": "Added Delaware governing law."
+    "justification": "Added Delaware governing law.",
+    "blank_lines_before": 1,
+    "blank_lines_after": 0
   }
 ]
 ```
@@ -249,7 +285,7 @@ uvx ruff check src/ tests/ --fix
 uvx ty check src/ tests/
 ```
 
-235 tests covering all modules, handlers, CLI, validation, and MCP server.
+321 tests covering all modules, handlers, CLI, validation, and MCP server.
 
 ## License
 

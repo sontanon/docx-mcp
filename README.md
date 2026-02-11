@@ -289,4 +289,4 @@ uvx ty check src/ tests/
 
 ## License
 
-TBD
+MIT

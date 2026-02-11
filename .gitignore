@@ -31,3 +31,10 @@ htmlcov/
 
 # uv
 uv.lock
+
+# Root-level test/demo documents (not to be committed)
+/*.docx
+/opencode.json
+
+# LibreOffice lock files
+.~lock.*

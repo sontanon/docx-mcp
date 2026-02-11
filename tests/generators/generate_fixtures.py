@@ -397,6 +397,31 @@ def generate_long_paragraph() -> Path:
     return path
 
 
+def generate_blank_separated() -> Path:
+    """Clauses separated by blank paragraphs — for delete_next_blanks tests.
+
+    Layout (fragment IDs):
+      1: Clause A text
+      2: (blank)
+      3: Clause B text
+      4: (blank)
+      5: Clause C text
+      6: (blank)
+      7: Clause D text
+    """
+    doc = Document()
+    doc.add_paragraph("The Seller shall deliver the goods within thirty days.")
+    doc.add_paragraph("")  # blank separator
+    doc.add_paragraph("The Buyer shall pay upon receipt of the goods.")
+    doc.add_paragraph("")  # blank separator
+    doc.add_paragraph("This Agreement is governed by the laws of New York.")
+    doc.add_paragraph("")  # blank separator
+    doc.add_paragraph("Neither party may assign without written consent.")
+    path = _ensure_dir() / "blank_separated.docx"
+    doc.save(str(path))
+    return path
+
+
 ALL_GENERATORS: list[tuple[str, Callable[[], Path]]] = [
     ("simple_5para", generate_simple_5para),
     ("formatted_runs", generate_formatted_runs),
@@ -406,6 +431,7 @@ ALL_GENERATORS: list[tuple[str, Callable[[], Path]]] = [
     ("existing_comments", generate_existing_comments),
     ("special_chars", generate_special_chars),
     ("long_paragraph", generate_long_paragraph),
+    ("blank_separated", generate_blank_separated),
 ]
 
 

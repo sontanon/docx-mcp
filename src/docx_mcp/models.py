@@ -33,6 +33,34 @@ class Change(BaseModel):
     new_text: str | None = None
     justification: str
 
+    # -- Optional spacing controls -------------------------------------------
+    blank_lines_before: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Number of blank paragraphs to insert before the appended paragraph. "
+            "Only used with append_after."
+        ),
+    )
+    blank_lines_after: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Number of blank paragraphs to insert after the appended paragraph. "
+            "Only used with append_after."
+        ),
+    )
+    delete_next_blanks: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Number of blank paragraphs immediately following the deleted "
+            "paragraph to also mark as deleted.  Only used with delete.  "
+            "Each targeted paragraph must be blank (whitespace-only), otherwise "
+            "an error is raised."
+        ),
+    )
+
 
 class DiffOp(StrEnum):
     """Type of operation in a word-level diff."""

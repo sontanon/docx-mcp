@@ -64,3 +64,8 @@ def special_chars_path(fixtures_dir: Path) -> Path:
 @pytest.fixture
 def long_paragraph_path(fixtures_dir: Path) -> Path:
     return fixtures_dir / "long_paragraph.docx"
+
+
+@pytest.fixture
+def blank_separated_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "blank_separated.docx"

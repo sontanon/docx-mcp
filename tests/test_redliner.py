@@ -412,3 +412,243 @@ class TestRoundTrip:
         doc = apply_redlines(raw, changes, config=_default_config())
         data = doc.to_bytes()
         assert _is_valid_docx(data)
+
+
+# ===================================================================
+# Validation: spacing field constraints
+# ===================================================================
+
+
+class TestSpacingValidation:
+    """Validate that spacing fields are rejected on wrong change types."""
+
+    def test_blank_lines_before_on_delete_raises(self, simple_5para_path):
+        changes = [
+            Change(
+                fragment_id=1,
+                change_type=ChangeType.DELETE,
+                justification="Remove.",
+                blank_lines_before=1,
+            ),
+        ]
+        with pytest.raises(ValueError, match=r"blank_lines_before.*only valid with append_after"):
+            apply_redlines(simple_5para_path, changes)
+
+    def test_blank_lines_after_on_modify_raises(self, simple_5para_path):
+        changes = [
+            Change(
+                fragment_id=1,
+                change_type=ChangeType.MODIFY,
+                new_text="Changed.",
+                justification="Edit.",
+                blank_lines_after=1,
+            ),
+        ]
+        with pytest.raises(ValueError, match=r"blank_lines_before.*only valid with append_after"):
+            apply_redlines(simple_5para_path, changes)
+
+    def test_delete_next_blanks_on_append_raises(self, simple_5para_path):
+        changes = [
+            Change(
+                fragment_id=1,
+                change_type=ChangeType.APPEND_AFTER,
+                new_text="New.",
+                justification="Add.",
+                delete_next_blanks=1,
+            ),
+        ]
+        with pytest.raises(ValueError, match=r"delete_next_blanks.*only valid with delete"):
+            apply_redlines(simple_5para_path, changes)
+
+    def test_delete_next_blanks_on_modify_raises(self, simple_5para_path):
+        changes = [
+            Change(
+                fragment_id=1,
+                change_type=ChangeType.MODIFY,
+                new_text="Changed.",
+                justification="Edit.",
+                delete_next_blanks=1,
+            ),
+        ]
+        with pytest.raises(ValueError, match=r"delete_next_blanks.*only valid with delete"):
+            apply_redlines(simple_5para_path, changes)
+
+    def test_zero_values_accepted_on_any_type(self, simple_5para_path):
+        """Default zero values should pass validation on any change type."""
+        changes = [
+            Change(
+                fragment_id=1,
+                change_type=ChangeType.DELETE,
+                justification="Remove.",
+                blank_lines_before=0,
+                blank_lines_after=0,
+                delete_next_blanks=0,
+            ),
+        ]
+        # Should not raise
+        doc = apply_redlines(simple_5para_path, changes, config=_default_config())
+        assert _is_valid_docx(doc.to_bytes())
+
+
+# ===================================================================
+# delete_next_blanks tests
+# ===================================================================
+
+
+class TestDeleteNextBlanks:
+    """Tests for deleting trailing blank paragraphs alongside a clause."""
+
+    def test_delete_with_one_trailing_blank(self, blank_separated_path):
+        """Deleting fragment 1 with delete_next_blanks=1 removes the blank at fragment 2."""
+        changes = [
+            Change(
+                fragment_id=1,
+                change_type=ChangeType.DELETE,
+                justification="Removed clause A.",
+                delete_next_blanks=1,
+            ),
+        ]
+        doc = apply_redlines(blank_separated_path, changes, config=_default_config())
+
+        # Both fragment 1 (clause) and fragment 2 (blank) should be marked deleted
+        fmap = doc.fragment_map()
+        del_els_1 = xpath(fmap[1], "w:del")
+        assert len(del_els_1) >= 1
+
+        # Fragment 2 is the blank — it should also be deleted (pPr mark)
+        ppr_del_2 = xpath(fmap[2], "w:pPr/w:rPr/w:del")
+        assert len(ppr_del_2) >= 1
+
+        # Total paragraph count unchanged (deletions are tracked, not removed)
+        assert len(doc.paragraphs) == 7
+
+        assert _is_valid_docx(doc.to_bytes())
+
+    def test_delete_next_blanks_non_blank_raises(self, blank_separated_path):
+        """If the next paragraph is not blank, ValueError is raised."""
+        # Fragment 3 is "The Buyer shall pay...", fragment 4 is blank.
+        # Deleting fragment 4 (blank) with delete_next_blanks=1 should fail
+        # because fragment 5 ("This Agreement...") is not blank.
+        changes = [
+            Change(
+                fragment_id=4,
+                change_type=ChangeType.DELETE,
+                justification="Remove blank.",
+                delete_next_blanks=1,
+            ),
+        ]
+        with pytest.raises(ValueError, match="not blank"):
+            apply_redlines(blank_separated_path, changes, config=_default_config())
+
+    def test_delete_next_blanks_not_enough_siblings(self, blank_separated_path):
+        """If there aren't enough paragraphs after the target, ValueError is raised."""
+        # Fragment 7 is the last paragraph — only <w:sectPr> follows it
+        changes = [
+            Change(
+                fragment_id=7,
+                change_type=ChangeType.DELETE,
+                justification="Remove last.",
+                delete_next_blanks=1,
+            ),
+        ]
+        with pytest.raises(ValueError, match="delete_next_blanks=1 on fragment 7"):
+            apply_redlines(blank_separated_path, changes, config=_default_config())
+
+    def test_delete_next_blanks_two_blanks_but_only_one_exists(self, blank_separated_path):
+        """Requesting 2 trailing blanks but only 1 exists raises ValueError."""
+        # Fragment 1 is a clause, fragment 2 is blank, fragment 3 is a clause
+        changes = [
+            Change(
+                fragment_id=1,
+                change_type=ChangeType.DELETE,
+                justification="Remove.",
+                delete_next_blanks=2,
+            ),
+        ]
+        with pytest.raises(ValueError, match="not blank"):
+            apply_redlines(blank_separated_path, changes, config=_default_config())
+
+    def test_delete_next_blanks_zero_unchanged_behavior(self, blank_separated_path):
+        """delete_next_blanks=0 should not touch trailing blanks."""
+        changes = [
+            Change(
+                fragment_id=1,
+                change_type=ChangeType.DELETE,
+                justification="Remove clause only.",
+                delete_next_blanks=0,
+            ),
+        ]
+        doc = apply_redlines(blank_separated_path, changes, config=_default_config())
+
+        fmap = doc.fragment_map()
+        # Fragment 1 should be deleted
+        del_els_1 = xpath(fmap[1], "w:del")
+        assert len(del_els_1) >= 1
+
+        # Fragment 2 (blank) should NOT be deleted
+        ppr_del_2 = xpath(fmap[2], "w:pPr/w:rPr/w:del")
+        assert len(ppr_del_2) == 0
+
+        assert _is_valid_docx(doc.to_bytes())
+
+    def test_delete_next_blanks_produces_valid_docx(self, blank_separated_path):
+        """Round-trip: delete with trailing blank, save, reload."""
+        changes = [
+            Change(
+                fragment_id=3,
+                change_type=ChangeType.DELETE,
+                justification="Removed clause B.",
+                delete_next_blanks=1,
+            ),
+        ]
+        doc = apply_redlines(blank_separated_path, changes, config=_default_config())
+        data = doc.to_bytes()
+        assert _is_valid_docx(data)
+
+        # Reload and verify structure
+        from docx_mcp.document import DocxDocument
+
+        doc2 = DocxDocument(data=data)
+        assert len(doc2.paragraphs) == 7
+
+
+# ===================================================================
+# Append with blank lines (end-to-end through redliner)
+# ===================================================================
+
+
+class TestAppendWithBlankLines:
+    """End-to-end tests for blank_lines_before/after through apply_redlines."""
+
+    def test_append_with_blank_line_before(self, simple_5para_path):
+        changes = [
+            Change(
+                fragment_id=3,
+                change_type=ChangeType.APPEND_AFTER,
+                new_text="New clause inserted.",
+                justification="Added clause.",
+                blank_lines_before=1,
+            ),
+        ]
+        doc = apply_redlines(simple_5para_path, changes, config=_default_config())
+
+        # 5 original + 1 blank + 1 content = 7
+        assert len(doc.paragraphs) == 7
+        assert _is_valid_docx(doc.to_bytes())
+
+    def test_append_with_blank_lines_before_and_after(self, simple_5para_path):
+        changes = [
+            Change(
+                fragment_id=3,
+                change_type=ChangeType.APPEND_AFTER,
+                new_text="New clause inserted.",
+                justification="Added clause.",
+                blank_lines_before=1,
+                blank_lines_after=1,
+            ),
+        ]
+        doc = apply_redlines(simple_5para_path, changes, config=_default_config())
+
+        # 5 original + 1 blank before + 1 content + 1 blank after = 8
+        assert len(doc.paragraphs) == 8
+        assert _is_valid_docx(doc.to_bytes())

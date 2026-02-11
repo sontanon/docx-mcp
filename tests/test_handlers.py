@@ -39,6 +39,31 @@ def _make_paragraph(*run_specs: tuple[str, dict[str, bool] | None]) -> etree._El
     return p
 
 
+def _make_paragraph_with_font(
+    text: str,
+    *,
+    font: str | None = None,
+    size: str | None = None,
+    bold: bool = False,
+) -> etree._Element:
+    """Build a ``<w:p>`` with a run that has font/size formatting."""
+    p = etree.Element(qn("w", "p"))
+    r = etree.SubElement(p, qn("w", "r"))
+    rpr = etree.SubElement(r, qn("w", "rPr"))
+    if font:
+        rfonts = etree.SubElement(rpr, qn("w", "rFonts"))
+        rfonts.set(qn("w", "ascii"), font)
+        rfonts.set(qn("w", "hAnsi"), font)
+    if size:
+        sz = etree.SubElement(rpr, qn("w", "sz"))
+        sz.set(qn("w", "val"), size)
+    if bold:
+        etree.SubElement(rpr, qn("w", "b"))
+    t = etree.SubElement(r, qn("w", "t"))
+    t.text = text
+    return p
+
+
 def _make_body_with_paragraphs(
     *para_specs: list[tuple[str, dict[str, bool] | None]],
 ) -> etree._Element:
@@ -689,3 +714,289 @@ class TestModifyWithTabs:
             config=_default_config(),
         )
         assert ids == []
+
+
+# ===================================================================
+# Append handler: font inheritance tests
+# ===================================================================
+
+
+class TestAppendFontInheritance:
+    """Tests for font/size inheritance when appending new paragraphs.
+
+    The append handler should copy ``<w:rFonts>``, ``<w:sz>``, etc. from
+    the reference paragraph's runs into the new paragraph's runs, so
+    appended text matches the surrounding document.
+    """
+
+    def test_inherits_font_from_reference(self):
+        """New runs should carry the same font as the reference paragraph."""
+        body = _make_body_with_paragraphs(
+            [("Reference text.", None)],  # placeholder
+        )
+        # Replace with a font-styled paragraph
+        body.remove(body[0])
+        ref_p = _make_paragraph_with_font("Reference text.", font="Times New Roman", size="24")
+        body.insert(0, ref_p)
+
+        mgr = IdManager()
+        new_p, _ = handle_append_after(
+            ref_p,
+            "Appended text.",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+
+        # Check that new runs have <w:rFonts>
+        ins_el = xpath(new_p, "w:ins")[0]
+        runs = xpath(ins_el, "w:r")
+        assert len(runs) >= 1
+
+        rpr = xpath(runs[0], "w:rPr")
+        assert len(rpr) == 1
+        rfonts = xpath(rpr[0], "w:rFonts")
+        assert len(rfonts) == 1
+        assert rfonts[0].get(qn("w", "ascii")) == "Times New Roman"
+
+    def test_inherits_size_from_reference(self):
+        """New runs should carry the same size as the reference paragraph."""
+        body = etree.Element(qn("w", "body"))
+        ref_p = _make_paragraph_with_font("Reference text.", font="Arial", size="28")
+        body.append(ref_p)
+
+        mgr = IdManager()
+        new_p, _ = handle_append_after(
+            ref_p,
+            "Appended text.",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+
+        ins_el = xpath(new_p, "w:ins")[0]
+        runs = xpath(ins_el, "w:r")
+        rpr = xpath(runs[0], "w:rPr")
+        sz = xpath(rpr[0], "w:sz")
+        assert len(sz) == 1
+        assert sz[0].get(qn("w", "val")) == "28"
+
+    def test_bold_markdown_with_font_inheritance(self):
+        """Bold pseudo-Markdown on top of inherited font should have both."""
+        body = etree.Element(qn("w", "body"))
+        ref_p = _make_paragraph_with_font("Reference.", font="Times New Roman", size="24")
+        body.append(ref_p)
+
+        mgr = IdManager()
+        new_p, _ = handle_append_after(
+            ref_p,
+            "The **Company** agrees.",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+
+        ins_el = xpath(new_p, "w:ins")[0]
+        runs = xpath(ins_el, "w:r")
+        # Find the bold run ("Company")
+        bold_run = None
+        for r in runs:
+            rpr_list = xpath(r, "w:rPr")
+            if rpr_list and xpath(rpr_list[0], "w:b"):
+                bold_run = r
+                break
+
+        assert bold_run is not None, "Should have a bold run"
+        rpr = xpath(bold_run, "w:rPr")[0]
+        # Should have both bold AND font
+        assert len(xpath(rpr, "w:b")) == 1
+        assert len(xpath(rpr, "w:rFonts")) == 1
+        assert xpath(rpr, "w:rFonts")[0].get(qn("w", "ascii")) == "Times New Roman"
+
+    def test_no_runs_in_reference_falls_back_gracefully(self):
+        """Appending after a paragraph with no runs should not crash."""
+        body = etree.Element(qn("w", "body"))
+        ref_p = etree.SubElement(body, qn("w", "p"))
+        # Paragraph has only <w:pPr>, no runs
+        etree.SubElement(ref_p, qn("w", "pPr"))
+
+        mgr = IdManager()
+        new_p, _ = handle_append_after(
+            ref_p,
+            "New content.",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+
+        # Should still produce valid content
+        ins_els = xpath(new_p, "w:ins")
+        assert len(ins_els) >= 1
+        runs = xpath(ins_els[0], "w:r")
+        assert len(runs) >= 1
+
+    def test_inherits_from_ppr_rpr_when_no_runs(self):
+        """If paragraph has ``<w:pPr><w:rPr>`` with font but no runs, inherit from that."""
+        body = etree.Element(qn("w", "body"))
+        ref_p = etree.SubElement(body, qn("w", "p"))
+        ppr = etree.SubElement(ref_p, qn("w", "pPr"))
+        rpr = etree.SubElement(ppr, qn("w", "rPr"))
+        rfonts = etree.SubElement(rpr, qn("w", "rFonts"))
+        rfonts.set(qn("w", "ascii"), "Courier New")
+        rfonts.set(qn("w", "hAnsi"), "Courier New")
+
+        mgr = IdManager()
+        new_p, _ = handle_append_after(
+            ref_p,
+            "Monospaced text.",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+
+        ins_el = xpath(new_p, "w:ins")[0]
+        runs = xpath(ins_el, "w:r")
+        assert len(runs) >= 1
+        new_rpr = xpath(runs[0], "w:rPr")
+        assert len(new_rpr) == 1
+        new_rfonts = xpath(new_rpr[0], "w:rFonts")
+        assert len(new_rfonts) == 1
+        assert new_rfonts[0].get(qn("w", "ascii")) == "Courier New"
+
+
+# ===================================================================
+# Append handler: blank line insertion tests
+# ===================================================================
+
+
+class TestAppendBlankLines:
+    """Tests for blank_lines_before and blank_lines_after in handle_append_after."""
+
+    def test_blank_lines_before(self):
+        """One blank paragraph should be inserted between reference and content."""
+        body = _make_body_with_paragraphs(
+            [("First.", None)],
+            [("Third.", None)],
+        )
+        ref_p = body[0]
+        mgr = IdManager()
+        new_p, _ = handle_append_after(
+            ref_p,
+            "Content.",
+            id_manager=mgr,
+            config=_default_config(),
+            blank_lines_before=1,
+        )
+
+        paragraphs = list(body)
+        assert len(paragraphs) == 4  # First, blank, content, Third
+        # The blank paragraph is at index 1
+        blank_p = paragraphs[1]
+        # It should have <w:pPr><w:rPr><w:ins/> but no content runs
+        ppr_ins = xpath(blank_p, "w:pPr/w:rPr/w:ins")
+        assert len(ppr_ins) == 1
+        assert len(xpath(blank_p, "w:ins")) == 0  # no content <w:ins> wrapper
+        assert len(xpath(blank_p, "w:r")) == 0  # no runs
+        # The content paragraph is at index 2
+        assert paragraphs[2] is new_p
+
+    def test_blank_lines_after(self):
+        """One blank paragraph should be inserted after the content."""
+        body = _make_body_with_paragraphs(
+            [("First.", None)],
+            [("Third.", None)],
+        )
+        ref_p = body[0]
+        mgr = IdManager()
+        new_p, _ = handle_append_after(
+            ref_p,
+            "Content.",
+            id_manager=mgr,
+            config=_default_config(),
+            blank_lines_after=1,
+        )
+
+        paragraphs = list(body)
+        assert len(paragraphs) == 4  # First, content, blank, Third
+        assert paragraphs[1] is new_p
+        blank_p = paragraphs[2]
+        ppr_ins = xpath(blank_p, "w:pPr/w:rPr/w:ins")
+        assert len(ppr_ins) == 1
+        assert len(xpath(blank_p, "w:r")) == 0
+
+    def test_blank_lines_before_and_after(self):
+        """Both blank_lines_before=1 and blank_lines_after=1."""
+        body = _make_body_with_paragraphs(
+            [("First.", None)],
+            [("Last.", None)],
+        )
+        ref_p = body[0]
+        mgr = IdManager()
+        new_p, _ = handle_append_after(
+            ref_p,
+            "Content.",
+            id_manager=mgr,
+            config=_default_config(),
+            blank_lines_before=1,
+            blank_lines_after=1,
+        )
+
+        paragraphs = list(body)
+        assert len(paragraphs) == 5  # First, blank, content, blank, Last
+        assert paragraphs[2] is new_p
+        # Both blanks should be tracked insertions
+        for idx in (1, 3):
+            ppr_ins = xpath(paragraphs[idx], "w:pPr/w:rPr/w:ins")
+            assert len(ppr_ins) == 1
+
+    def test_multiple_blank_lines_before(self):
+        """blank_lines_before=2 inserts two blank paragraphs."""
+        body = _make_body_with_paragraphs([("Ref.", None)])
+        ref_p = body[0]
+        mgr = IdManager()
+        new_p, _ = handle_append_after(
+            ref_p,
+            "Content.",
+            id_manager=mgr,
+            config=_default_config(),
+            blank_lines_before=2,
+        )
+
+        paragraphs = list(body)
+        assert len(paragraphs) == 4  # Ref, blank, blank, content
+        assert paragraphs[3] is new_p
+
+    def test_default_zero_no_blanks(self):
+        """Default (0, 0) should produce no blank paragraphs."""
+        body = _make_body_with_paragraphs(
+            [("First.", None)],
+            [("Second.", None)],
+        )
+        ref_p = body[0]
+        mgr = IdManager()
+        new_p, _ = handle_append_after(
+            ref_p,
+            "Content.",
+            id_manager=mgr,
+            config=_default_config(),
+        )
+
+        paragraphs = list(body)
+        assert len(paragraphs) == 3  # First, content, Second
+        assert paragraphs[1] is new_p
+
+    def test_blank_paragraphs_are_tracked_insertions(self):
+        """Blank paragraphs should have tracked-insertion markup."""
+        body = _make_body_with_paragraphs([("Ref.", None)])
+        ref_p = body[0]
+        mgr = IdManager()
+        handle_append_after(
+            ref_p,
+            "Content.",
+            id_manager=mgr,
+            config=_default_config(),
+            blank_lines_before=1,
+        )
+
+        blank_p = list(body)[1]
+        ppr_ins = xpath(blank_p, "w:pPr/w:rPr/w:ins")
+        assert len(ppr_ins) == 1
+        # Verify attributes
+        ins_el = ppr_ins[0]
+        assert ins_el.get(qn("w", "author")) == "Test Author"
+        assert ins_el.get(qn("w", "id")) is not None

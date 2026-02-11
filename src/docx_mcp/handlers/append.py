@@ -8,6 +8,8 @@ OOXML tracked insertion of a new paragraph requires:
 3. All content runs must be wrapped in ``<w:ins>`` elements.
 4. The new paragraph copies ``<w:pPr>`` (style, numbering, etc.) from
    the reference paragraph to maintain document consistency.
+5. Run-level formatting (font, size, etc.) is inherited from the reference
+   paragraph's runs so that appended text matches the surrounding document.
 
 The new text is provided as pseudo-Markdown and must be parsed into
 formatted runs.
@@ -32,6 +34,8 @@ def handle_append_after(
     *,
     id_manager: IdManager,
     config: RedlineConfig,
+    blank_lines_before: int = 0,
+    blank_lines_after: int = 0,
 ) -> tuple[etree._Element, int]:
     """Insert a new tracked-change paragraph after *reference_paragraph*.
 
@@ -40,29 +44,209 @@ def handle_append_after(
         new_text: The new paragraph content in pseudo-Markdown format.
         id_manager: ID allocator for annotation IDs.
         config: Author / date configuration.
+        blank_lines_before: Number of blank paragraphs to insert between
+            the reference and the new content paragraph.
+        blank_lines_after: Number of blank paragraphs to insert after the
+            new content paragraph.
 
     Returns:
-        A tuple of ``(new_paragraph, ins_id)`` — the new element and its
-        annotation ID.
+        A tuple of ``(new_paragraph, ins_id)`` — the new content element
+        and its annotation ID.
     """
     ins_id = id_manager.next_id()
     author = config.author
     date = config.date_iso()
 
-    # --- 1. Create new <w:p> ---
+    # --- 1. Derive formatting from reference paragraph ---
+    ref_ppr = xpath(reference_paragraph, "w:pPr")
+    base_ppr = copy.deepcopy(ref_ppr[0]) if ref_ppr else None
+    base_rpr = _extract_base_rpr(reference_paragraph)
+
+    # --- 2. Build the content paragraph ---
+    new_p = _build_inserted_paragraph(
+        new_text,
+        ins_id=ins_id,
+        base_ppr=base_ppr,
+        base_rpr=base_rpr,
+        id_manager=id_manager,
+        author=author,
+        date=date,
+    )
+
+    # --- 3. Insert into the tree: blanks_before → content → blanks_after ---
+    # We build the chain in reverse-insert order because addnext inserts
+    # immediately after the reference, so we insert blanks_after first
+    # (they end up furthest from the reference), then content, then
+    # blanks_before.
+    anchor = reference_paragraph
+
+    # Insert blank lines *before* the content paragraph
+    for _ in range(blank_lines_before):
+        blank_p = _build_blank_inserted_paragraph(
+            base_ppr=base_ppr,
+            id_manager=id_manager,
+            author=author,
+            date=date,
+        )
+        anchor.addnext(blank_p)
+        anchor = blank_p
+
+    # Insert the content paragraph
+    anchor.addnext(new_p)
+    anchor = new_p
+
+    # Insert blank lines *after* the content paragraph
+    for _ in range(blank_lines_after):
+        blank_p = _build_blank_inserted_paragraph(
+            base_ppr=base_ppr,
+            id_manager=id_manager,
+            author=author,
+            date=date,
+        )
+        anchor.addnext(blank_p)
+        anchor = blank_p
+
+    return new_p, ins_id
+
+
+# ---------------------------------------------------------------------------
+# Formatting inheritance
+# ---------------------------------------------------------------------------
+
+
+def _extract_base_rpr(paragraph: etree._Element) -> etree._Element | None:
+    """Extract a base ``<w:rPr>`` from *paragraph* for formatting inheritance.
+
+    Strategy (first match wins):
+
+    1. The ``<w:rPr>`` of the first run that contains text — this represents
+       the formatting actually visible in the paragraph.
+    2. The ``<w:rPr>`` inside ``<w:pPr>`` — the paragraph-mark formatting,
+       which often carries the font even when no runs exist.
+    3. ``None`` if neither is available.
+
+    The returned element is a **deep copy** safe to mutate.
+    """
+    # Try runs first
+    for run in xpath(paragraph, "w:r"):
+        # Check if this run has any text content
+        has_text = False
+        for child in run:
+            tag = etree.QName(child.tag).localname if isinstance(child.tag, str) else ""
+            if tag in ("t", "tab", "br") and (tag != "t" or child.text):
+                has_text = True
+                break
+        if has_text:
+            rpr_list = xpath(run, "w:rPr")
+            if rpr_list:
+                return copy.deepcopy(rpr_list[0])
+
+    # Fall back to paragraph-mark rPr
+    ppr_rpr_list = xpath(paragraph, "w:pPr/w:rPr")
+    if ppr_rpr_list:
+        rpr = copy.deepcopy(ppr_rpr_list[0])
+        # Remove tracked-change marks (ins/del) — they're not formatting
+        for mark in xpath(rpr, "w:ins") + xpath(rpr, "w:del"):
+            rpr.remove(mark)
+        return rpr if len(rpr) > 0 else None
+
+    return None
+
+
+def _merge_rpr(
+    base: etree._Element | None,
+    *,
+    bold: bool = False,
+    italic: bool = False,
+    underline: bool = False,
+) -> etree._Element | None:
+    """Merge pseudo-Markdown formatting onto a base ``<w:rPr>``.
+
+    Starts from a deep copy of *base* (or a fresh ``<w:rPr>`` if base is
+    ``None`` and formatting is requested).  Then sets or clears the bold,
+    italic, and underline elements.
+
+    Returns ``None`` if the result would be an empty ``<w:rPr>``.
+    """
+    if base is not None:
+        result = copy.deepcopy(base)
+    elif bold or italic or underline:
+        result = etree.Element(qn("w", "rPr"))
+    else:
+        return None
+
+    # Bold: set or remove <w:b>
+    existing_b = xpath(result, "w:b")
+    if bold and not existing_b:
+        # Insert <w:b> early (convention: b comes before i, u)
+        etree.SubElement(result, qn("w", "b"))
+    elif not bold and existing_b:
+        for el in existing_b:
+            result.remove(el)
+
+    # Italic: set or remove <w:i>
+    existing_i = xpath(result, "w:i")
+    if italic and not existing_i:
+        etree.SubElement(result, qn("w", "i"))
+    elif not italic and existing_i:
+        for el in existing_i:
+            result.remove(el)
+
+    # Underline: set or remove <w:u>
+    existing_u = xpath(result, "w:u")
+    if underline and not existing_u:
+        u = etree.SubElement(result, qn("w", "u"))
+        u.set(qn("w", "val"), "single")
+    elif not underline and existing_u:
+        for el in existing_u:
+            result.remove(el)
+
+    return result if len(result) > 0 else None
+
+
+# ---------------------------------------------------------------------------
+# Paragraph builders
+# ---------------------------------------------------------------------------
+
+
+def _build_inserted_paragraph(
+    text: str,
+    *,
+    ins_id: int,
+    base_ppr: etree._Element | None,
+    base_rpr: etree._Element | None,
+    id_manager: IdManager,
+    author: str,
+    date: str,
+) -> etree._Element:
+    """Build a ``<w:p>`` with tracked-insertion markup and content runs.
+
+    Args:
+        text: New paragraph content in pseudo-Markdown.
+        ins_id: Annotation ID for the paragraph-mark insertion.
+        base_ppr: Deep copy of the reference paragraph's ``<w:pPr>``
+            (may be ``None``).
+        base_rpr: Deep copy of the reference paragraph's run formatting
+            (may be ``None``).
+        id_manager: ID allocator for the ``<w:ins>`` wrapper.
+        author: Author for tracked-change attributes.
+        date: ISO 8601 date for tracked-change attributes.
+
+    Returns:
+        A new ``<w:p>`` element ready to insert into the document tree.
+    """
     new_p = etree.Element(qn("w", "p"))
 
-    # --- 2. Copy <w:pPr> from reference (style, numbering, etc.) ---
-    ref_ppr = xpath(reference_paragraph, "w:pPr")
-    if ref_ppr:
-        new_ppr = copy.deepcopy(ref_ppr[0])
+    # --- Paragraph properties ---
+    if base_ppr is not None:
+        new_ppr = copy.deepcopy(base_ppr)
         # Remove any existing tracked-change marks from the copied pPr
         for old_mark in xpath(new_ppr, "w:rPr/w:ins") + xpath(new_ppr, "w:rPr/w:del"):
             old_mark.getparent().remove(old_mark)
     else:
         new_ppr = etree.Element(qn("w", "pPr"))
 
-    # --- 3. Mark paragraph mark as inserted ---
+    # Mark the paragraph mark as inserted
     ppr_rpr = xpath(new_ppr, "w:rPr")
     rpr = ppr_rpr[0] if ppr_rpr else etree.SubElement(new_ppr, qn("w", "rPr"))
 
@@ -73,21 +257,58 @@ def handle_append_after(
 
     new_p.append(new_ppr)
 
-    # --- 4. Parse pseudo-Markdown and create runs inside <w:ins> ---
+    # --- Content runs inside <w:ins> ---
     ins_wrapper = etree.SubElement(new_p, qn("w", "ins"))
     ins_wrapper.set(qn("w", "id"), str(id_manager.next_id()))
     ins_wrapper.set(qn("w", "author"), author)
     ins_wrapper.set(qn("w", "date"), date)
 
-    run_specs = _parse_pseudo_markdown(new_text)
-    for text, rpr_el in run_specs:
-        r = build_run_element(text, rpr=rpr_el)
+    run_specs = _parse_pseudo_markdown(text)
+    for run_text, _md_rpr, md_bold, md_italic, md_underline in run_specs:
+        # Merge pseudo-Markdown formatting onto the inherited base rPr
+        merged = _merge_rpr(
+            base_rpr,
+            bold=md_bold,
+            italic=md_italic,
+            underline=md_underline,
+        )
+        r = build_run_element(run_text, rpr=merged)
         ins_wrapper.append(r)
 
-    # --- 5. Insert after reference ---
-    reference_paragraph.addnext(new_p)
+    return new_p
 
-    return new_p, ins_id
+
+def _build_blank_inserted_paragraph(
+    *,
+    base_ppr: etree._Element | None,
+    id_manager: IdManager,
+    author: str,
+    date: str,
+) -> etree._Element:
+    """Build an empty ``<w:p>`` marked as a tracked insertion.
+
+    Used for inserting blank separator lines around appended content.
+    """
+    blank_id = id_manager.next_id()
+    blank_p = etree.Element(qn("w", "p"))
+
+    if base_ppr is not None:
+        blank_ppr = copy.deepcopy(base_ppr)
+        for old_mark in xpath(blank_ppr, "w:rPr/w:ins") + xpath(blank_ppr, "w:rPr/w:del"):
+            old_mark.getparent().remove(old_mark)
+    else:
+        blank_ppr = etree.Element(qn("w", "pPr"))
+
+    ppr_rpr = xpath(blank_ppr, "w:rPr")
+    rpr = ppr_rpr[0] if ppr_rpr else etree.SubElement(blank_ppr, qn("w", "rPr"))
+
+    ins_mark = etree.SubElement(rpr, qn("w", "ins"))
+    ins_mark.set(qn("w", "id"), str(blank_id))
+    ins_mark.set(qn("w", "author"), author)
+    ins_mark.set(qn("w", "date"), date)
+
+    blank_p.append(blank_ppr)
+    return blank_p
 
 
 # ---------------------------------------------------------------------------
@@ -118,16 +339,23 @@ _FORMATTING_RE = re.compile(
 )
 
 
-def _parse_pseudo_markdown(text: str) -> list[tuple[str, etree._Element | None]]:
-    """Parse pseudo-Markdown into ``(text, rPr)`` pairs.
+def _parse_pseudo_markdown(
+    text: str,
+) -> list[tuple[str, etree._Element | None, bool, bool, bool]]:
+    """Parse pseudo-Markdown into run specifications.
 
-    Returns a list of ``(plain_text, rPr_element_or_None)`` tuples.
+    Returns a list of ``(plain_text, rPr_element_or_None, bold, italic,
+    underline)`` tuples.  The ``rPr`` is built with *only* the Markdown
+    formatting (not inherited formatting); the ``bold``/``italic``/
+    ``underline`` flags indicate which markers were present so the caller
+    can merge with inherited formatting.
+
     The text has Markdown escapes removed (``\\*`` → ``*``, ``\\_`` → ``_``).
     """
     if not text:
         return []
 
-    result: list[tuple[str, etree._Element | None]] = []
+    result: list[tuple[str, etree._Element | None, bool, bool, bool]] = []
     pos = 0
 
     while pos < len(text):
@@ -136,46 +364,45 @@ def _parse_pseudo_markdown(text: str) -> list[tuple[str, etree._Element | None]]
             # Rest is plain text
             remaining = text[pos:]
             if remaining:
-                result.append((_unescape(remaining), None))
+                result.append((_unescape(remaining), None, False, False, False))
             break
 
         # Plain text before the match
         if m.start() > pos:
             plain = text[pos : m.start()]
             if plain:
-                result.append((_unescape(plain), None))
+                result.append((_unescape(plain), None, False, False, False))
 
         # Determine which group matched
         if m.group(1):  # bold+underline+italic
             inner = m.group(2)
-            # Strip the inner italic markers
             inner = inner[1:-1] if inner.startswith("_") and inner.endswith("_") else inner
             rpr = _make_rpr(bold=True, italic=True, underline=True)
-            result.append((_unescape(inner), rpr))
+            result.append((_unescape(inner), rpr, True, True, True))
         elif m.group(3):  # bold+underline
             inner = m.group(4)
             rpr = _make_rpr(bold=True, underline=True)
-            result.append((_unescape(inner), rpr))
+            result.append((_unescape(inner), rpr, True, False, True))
         elif m.group(5):  # bold+italic
             inner = m.group(6)
             rpr = _make_rpr(bold=True, italic=True)
-            result.append((_unescape(inner), rpr))
+            result.append((_unescape(inner), rpr, True, True, False))
         elif m.group(7):  # bold
             inner = m.group(8)
             rpr = _make_rpr(bold=True)
-            result.append((_unescape(inner), rpr))
+            result.append((_unescape(inner), rpr, True, False, False))
         elif m.group(9):  # underline+italic
             inner = m.group(11)
             rpr = _make_rpr(italic=True, underline=True)
-            result.append((_unescape(inner), rpr))
+            result.append((_unescape(inner), rpr, False, True, True))
         elif m.group(12):  # underline
             inner = m.group(13)
             rpr = _make_rpr(underline=True)
-            result.append((_unescape(inner), rpr))
+            result.append((_unescape(inner), rpr, False, False, True))
         elif m.group(14):  # italic
             inner = m.group(15)
             rpr = _make_rpr(italic=True)
-            result.append((_unescape(inner), rpr))
+            result.append((_unescape(inner), rpr, False, True, False))
 
         pos = m.end()
 

@@ -93,6 +93,37 @@ class ChangeParam(BaseModel):
         description="Reason for this change. Becomes a Word comment.",
     )
 
+    # -- Optional spacing controls -------------------------------------------
+    blank_lines_before: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Number of blank paragraphs to insert before the appended paragraph. "
+            "Only used with append_after.  Most legal documents separate clauses "
+            "with one blank line; set to 1 to match that convention."
+        ),
+    )
+    blank_lines_after: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Number of blank paragraphs to insert after the appended paragraph. "
+            "Only used with append_after."
+        ),
+    )
+    delete_next_blanks: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Number of blank paragraphs immediately following the deleted "
+            "paragraph to also mark as deleted.  Only used with delete.  "
+            "Set to 1 when a clause is followed by a blank separator line "
+            "that should be removed together with the clause.  Each targeted "
+            "paragraph must be blank (whitespace-only); an error is raised "
+            "if a non-blank paragraph is encountered."
+        ),
+    )
+
 
 # TypeAdapter for validating changes loaded from a JSON file.
 _CHANGES_ADAPTER: TypeAdapter[list[ChangeParam]] = TypeAdapter(list[ChangeParam])
@@ -134,6 +165,9 @@ def _convert_changes(params: list[ChangeParam]) -> list[Change]:
             change_type=ChangeType(p.change_type),
             new_text=p.new_text,
             justification=p.justification,
+            blank_lines_before=p.blank_lines_before,
+            blank_lines_after=p.blank_lines_after,
+            delete_next_blanks=p.delete_next_blanks,
         )
         for p in params
     ]

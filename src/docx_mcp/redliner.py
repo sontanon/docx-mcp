@@ -43,6 +43,10 @@ from docx_mcp.handlers.delete import handle_delete
 from docx_mcp.handlers.modify import handle_modify
 from docx_mcp.id_manager import IdManager
 from docx_mcp.models import Change, ChangeType, RedlineConfig
+from docx_mcp.namespaces import xpath
+
+# Tag names of elements that carry visible text inside a run.
+_TEXT_TAGS = frozenset({"t", "delText"})
 
 
 def apply_redlines(
@@ -130,6 +134,16 @@ def apply_redlines(
                 config=config,
             )
 
+            # Also delete trailing blank paragraphs if requested
+            if change.delete_next_blanks > 0:
+                _delete_trailing_blanks(
+                    paragraph,
+                    count=change.delete_next_blanks,
+                    fragment_id=change.fragment_id,
+                    id_manager=id_manager,
+                    config=config,
+                )
+
         elif change.change_type == ChangeType.APPEND_AFTER:
             assert change.new_text is not None
             new_p, _ = handle_append_after(
@@ -137,6 +151,8 @@ def apply_redlines(
                 change.new_text,
                 id_manager=id_manager,
                 config=config,
+                blank_lines_before=change.blank_lines_before,
+                blank_lines_after=change.blank_lines_after,
             )
             # Comment on the new paragraph
             add_comment(
@@ -167,6 +183,26 @@ def _validate_changes(changes: list[Change], max_fragment_id: int) -> None:
             msg = (
                 f"Change type {change.change_type.value} on "
                 f"fragment {change.fragment_id} requires new_text"
+            )
+            raise ValueError(msg)
+
+        # blank_lines_before / blank_lines_after are only valid with append_after
+        if change.change_type != ChangeType.APPEND_AFTER and (
+            change.blank_lines_before > 0 or change.blank_lines_after > 0
+        ):
+            msg = (
+                f"blank_lines_before/blank_lines_after are only valid with "
+                f"append_after, but fragment {change.fragment_id} has "
+                f"change_type={change.change_type.value}"
+            )
+            raise ValueError(msg)
+
+        # delete_next_blanks is only valid with delete
+        if change.change_type != ChangeType.DELETE and change.delete_next_blanks > 0:
+            msg = (
+                f"delete_next_blanks is only valid with delete, "
+                f"but fragment {change.fragment_id} has "
+                f"change_type={change.change_type.value}"
             )
             raise ValueError(msg)
 
@@ -203,3 +239,83 @@ def _get_tracked_change_elements(paragraph: etree._Element) -> list[etree._Eleme
         if tag_local in ("del", "ins"):
             elements.append(child)
     return elements
+
+
+# ---------------------------------------------------------------------------
+# Blank-paragraph helpers
+# ---------------------------------------------------------------------------
+
+
+def _is_blank_paragraph(paragraph: etree._Element) -> bool:
+    """Return ``True`` if *paragraph* contains no visible text.
+
+    A paragraph is blank if it has no ``<w:r>`` elements, or all of its
+    runs contain only whitespace text (or no text at all).  Tabs, breaks,
+    and empty ``<w:t>`` elements are treated as whitespace.
+    """
+    for run in xpath(paragraph, "w:r"):
+        for child in run:
+            tag = etree.QName(child.tag).localname if isinstance(child.tag, str) else ""
+            if tag in _TEXT_TAGS and child.text and child.text.strip():
+                return False
+    return True
+
+
+def _paragraph_preview(paragraph: etree._Element, *, max_len: int = 60) -> str:
+    """Extract a short text preview of *paragraph* for error messages."""
+    parts: list[str] = []
+    for run in xpath(paragraph, "w:r"):
+        for child in run:
+            tag = etree.QName(child.tag).localname if isinstance(child.tag, str) else ""
+            if tag in _TEXT_TAGS and child.text:
+                parts.append(child.text)
+    text = "".join(parts).strip()
+    if len(text) > max_len:
+        return text[:max_len] + "..."
+    return text
+
+
+def _delete_trailing_blanks(
+    paragraph: etree._Element,
+    *,
+    count: int,
+    fragment_id: int,
+    id_manager: IdManager,
+    config: RedlineConfig,
+) -> None:
+    """Mark *count* blank siblings after *paragraph* as tracked deletions.
+
+    Raises:
+        ValueError: If a sibling does not exist or is not blank.
+    """
+    current = paragraph
+    for i in range(count):
+        next_el = current.getnext()
+        if next_el is None:
+            msg = (
+                f"delete_next_blanks={count} on fragment {fragment_id}, "
+                f"but only {i} paragraph(s) follow the deleted paragraph"
+            )
+            raise ValueError(msg)
+
+        # Verify it's a <w:p>
+        next_tag = etree.QName(next_el.tag).localname if isinstance(next_el.tag, str) else ""
+        if next_tag != "p":
+            msg = (
+                f"delete_next_blanks={count} on fragment {fragment_id}, "
+                f"but the element at position {i + 1} after the deleted paragraph "
+                f"is <w:{next_tag}>, not <w:p>"
+            )
+            raise ValueError(msg)
+
+        if not _is_blank_paragraph(next_el):
+            preview = _paragraph_preview(next_el)
+            msg = (
+                f"delete_next_blanks={count} on fragment {fragment_id}, "
+                f"but the paragraph at position {i + 1} after the deleted paragraph "
+                f"is not blank: '{preview}'"
+            )
+            raise ValueError(msg)
+
+        handle_delete(next_el, id_manager=id_manager, config=config)
+        current = next_el

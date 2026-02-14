@@ -422,6 +422,142 @@ def generate_blank_separated() -> Path:
     return path
 
 
+def generate_simple_table() -> Path:
+    """3x3 table with plain text, paragraphs before and after."""
+    doc = Document()
+
+    doc.add_paragraph("Introduction paragraph before the table.")
+
+    table = doc.add_table(rows=3, cols=3)
+    table.style = "Table Grid"
+
+    headers = ["Header A", "Header B", "Header C"]
+    for col_idx, header in enumerate(headers):
+        table.rows[0].cells[col_idx].text = header
+
+    for row_idx in range(1, 3):
+        for col_idx in range(3):
+            table.rows[row_idx].cells[col_idx].text = f"Cell {row_idx}.{col_idx + 1}"
+
+    doc.add_paragraph("Conclusion paragraph after the table.")
+
+    path = _ensure_dir() / "simple_table.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_formatted_table() -> Path:
+    """Table with bold/italic text in cells."""
+    doc = Document()
+
+    doc.add_paragraph("Document with formatted table.")
+
+    table = doc.add_table(rows=2, cols=2)
+    table.style = "Table Grid"
+
+    cell = table.rows[0].cells[0]
+    p = cell.paragraphs[0]
+    run = p.add_run("Bold Header")
+    run.bold = True
+
+    cell = table.rows[0].cells[1]
+    p = cell.paragraphs[0]
+    run = p.add_run("Italic Header")
+    run.italic = True
+
+    table.rows[1].cells[0].text = "Normal cell"
+    table.rows[1].cells[1].text = "Plain text"
+
+    path = _ensure_dir() / "formatted_table.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_table_multi_para() -> Path:
+    """Table with cells containing multiple paragraphs."""
+    doc = Document()
+
+    doc.add_paragraph("Document with multi-paragraph cells.")
+
+    table = doc.add_table(rows=2, cols=2)
+    table.style = "Table Grid"
+
+    cell = table.rows[0].cells[0]
+    cell.text = "Header A"
+
+    cell = table.rows[0].cells[1]
+    cell.text = "Header B"
+
+    cell = table.rows[1].cells[0]
+    p1 = cell.paragraphs[0]
+    p1.text = "First paragraph in cell."
+    p2 = cell.add_paragraph("Second paragraph in cell.")
+
+    cell = table.rows[1].cells[1]
+    p1 = cell.paragraphs[0]
+    p1.text = "Another cell."
+    cell.add_paragraph("With two paragraphs.")
+    cell.add_paragraph("And a third one.")
+
+    path = _ensure_dir() / "table_multi_para.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_merged_cell_table() -> Path:
+    """Table with horizontal merged cells (should be rejected as non-simple)."""
+    doc = Document()
+
+    doc.add_paragraph("Document with merged cells.")
+
+    table = doc.add_table(rows=2, cols=3)
+    table.style = "Table Grid"
+
+    table.rows[0].cells[0].text = "A"
+    table.rows[0].cells[1].text = "B"
+
+    a = table.rows[0].cells[0]
+    b = table.rows[0].cells[1]
+    a.merge(b)
+
+    table.rows[0].cells[2].text = "C"
+    table.rows[1].cells[0].text = "D"
+    table.rows[1].cells[1].text = "E"
+    table.rows[1].cells[2].text = "F"
+
+    path = _ensure_dir() / "merged_cell_table.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_mixed_content() -> Path:
+    """Multiple paragraphs interspersed with multiple tables."""
+    doc = Document()
+
+    doc.add_paragraph("First paragraph before any table.")
+
+    table1 = doc.add_table(rows=2, cols=2)
+    table1.style = "Table Grid"
+    table1.rows[0].cells[0].text = "T1-A"
+    table1.rows[0].cells[1].text = "T1-B"
+    table1.rows[1].cells[0].text = "T1-C"
+    table1.rows[1].cells[1].text = "T1-D"
+
+    doc.add_paragraph("Second paragraph between tables.")
+
+    table2 = doc.add_table(rows=1, cols=3)
+    table2.style = "Table Grid"
+    table2.rows[0].cells[0].text = "X"
+    table2.rows[0].cells[1].text = "Y"
+    table2.rows[0].cells[2].text = "Z"
+
+    doc.add_paragraph("Third paragraph after all tables.")
+
+    path = _ensure_dir() / "mixed_content.docx"
+    doc.save(str(path))
+    return path
+
+
 ALL_GENERATORS: list[tuple[str, Callable[[], Path]]] = [
     ("simple_5para", generate_simple_5para),
     ("formatted_runs", generate_formatted_runs),
@@ -432,6 +568,11 @@ ALL_GENERATORS: list[tuple[str, Callable[[], Path]]] = [
     ("special_chars", generate_special_chars),
     ("long_paragraph", generate_long_paragraph),
     ("blank_separated", generate_blank_separated),
+    ("simple_table", generate_simple_table),
+    ("formatted_table", generate_formatted_table),
+    ("table_multi_para", generate_table_multi_para),
+    ("merged_cell_table", generate_merged_cell_table),
+    ("mixed_content", generate_mixed_content),
 ]
 
 

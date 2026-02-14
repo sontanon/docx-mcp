@@ -317,5 +317,5 @@ def _delete_trailing_blanks(
             )
             raise ValueError(msg)
 
-        handle_delete(next_el, id_manager=id_manager, config=config)
+        handle_delete(next_el, id_manager=id_manager, config=config, preserve_paragraph_mark=False)
         current = next_el

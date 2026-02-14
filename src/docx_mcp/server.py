@@ -41,13 +41,20 @@ from pydantic import BaseModel, Discriminator, Field, Tag, TypeAdapter, Validati
 
 from docx_mcp.converter import (
     body_to_fragments,
-    document_to_fragments,
     fragments_to_json_interleaved,
     fragments_to_tagged_text_interleaved,
 )
 from docx_mcp.differ import DmpWordDiffer
 from docx_mcp.document import DocxDocument
-from docx_mcp.models import Change, ChangeType, DiffOp, RedlineConfig, TableChange
+from docx_mcp.models import (
+    Change,
+    ChangeType,
+    DiffOp,
+    RedlineConfig,
+    SkippedTableInfo,
+    TableChange,
+    TableInfo,
+)
 from docx_mcp.redliner import apply_redlines
 from docx_mcp.table_utils import parse_cell_id
 from docx_mcp.validator import validate_document as _validate_document
@@ -969,11 +976,11 @@ def diff_fragments(
     original_path: str,
     modified_path: str,
 ) -> str:
-    """Compare two .docx files and show paragraph-level text differences.
+    """Compare two .docx files and show paragraph and table-level text differences.
 
-    Extracts the pseudo-Markdown text from each paragraph in both documents,
-    then produces a word-level diff for each fragment position. This is useful
-    for understanding what changed between two versions of a document.
+    Extracts the pseudo-Markdown text from each paragraph and table cell in both
+    documents, then produces a word-level diff for each fragment position. This is
+    useful for understanding what changed between two versions of a document.
 
     Use this tool:
 
@@ -985,18 +992,21 @@ def diff_fragments(
     Important Limitations
     ---------------------
 
-    Paragraphs are matched **by position** (fragment 1 vs fragment 1, fragment 2
-    vs fragment 2, etc.). This tool does **not** detect paragraph reordering or
+    Fragments are matched **by position** (fragment 1 vs fragment 1, fragment 2
+    vs fragment 2, etc.). This tool does **not** detect fragment reordering or
     track moved sections. If the documents have very different structures (different
-    paragraph counts, major reordering), the output will show extensive changes.
+    fragment counts, major reordering), the output will show extensive changes.
 
     Best used for comparing documents with the same basic structure where you made
-    local edits (word changes, clause deletions, appended sections).
+    local edits (word changes, clause deletions, appended sections, table cell
+    modifications).
 
     Output Format
     -------------
 
-    Each fragment is reported with its change status::
+    Each fragment is reported with its change status.
+
+    Paragraphs::
 
         Fragment 1: unchanged
         Fragment 2: modified
@@ -1008,8 +1018,20 @@ def diff_fragments(
         Fragment 10: added (only in modified)
           + This is a new clause.
 
+    Tables::
+
+        Table 56: modified
+          Cell 56.2.2: modified
+            - Gwendolyn Mahon, M.Sc., Ph.D
+            + John H. Smith, Ph.D.
+        Table 57: unchanged
+        Table 58: dimensions changed (3x2 → 4x2)
+
     Lines starting with ``-`` show deleted text, ``+`` shows inserted text.
     Unchanged fragments are listed but their text is omitted for brevity.
+
+    For tables, each modified cell is shown with its cell ID (table_id.row.col)
+    followed by the word-level diff of the cell content.
 
     Difference from extract_fragments with markup=True
     --------------------------------------------------
@@ -1026,13 +1048,31 @@ def diff_fragments(
 
     Returns:
         Human-readable diff showing changes per fragment, with ``-`` for deletions
-        and ``+`` for insertions.
+        and ``+`` for insertions. Tables show cell-level diffs.
     """
     doc_a = _load_document(original_path)
     doc_b = _load_document(modified_path)
 
-    frags_a = dict(document_to_fragments(doc_a.paragraphs))
-    frags_b = dict(document_to_fragments(doc_b.paragraphs))
+    # Extract fragments (paragraphs and tables) from both documents
+    items_a = body_to_fragments(doc_a.body_elements)
+    items_b = body_to_fragments(doc_b.body_elements)
+
+    # Build dictionaries mapping fragment_id -> FragmentItem
+    frags_a: dict[int, tuple[int, str] | TableInfo | SkippedTableInfo] = {}
+    for item in items_a:
+        if isinstance(item, tuple):
+            fid, _text = item
+            frags_a[fid] = item
+        else:  # TableInfo or SkippedTableInfo
+            frags_a[item.table_id] = item
+
+    frags_b: dict[int, tuple[int, str] | TableInfo | SkippedTableInfo] = {}
+    for item in items_b:
+        if isinstance(item, tuple):
+            fid, _text = item
+            frags_b[fid] = item
+        else:  # TableInfo or SkippedTableInfo
+            frags_b[item.table_id] = item
 
     all_ids = sorted(set(frags_a) | set(frags_b))
     if not all_ids:
@@ -1042,33 +1082,105 @@ def diff_fragments(
     lines: list[str] = []
 
     for fid in all_ids:
-        text_a = frags_a.get(fid)
-        text_b = frags_b.get(fid)
+        item_a = frags_a.get(fid)
+        item_b = frags_b.get(fid)
 
-        if text_a is not None and text_b is None:
-            lines.append(f"Fragment {fid}: deleted (only in original)")
-            if text_a:
-                lines.append(f"  - {text_a}")
-        elif text_a is None and text_b is not None:
-            lines.append(f"Fragment {fid}: added (only in modified)")
-            if text_b:
-                lines.append(f"  + {text_b}")
-        elif text_a == text_b:
-            lines.append(f"Fragment {fid}: unchanged")
-        else:
-            assert text_a is not None and text_b is not None
-            chunks = differ.diff(text_a, text_b)
-            has_changes = any(c.op != DiffOp.EQUAL for c in chunks)
-            if not has_changes:
+        # Handle missing fragments
+        if item_a is not None and item_b is None:
+            if isinstance(item_a, tuple):
+                _fid, text_a = item_a
+                lines.append(f"Fragment {fid}: deleted (only in original)")
+                if text_a:
+                    lines.append(f"  - {text_a}")
+            else:  # Table
+                lines.append(f"Table {fid}: deleted (only in original)")
+            continue
+
+        if item_a is None and item_b is not None:
+            if isinstance(item_b, tuple):
+                _fid, text_b = item_b
+                lines.append(f"Fragment {fid}: added (only in modified)")
+                if text_b:
+                    lines.append(f"  + {text_b}")
+            else:  # Table
+                lines.append(f"Table {fid}: added (only in modified)")
+            continue
+
+        # Both exist - compare based on type
+        assert item_a is not None and item_b is not None
+
+        # Case 1: Both are paragraphs
+        if isinstance(item_a, tuple) and isinstance(item_b, tuple):
+            _fid_a, text_a = item_a
+            _fid_b, text_b = item_b
+            if text_a == text_b:
                 lines.append(f"Fragment {fid}: unchanged")
+            else:
+                chunks = differ.diff(text_a, text_b)
+                has_changes = any(c.op != DiffOp.EQUAL for c in chunks)
+                if not has_changes:
+                    lines.append(f"Fragment {fid}: unchanged")
+                else:
+                    lines.append(f"Fragment {fid}: modified")
+                    for chunk in chunks:
+                        if chunk.op == DiffOp.DELETE:
+                            lines.append(f"  - {chunk.text}")
+                        elif chunk.op == DiffOp.INSERT:
+                            lines.append(f"  + {chunk.text}")
+
+        # Case 2: Type mismatch (paragraph vs table)
+        elif not isinstance(item_a, type(item_b)):
+            lines.append(f"Fragment {fid}: type changed (paragraph ↔ table)")
+
+        # Case 3: Both are SkippedTableInfo
+        elif isinstance(item_a, SkippedTableInfo) and isinstance(item_b, SkippedTableInfo):
+            if item_a.reason == item_b.reason:
+                lines.append(f"Table {fid}: unchanged (skipped: {item_a.reason})")
+            else:
+                lines.append(f"Table {fid}: skip reason changed")
+                lines.append(f"  - {item_a.reason}")
+                lines.append(f"  + {item_b.reason}")
+
+        # Case 4: One skipped, one not
+        elif isinstance(item_a, SkippedTableInfo) or isinstance(item_b, SkippedTableInfo):
+            lines.append(f"Table {fid}: skip status changed")
+
+        # Case 5: Both are TableInfo
+        elif isinstance(item_a, TableInfo) and isinstance(item_b, TableInfo):
+            # Check dimensions
+            if item_a.rows != item_b.rows or item_a.cols != item_b.cols:
+                lines.append(
+                    f"Table {fid}: dimensions changed "
+                    f"({item_a.rows}x{item_a.cols} → {item_b.rows}x{item_b.cols})"
+                )
                 continue
-            lines.append(f"Fragment {fid}: modified")
-            for chunk in chunks:
-                if chunk.op == DiffOp.DELETE:
-                    lines.append(f"  - {chunk.text}")
-                elif chunk.op == DiffOp.INSERT:
-                    lines.append(f"  + {chunk.text}")
-                # EQUAL chunks are omitted for brevity
+
+            # Compare cell-by-cell
+            table_has_changes = False
+            cell_changes: list[str] = []
+
+            for row_idx in range(item_a.rows):
+                for col_idx in range(item_a.cols):
+                    cell_a = item_a.cells[row_idx][col_idx]
+                    cell_b = item_b.cells[row_idx][col_idx]
+
+                    if cell_a.text != cell_b.text:
+                        table_has_changes = True
+                        chunks = differ.diff(cell_a.text, cell_b.text)
+                        has_diff = any(c.op != DiffOp.EQUAL for c in chunks)
+                        if has_diff:
+                            cell_changes.append(f"  Cell {cell_a.cell_id}: modified")
+                            for chunk in chunks:
+                                if chunk.op == DiffOp.DELETE:
+                                    cell_changes.append(f"    - {chunk.text}")
+                                elif chunk.op == DiffOp.INSERT:
+                                    cell_changes.append(f"    + {chunk.text}")
+
+            if table_has_changes:
+                lines.append(f"Table {fid}: modified")
+                lines.extend(cell_changes)
+            else:
+                lines.append(f"Table {fid}: unchanged")
 
     return "\n".join(lines)
 

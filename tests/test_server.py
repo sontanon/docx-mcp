@@ -561,6 +561,95 @@ class TestDiffFragments:
         # NDA has more paragraphs than simple_5para, so we should see "added"
         assert "added" in text or "modified" in text
 
+    async def test_identical_tables(self, simple_table_path):
+        """Identical tables should be reported as unchanged."""
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "diff_fragments",
+                {
+                    "original_path": str(simple_table_path),
+                    "modified_path": str(simple_table_path),
+                },
+            )
+        text = _text(result)
+        # simple_table has a paragraph at fragment 1, table at fragment 2
+        assert "Table 2: unchanged" in text
+
+    async def test_modified_table_cell(self, simple_table_path, tmp_path):
+        """Modified table cells should be shown with cell-level diffs."""
+        # Create a genuinely modified version by directly manipulating the document
+        # (not using tracked changes, which don't change the extracted text)
+        from docx_mcp.document import DocxDocument
+        from docx_mcp.namespaces import xpath
+
+        output = tmp_path / "modified_table.docx"
+        doc = DocxDocument(simple_table_path)
+
+        # Directly modify cell 2.1.1 text (table at body_elements[1], row 1, col 1)
+        table = doc.body_elements[1]
+        rows = xpath(table, ".//w:tr")
+        first_cell = xpath(rows[0], ".//w:tc")[0]
+        first_para = xpath(first_cell, ".//w:p")[0]
+        first_run = xpath(first_para, ".//w:r")[0]
+        text_elem = xpath(first_run, ".//w:t")[0]
+        text_elem.text = "Changed Header A"
+
+        doc.save(output)
+
+        # Now diff the original and modified
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "diff_fragments",
+                {
+                    "original_path": str(simple_table_path),
+                    "modified_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "Table 2: modified" in text
+        assert "Cell 2.1.1: modified" in text
+
+    async def test_mixed_content_with_table_change(self, mixed_content_path, tmp_path):
+        """Mixed paragraph and table content should diff correctly."""
+        # Create a modified version with both paragraph and table changes
+        output = tmp_path / "modified_mixed.docx"
+        async with Client(mcp) as client:
+            await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(mixed_content_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "modify",
+                            "new_text": "Modified first paragraph.",
+                            "justification": "Test para change.",
+                        },
+                        {
+                            "cell_id": "2.1.1",
+                            "change_type": "modify_cell",
+                            "new_text": "Modified cell content",
+                            "justification": "Test cell change.",
+                        },
+                    ],
+                    "output_path": str(output),
+                    "validate": False,
+                },
+            )
+            # Now diff the original and modified
+            result = await client.call_tool(
+                "diff_fragments",
+                {
+                    "original_path": str(mixed_content_path),
+                    "modified_path": str(output),
+                },
+            )
+        text = _text(result)
+        # Should show both paragraph and table modifications
+        assert "Fragment 1:" in text
+        assert "Table 2: modified" in text or "Table 2:" in text
+        assert "Cell 2.1.1:" in text
+
     async def test_file_not_found(self, simple_5para_path):
         async with Client(mcp) as client:
             with pytest.raises(Exception, match="File not found"):

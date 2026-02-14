@@ -100,6 +100,10 @@ def apply_table_changes(
                 config=config,
             )
 
+        else:
+            msg = f"Unsupported change_type: {change.change_type.value}"
+            raise ValueError(msg)
+
 
 def _modify_cell(
     paras: list[etree._Element],

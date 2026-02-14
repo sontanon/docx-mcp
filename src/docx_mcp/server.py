@@ -10,7 +10,7 @@ Tools:
     apply_changes       Apply tracked changes (inline list) to paragraphs and tables.
     apply_changes_from_file  Apply tracked changes from a JSON file.
     validate_document   Structural validation of a .docx file.
-    diff_fragments      Compare two .docx files paragraph-by-paragraph.
+    diff_fragments      Compare two .docx files (paragraphs and tables).
 
 Resource:
     docx://{document_path}/fragments  Browse document fragments (paragraphs and tables).
@@ -703,7 +703,7 @@ def apply_changes(
                 "justification": "Updated title and year"
             },
             {
-                "fragment_id": "2.1.1",
+                "cell_id": "2.1.1",
                 "change_type": "modify_cell",
                 "new_text": "**Disclosing Party**",
                 "justification": "Clarified table header"
@@ -1128,10 +1128,6 @@ def diff_fragments(
                         elif chunk.op == DiffOp.INSERT:
                             lines.append(f"  + {chunk.text}")
 
-        # Case 2: Type mismatch (paragraph vs table)
-        elif not isinstance(item_a, type(item_b)):
-            lines.append(f"Fragment {fid}: type changed (paragraph ↔ table)")
-
         # Case 3: Both are SkippedTableInfo
         elif isinstance(item_a, SkippedTableInfo) and isinstance(item_b, SkippedTableInfo):
             if item_a.reason == item_b.reason:
@@ -1141,8 +1137,12 @@ def diff_fragments(
                 lines.append(f"  - {item_a.reason}")
                 lines.append(f"  + {item_b.reason}")
 
-        # Case 4: One skipped, one not
-        elif isinstance(item_a, SkippedTableInfo) or isinstance(item_b, SkippedTableInfo):
+        # Case 4: One skipped, one not (both must be table types)
+        elif (
+            not isinstance(item_a, tuple)
+            and not isinstance(item_b, tuple)
+            and isinstance(item_a, SkippedTableInfo) != isinstance(item_b, SkippedTableInfo)
+        ):
             lines.append(f"Table {fid}: skip status changed")
 
         # Case 5: Both are TableInfo
@@ -1181,6 +1181,10 @@ def diff_fragments(
                 lines.extend(cell_changes)
             else:
                 lines.append(f"Table {fid}: unchanged")
+
+        # Case 2: Type mismatch (paragraph vs table)
+        else:
+            lines.append(f"Fragment {fid}: type changed (paragraph ↔ table)")
 
     return "\n".join(lines)
 

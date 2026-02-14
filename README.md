@@ -44,14 +44,14 @@ changes = [
     ),
     # Modify a table cell (format: "table_id.row.col")
     Change(
-        fragment_id="2.1.1",
+        cell_id="2.1.1",
         change_type=ChangeType.MODIFY_CELL,
         new_text="Updated **cell** content",
         justification="Corrected table entry.",
     ),
     # Clear a table cell
     Change(
-        fragment_id="2.3.2",
+        cell_id="2.3.2",
         change_type=ChangeType.CLEAR_CELL,
         justification="Removed obsolete data.",
     ),
@@ -260,13 +260,13 @@ The CLI accepts a JSON file containing either a bare array or a
 ```json
 [
   {
-    "fragment_id": "2.1.1",
+    "cell_id": "2.1.1",
     "change_type": "modify_cell",
     "new_text": "Updated **cell** content",
     "justification": "Corrected cell value."
   },
   {
-    "fragment_id": "2.3.2",
+    "cell_id": "2.3.2",
     "change_type": "clear_cell",
     "justification": "Cleared obsolete data."
   }

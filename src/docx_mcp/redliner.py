@@ -212,6 +212,19 @@ def _validate_changes(
             )
             raise ValueError(msg)
 
+        # Verify change_type is a paragraph type
+        if change.change_type not in (
+            ChangeType.MODIFY,
+            ChangeType.DELETE,
+            ChangeType.APPEND_AFTER,
+        ):
+            msg = (
+                f"Paragraph change on fragment {change.fragment_id} has invalid "
+                f"change_type '{change.change_type.value}'. For table changes, "
+                f"use cell_id instead of fragment_id."
+            )
+            raise ValueError(msg)
+
         if (
             change.change_type in (ChangeType.MODIFY, ChangeType.APPEND_AFTER)
             and change.new_text is None
@@ -297,6 +310,14 @@ def _validate_table_changes(
             msg = (
                 f"Table change for cell_id={change.cell_id} has invalid "
                 f"row/col (must be positive integers)"
+            )
+            raise ValueError(msg)
+
+        # Validate change_type is a table type
+        if change.change_type not in (ChangeType.MODIFY_CELL, ChangeType.CLEAR_CELL):
+            msg = (
+                f"Table change for cell_id={change.cell_id} has invalid change_type "
+                f"'{change.change_type.value}'. Must be 'modify_cell' or 'clear_cell'."
             )
             raise ValueError(msg)
 

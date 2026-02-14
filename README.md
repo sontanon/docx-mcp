@@ -22,22 +22,38 @@ uv sync
 from docx_mcp import apply_redlines, Change, ChangeType, RedlineConfig
 
 changes = [
+    # Modify a paragraph
     Change(
         fragment_id=3,
         change_type=ChangeType.MODIFY,
         new_text="The Company **shall** provide written notice.",
         justification="Strengthened obligation language.",
     ),
+    # Delete a paragraph
     Change(
         fragment_id=5,
         change_type=ChangeType.DELETE,
         justification="Removed redundant clause.",
     ),
+    # Append a new paragraph
     Change(
         fragment_id=7,
         change_type=ChangeType.APPEND_AFTER,
         new_text="The foregoing shall survive termination.",
         justification="Added survival provision.",
+    ),
+    # Modify a table cell (format: "table_id.row.col")
+    Change(
+        fragment_id="2.1.1",
+        change_type=ChangeType.MODIFY_CELL,
+        new_text="Updated **cell** content",
+        justification="Corrected table entry.",
+    ),
+    # Clear a table cell
+    Change(
+        fragment_id="2.3.2",
+        change_type=ChangeType.CLEAR_CELL,
+        justification="Removed obsolete data.",
     ),
 ]
 
@@ -124,17 +140,44 @@ An LLM client would typically:
 
 ### Fragments
 
-Paragraphs in the document are numbered 1..N (top-level `<w:p>` elements in
-`<w:body>`). Each paragraph is a **fragment**, identified by its 1-based index.
-Use `docx-mcp convert` to see the fragment map for any document.
+Documents are indexed by body elements in document order. **Paragraphs** are
+numbered 1..N, and **tables** (simple rectangular grids without merged cells) are
+also numbered in the same sequence. Each element is a **fragment**, identified by
+its 1-based index.
+
+Use `docx-mcp convert` to see the fragment map for any document:
+
+```
+1: Introduction paragraph
+2: [Table: 3x3 grid]
+   - Cell ID format: "table_id.row.col" (e.g., "2.1.1" = table 2, row 1, col 1)
+3: Conclusion paragraph
+```
+
+For tables with merged cells (non-simple), a placeholder `[Unsupported table]` is
+shown in both tagged and JSON output formats.
 
 ### Change types
+
+#### Paragraph changes
 
 | Type           | Description                                         | Requires `new_text` |
 |----------------|-----------------------------------------------------|---------------------|
 | `modify`       | Word-level diff applied as tracked changes          | Yes                 |
 | `delete`       | Entire paragraph marked as deleted                  | No                  |
 | `append_after` | New paragraph inserted after the referenced fragment | Yes                |
+
+#### Table cell changes
+
+| Type           | Description                                         | Requires `new_text` |
+|----------------|-----------------------------------------------------|---------------------|
+| `modify_cell`  | Modify cell content (single or multi-paragraph)     | Yes                 |
+| `clear_cell`   | Delete all content in a cell (preserves structure)  | No                  |
+
+**Cell modification** uses positional alignment: if the cell has multiple
+paragraphs, the new text is split on newlines (`\n`) and each line is applied
+to the corresponding paragraph in order. Cell content is marked with tracked
+changes and comments just like paragraph modifications.
 
 #### Blank line management
 
@@ -184,7 +227,9 @@ on top of the inherited base formatting.
 ### Changes JSON
 
 The CLI accepts a JSON file containing either a bare array or a
-`{"changes": [...]}` wrapper:
+`{"changes": [...]}` wrapper.
+
+#### Paragraph changes example
 
 ```json
 [
@@ -209,6 +254,26 @@ The CLI accepts a JSON file containing either a bare array or a
   }
 ]
 ```
+
+#### Table cell changes example
+
+```json
+[
+  {
+    "fragment_id": "2.1.1",
+    "change_type": "modify_cell",
+    "new_text": "Updated **cell** content",
+    "justification": "Corrected cell value."
+  },
+  {
+    "fragment_id": "2.3.2",
+    "change_type": "clear_cell",
+    "justification": "Cleared obsolete data."
+  }
+]
+```
+
+Cell IDs use the format `"table_id.row.col"` where rows and columns are 1-based.
 
 ## Validation
 
@@ -254,13 +319,15 @@ src/docx_mcp/
   cli.py             CLI entry point (apply, convert, validate)
   models.py          Pydantic data models (Change, ChangeType, RedlineConfig, ...)
   document.py        DocxDocument: ZIP parsing, XML tree access, serialization
-  converter.py       Paragraph XML -> pseudo-Markdown conversion
+  converter.py       Paragraph & table XML -> pseudo-Markdown conversion
+  table_utils.py     Table inspection utilities (cell access, simplicity checks)
   tokenizer.py       Word-level tokenization
   differ.py          Word-level diff engine (diff-match-patch wrapper)
   run_ops.py         Diff-to-XML-run mapping, run splitting, element building
   id_manager.py      Monotonic annotation ID allocator
   comments.py        Comment creation and range marker insertion
   redliner.py        Main orchestrator: apply_redlines()
+  table_redliner.py  Table cell change application
   validator.py       Structural validation checks
   server.py          MCP server (FastMCP 2.x, stdio transport)
   handlers/
@@ -285,7 +352,7 @@ uvx ruff check src/ tests/ --fix
 uvx ty check src/ tests/
 ```
 
-321 tests covering all modules, handlers, CLI, validation, and MCP server.
+389 tests covering all modules, handlers, table operations, CLI, validation, and MCP server.
 
 ## License
 

@@ -491,7 +491,7 @@ def generate_table_multi_para() -> Path:
     cell = table.rows[1].cells[0]
     p1 = cell.paragraphs[0]
     p1.text = "First paragraph in cell."
-    p2 = cell.add_paragraph("Second paragraph in cell.")
+    cell.add_paragraph("Second paragraph in cell.")
 
     cell = table.rows[1].cells[1]
     p1 = cell.paragraphs[0]

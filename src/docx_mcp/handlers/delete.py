@@ -26,6 +26,7 @@ def handle_delete(
     *,
     id_manager: IdManager,
     config: RedlineConfig,
+    preserve_paragraph_mark: bool = False,
 ) -> int:
     """Mark *paragraph* as a tracked deletion in-place.
 
@@ -33,6 +34,9 @@ def handle_delete(
         paragraph: The ``<w:p>`` element to mark as deleted.
         id_manager: ID allocator for annotation IDs.
         config: Author / date configuration.
+        preserve_paragraph_mark: If True, skip marking the paragraph mark
+            as deleted. Used for table cells where ``<w:tc>`` must contain
+            at least one ``<w:p>`` element.
 
     Returns:
         The annotation ID used for the ``<w:del>`` wrapper.
@@ -63,7 +67,8 @@ def handle_delete(
             del_el.append(run)
 
     # --- 2. Mark the paragraph mark as deleted ---
-    _mark_paragraph_mark_deleted(paragraph, del_id=del_id, author=author, date=date)
+    if not preserve_paragraph_mark:
+        _mark_paragraph_mark_deleted(paragraph, del_id=del_id, author=author, date=date)
 
     return del_id
 

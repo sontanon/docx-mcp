@@ -69,3 +69,28 @@ def long_paragraph_path(fixtures_dir: Path) -> Path:
 @pytest.fixture
 def blank_separated_path(fixtures_dir: Path) -> Path:
     return fixtures_dir / "blank_separated.docx"
+
+
+@pytest.fixture
+def simple_table_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "simple_table.docx"
+
+
+@pytest.fixture
+def formatted_table_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "formatted_table.docx"
+
+
+@pytest.fixture
+def table_multi_para_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "table_multi_para.docx"
+
+
+@pytest.fixture
+def merged_cell_table_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "merged_cell_table.docx"
+
+
+@pytest.fixture
+def mixed_content_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "mixed_content.docx"

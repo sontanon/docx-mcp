@@ -6,10 +6,11 @@ import io
 import zipfile
 
 import pytest
+from pydantic import ValidationError
 
 from docx_mcp.converter import paragraph_to_pseudo_markdown
 from docx_mcp.document import DocxDocument
-from docx_mcp.models import Change, ChangeType, RedlineConfig
+from docx_mcp.models import ParagraphChange, ParagraphChangeType, RedlineConfig
 from docx_mcp.namespaces import xpath
 from docx_mcp.redliner import apply_redlines
 
@@ -39,9 +40,10 @@ def _is_valid_docx(data: bytes) -> bool:
 class TestValidation:
     def test_invalid_fragment_id_raises(self, simple_5para_path):
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=99,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Bad ID.",
             ),
         ]
@@ -50,9 +52,10 @@ class TestValidation:
 
     def test_zero_fragment_id_raises(self, simple_5para_path):
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=0,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Zero ID.",
             ),
         ]
@@ -60,28 +63,26 @@ class TestValidation:
             apply_redlines(simple_5para_path, changes)
 
     def test_modify_without_new_text_raises(self, simple_5para_path):
-        changes = [
-            Change(
+        # Pydantic validator catches this at model creation time
+        with pytest.raises(ValidationError, match="new_text is required"):
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text=None,
                 justification="Missing text.",
-            ),
-        ]
-        with pytest.raises(ValueError, match="requires new_text"):
-            apply_redlines(simple_5para_path, changes)
+            )
 
     def test_append_without_new_text_raises(self, simple_5para_path):
-        changes = [
-            Change(
+        # Pydantic validator catches this at model creation time
+        with pytest.raises(ValidationError, match="new_text is required"):
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.APPEND_AFTER,
+                change_type=ParagraphChangeType.APPEND_AFTER,
                 new_text=None,
                 justification="Missing text.",
-            ),
-        ]
-        with pytest.raises(ValueError, match="requires new_text"):
-            apply_redlines(simple_5para_path, changes)
+            )
 
     def test_empty_changes_returns_unchanged_doc(self, simple_5para_path):
         doc = apply_redlines(simple_5para_path, [])
@@ -97,9 +98,10 @@ class TestValidation:
 class TestSingleDelete:
     def test_delete_produces_tracked_deletion(self, simple_5para_path):
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=2,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Removed redundant paragraph.",
             ),
         ]
@@ -125,9 +127,10 @@ class TestSingleDelete:
 class TestSingleAppend:
     def test_append_inserts_new_paragraph(self, simple_5para_path):
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=3,
-                change_type=ChangeType.APPEND_AFTER,
+                change_type=ParagraphChangeType.APPEND_AFTER,
                 new_text="This is a new paragraph.",
                 justification="Added clarification.",
             ),
@@ -165,9 +168,10 @@ class TestSingleModify:
             new_text = "Completely different text."
 
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text=new_text,
                 justification="Updated wording.",
             ),
@@ -201,20 +205,23 @@ class TestMultipleChanges:
         old_text = paragraph_to_pseudo_markdown(para1)
 
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text=old_text + " (amended)",
                 justification="Added amendment note.",
             ),
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=3,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Removed paragraph 3.",
             ),
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=5,
-                change_type=ChangeType.APPEND_AFTER,
+                change_type=ParagraphChangeType.APPEND_AFTER,
                 new_text="New final paragraph.",
                 justification="Added conclusion.",
             ),
@@ -239,9 +246,10 @@ class TestMultipleChanges:
             para = doc_orig.fragment_map()[fid]
             paragraph_to_pseudo_markdown(para)  # verify conversion works
             changes.append(
-                Change(
+                ParagraphChange(
+                    kind="paragraph",
                     fragment_id=fid,
-                    change_type=ChangeType.MODIFY,
+                    change_type=ParagraphChangeType.MODIFY,
                     new_text=f"Replaced text for paragraph {fid}.",
                     justification=f"Updated paragraph {fid}.",
                 ),
@@ -261,15 +269,17 @@ class TestMultipleChanges:
     def test_multiple_appends_same_fragment(self, simple_5para_path):
         """Two appends after the same paragraph (reverse order processing)."""
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=2,
-                change_type=ChangeType.APPEND_AFTER,
+                change_type=ParagraphChangeType.APPEND_AFTER,
                 new_text="First new paragraph.",
                 justification="Added first.",
             ),
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=2,
-                change_type=ChangeType.APPEND_AFTER,
+                change_type=ParagraphChangeType.APPEND_AFTER,
                 new_text="Second new paragraph.",
                 justification="Added second.",
             ),
@@ -297,9 +307,10 @@ class TestWithFormattedDoc:
         new_text = old_text + " (reviewed)"
 
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text=new_text,
                 justification="Added review note.",
             ),
@@ -314,9 +325,10 @@ class TestWithExistingComments:
         original_comment_count = len(xpath(doc_orig.comments_tree, "w:comment"))
 
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="Modified first paragraph.",
                 justification="New comment.",
             ),
@@ -352,9 +364,10 @@ class TestWithNdaSkeleton:
         )
 
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=target_fid,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text=new_text,
                 justification="Modernized obligation language.",
             ),
@@ -375,14 +388,16 @@ class TestRoundTrip:
     def test_save_and_reload(self, simple_5para_path, tmp_path):
         """Apply changes, save to file, reload, and verify."""
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=2,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Removed.",
             ),
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=4,
-                change_type=ChangeType.APPEND_AFTER,
+                change_type=ParagraphChangeType.APPEND_AFTER,
                 new_text="New paragraph.",
                 justification="Added.",
             ),
@@ -402,9 +417,10 @@ class TestRoundTrip:
         """Load from bytes, apply changes, get bytes back."""
         raw = simple_5para_path.read_bytes()
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="Completely new first paragraph.",
                 justification="Rewrote.",
             ),
@@ -423,62 +439,59 @@ class TestSpacingValidation:
     """Validate that spacing fields are rejected on wrong change types."""
 
     def test_blank_lines_before_on_delete_raises(self, simple_5para_path):
-        changes = [
-            Change(
+        # Pydantic validator catches this at model creation time
+        with pytest.raises(ValidationError, match=r"blank_lines_before.*only allowed"):
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Remove.",
                 blank_lines_before=1,
-            ),
-        ]
-        with pytest.raises(ValueError, match=r"blank_lines_before.*only valid with append_after"):
-            apply_redlines(simple_5para_path, changes)
+            )
 
     def test_blank_lines_after_on_modify_raises(self, simple_5para_path):
-        changes = [
-            Change(
+        # Pydantic validator catches this at model creation time
+        with pytest.raises(ValidationError, match=r"blank_lines.*only allowed"):
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="Changed.",
                 justification="Edit.",
                 blank_lines_after=1,
-            ),
-        ]
-        with pytest.raises(ValueError, match=r"blank_lines_before.*only valid with append_after"):
-            apply_redlines(simple_5para_path, changes)
+            )
 
     def test_delete_next_blanks_on_append_raises(self, simple_5para_path):
-        changes = [
-            Change(
+        # Pydantic validator catches this at model creation time
+        with pytest.raises(ValidationError, match="delete_next_blanks only allowed"):
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.APPEND_AFTER,
+                change_type=ParagraphChangeType.APPEND_AFTER,
                 new_text="New.",
                 justification="Add.",
                 delete_next_blanks=1,
-            ),
-        ]
-        with pytest.raises(ValueError, match=r"delete_next_blanks.*only valid with delete"):
-            apply_redlines(simple_5para_path, changes)
+            )
 
     def test_delete_next_blanks_on_modify_raises(self, simple_5para_path):
-        changes = [
-            Change(
+        # Pydantic validator catches this at model creation time
+        with pytest.raises(ValidationError, match="delete_next_blanks only allowed"):
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="Changed.",
                 justification="Edit.",
                 delete_next_blanks=1,
-            ),
-        ]
-        with pytest.raises(ValueError, match=r"delete_next_blanks.*only valid with delete"):
-            apply_redlines(simple_5para_path, changes)
+            )
 
     def test_zero_values_accepted_on_any_type(self, simple_5para_path):
         """Default zero values should pass validation on any change type."""
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Remove.",
                 blank_lines_before=0,
                 blank_lines_after=0,
@@ -501,9 +514,10 @@ class TestDeleteNextBlanks:
     def test_delete_with_one_trailing_blank(self, blank_separated_path):
         """Deleting fragment 1 with delete_next_blanks=1 removes the blank at fragment 2."""
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Removed clause A.",
                 delete_next_blanks=1,
             ),
@@ -530,9 +544,10 @@ class TestDeleteNextBlanks:
         # Deleting fragment 4 (blank) with delete_next_blanks=1 should fail
         # because fragment 5 ("This Agreement...") is not blank.
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=4,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Remove blank.",
                 delete_next_blanks=1,
             ),
@@ -544,9 +559,10 @@ class TestDeleteNextBlanks:
         """If there aren't enough paragraphs after the target, ValueError is raised."""
         # Fragment 7 is the last paragraph — only <w:sectPr> follows it
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=7,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Remove last.",
                 delete_next_blanks=1,
             ),
@@ -558,9 +574,10 @@ class TestDeleteNextBlanks:
         """Requesting 2 trailing blanks but only 1 exists raises ValueError."""
         # Fragment 1 is a clause, fragment 2 is blank, fragment 3 is a clause
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Remove.",
                 delete_next_blanks=2,
             ),
@@ -571,9 +588,10 @@ class TestDeleteNextBlanks:
     def test_delete_next_blanks_zero_unchanged_behavior(self, blank_separated_path):
         """delete_next_blanks=0 should not touch trailing blanks."""
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Remove clause only.",
                 delete_next_blanks=0,
             ),
@@ -594,9 +612,10 @@ class TestDeleteNextBlanks:
     def test_delete_next_blanks_produces_valid_docx(self, blank_separated_path):
         """Round-trip: delete with trailing blank, save, reload."""
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=3,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Removed clause B.",
                 delete_next_blanks=1,
             ),
@@ -622,9 +641,10 @@ class TestAppendWithBlankLines:
 
     def test_append_with_blank_line_before(self, simple_5para_path):
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=3,
-                change_type=ChangeType.APPEND_AFTER,
+                change_type=ParagraphChangeType.APPEND_AFTER,
                 new_text="New clause inserted.",
                 justification="Added clause.",
                 blank_lines_before=1,
@@ -638,9 +658,10 @@ class TestAppendWithBlankLines:
 
     def test_append_with_blank_lines_before_and_after(self, simple_5para_path):
         changes = [
-            Change(
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=3,
-                change_type=ChangeType.APPEND_AFTER,
+                change_type=ParagraphChangeType.APPEND_AFTER,
                 new_text="New clause inserted.",
                 justification="Added clause.",
                 blank_lines_before=1,

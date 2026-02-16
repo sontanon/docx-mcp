@@ -6,6 +6,10 @@ suitable for LLM consumption.
 
 Unicode characters (smart quotes, em-dashes, section symbols, etc.) are preserved
 as-is. Only Markdown syntax characters (*, _) are escaped with backslashes.
+
+Tables are extracted as structured data (CellInfo/TableInfo) with cell text in
+pseudo-Markdown. Non-simple tables are represented as SkippedTableInfo with a
+reason.
 """
 
 from __future__ import annotations
@@ -14,7 +18,9 @@ import re
 
 from lxml import etree
 
+from docx_mcp.models import CellInfo, SkippedTableInfo, TableInfo
 from docx_mcp.namespaces import qn, xpath
+from docx_mcp.table_utils import get_cell_paragraphs, is_simple_table, table_dimensions
 
 
 def _has_bool_property(rpr: etree._Element | None, local_name: str) -> bool:
@@ -289,3 +295,190 @@ def fragments_to_tagged_text(fragments: list[tuple[int, str]]) -> str:
     for fid, text in fragments:
         lines.append(f"<f={fid}>{text}</f={fid}>")
     return "\n".join(lines)
+
+
+# --- Table Extraction ---
+
+
+def _extract_table_info(
+    tbl: etree._Element,
+    table_id: int,
+    *,
+    markup: bool = False,
+) -> TableInfo | SkippedTableInfo:
+    """Extract structured table info from a <w:tbl> element.
+
+    Args:
+        tbl: A ``<w:tbl>`` element.
+        table_id: 1-based table index in document order.
+        markup: When True, include tracked-change markers in cell text.
+
+    Returns:
+        TableInfo if the table is simple, or SkippedTableInfo if not.
+    """
+    is_simple, reason = is_simple_table(tbl)
+
+    if not is_simple:
+        return SkippedTableInfo(table_id=table_id, reason=reason)
+
+    rows_count, cols_count = table_dimensions(tbl)
+
+    cells: list[list[CellInfo]] = []
+    rows = list(xpath(tbl, "./w:tr"))
+
+    for row_idx, row in enumerate(rows, start=1):
+        cell_row: list[CellInfo] = []
+        tcs = list(xpath(row, "./w:tc"))
+
+        for col_idx, tc in enumerate(tcs, start=1):
+            cell_id = f"{table_id}.{row_idx}.{col_idx}"
+            paras = get_cell_paragraphs(tc)
+
+            cell_text_parts: list[str] = []
+            for para in paras:
+                para_md = paragraph_to_pseudo_markdown(para, markup=markup)
+                cell_text_parts.append(para_md)
+
+            cell_text = "\n".join(cell_text_parts)
+
+            cell_info = CellInfo(
+                cell_id=cell_id,
+                row=row_idx,
+                col=col_idx,
+                text=cell_text,
+            )
+            cell_row.append(cell_info)
+
+        cells.append(cell_row)
+
+    return TableInfo(
+        table_id=table_id,
+        rows=rows_count,
+        cols=cols_count,
+        cells=cells,
+    )
+
+
+FragmentItem = tuple[int, str] | TableInfo | SkippedTableInfo
+
+
+def body_to_fragments(
+    body_elements: list[etree._Element],
+    *,
+    markup: bool = False,
+) -> list[FragmentItem]:
+    """Convert mixed <w:p>/<w:tbl> elements to fragment items.
+
+    Tables and paragraphs share the same 1-based ID space in document order.
+
+    Args:
+        body_elements: List of ``<w:p>`` and ``<w:tbl>`` elements
+            (typically from DocxDocument.body_elements).
+        markup: When True, include tracked-change markers in text.
+
+    Returns:
+        List of FragmentItem (either (id, text) for paragraphs or
+        TableInfo/SkippedTableInfo for tables).
+    """
+    items: list[FragmentItem] = []
+
+    for i, el in enumerate(body_elements, start=1):
+        tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
+
+        if tag_local == "p":
+            md = paragraph_to_pseudo_markdown(el, markup=markup)
+            items.append((i, md))
+
+        elif tag_local == "tbl":
+            table_info = _extract_table_info(el, table_id=i, markup=markup)
+            items.append(table_info)
+
+    return items
+
+
+def fragments_to_tagged_text_interleaved(items: list[FragmentItem]) -> str:
+    """Format mixed paragraph/table fragments as tagged text.
+
+    Produces:
+        <f=1>First paragraph text.</f=1>
+        <table=2 rows=2 cols=3>
+        <cell=2.1.1>Header A</cell=2.1.1>
+        <cell=2.1.2>First para
+        Second para</cell=2.1.2>
+        ...
+        </table=2>
+        <table=4 skipped reason="contains merged cells"/>
+        <f=5>Another paragraph.</f=5>
+    """
+    lines: list[str] = []
+
+    for item in items:
+        if isinstance(item, tuple):
+            fid, text = item
+            lines.append(f"<f={fid}>{text}</f={fid}>")
+
+        elif isinstance(item, SkippedTableInfo):
+            lines.append(f'<table={item.table_id} skipped reason="{item.reason}"/>')
+
+        elif isinstance(item, TableInfo):
+            lines.append(f"<table={item.table_id} rows={item.rows} cols={item.cols}>")
+            for row in item.cells:
+                for cell in row:
+                    lines.append(f"<cell={cell.cell_id}>{cell.text}</cell={cell.cell_id}>")
+            lines.append(f"</table={item.table_id}>")
+
+    return "\n".join(lines)
+
+
+def fragments_to_json_interleaved(items: list[FragmentItem]) -> list[dict]:
+    """Format mixed paragraph/table fragments as JSON-serializable dicts.
+
+    Returns:
+        List of dicts with discriminated union:
+        - Paragraph: {"type": "paragraph", "fragment_id": 1, "text": "..."}
+        - Table: {"type": "table", "table_id": 2, "rows": 2, "cols": 3,
+                  "cells": [[{"cell_id": "2.1.1", "row": 1, "col": 1, "text": "..."}]]}
+        - Skipped: {"type": "table", "table_id": 4, "skipped": true,
+                    "reason": "contains merged cells"}
+    """
+    result: list[dict] = []
+
+    for item in items:
+        if isinstance(item, tuple):
+            fid, text = item
+            result.append({"type": "paragraph", "fragment_id": fid, "text": text})
+
+        elif isinstance(item, SkippedTableInfo):
+            result.append(
+                {
+                    "type": "table",
+                    "table_id": item.table_id,
+                    "skipped": True,
+                    "reason": item.reason,
+                }
+            )
+
+        elif isinstance(item, TableInfo):
+            cells_json = [
+                [
+                    {
+                        "cell_id": cell.cell_id,
+                        "row": cell.row,
+                        "col": cell.col,
+                        "text": cell.text,
+                    }
+                    for cell in row
+                ]
+                for row in item.cells
+            ]
+            result.append(
+                {
+                    "type": "table",
+                    "table_id": item.table_id,
+                    "rows": item.rows,
+                    "cols": item.cols,
+                    "cells": cells_json,
+                }
+            )
+
+    return result

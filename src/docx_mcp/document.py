@@ -109,6 +109,33 @@ class DocxDocument:
         """
         return xpath(self.body, "./w:p")
 
+    @property
+    def body_elements(self) -> list[etree._Element]:
+        """All direct children of <w:body> in document order.
+
+        Includes both ``<w:p>`` (paragraphs) and ``<w:tbl>`` (tables).
+        Section properties ``<w:sectPr>`` and other non-content elements
+        are excluded.
+        """
+        result: list[etree._Element] = []
+        for child in self.body:
+            tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if tag_local in ("p", "tbl"):
+                result.append(child)
+        return result
+
+    def interleaved_element_map(self) -> dict[int, etree._Element]:
+        """Build a 1-based ID → element map for paragraphs and tables.
+
+        Tables and paragraphs share the same ID space in document order.
+        Fragment ID 1 corresponds to the first element in body_elements,
+        fragment ID 2 to the second, etc.
+
+        Returns:
+            Dict mapping element_id (1..N) to the lxml element.
+        """
+        return {i: el for i, el in enumerate(self.body_elements, start=1)}
+
     def fragment_map(self) -> dict[int, etree._Element]:
         """Build a mapping of 1-based fragment IDs to paragraph elements.
 

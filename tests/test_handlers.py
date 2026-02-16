@@ -151,6 +151,40 @@ class TestHandleDelete:
         del_id = handle_delete(p, id_manager=mgr, config=_default_config())
         assert del_id == 100
 
+    def test_preserve_paragraph_mark_false_deletes_mark(self):
+        """Test that preserve_paragraph_mark=False deletes the paragraph mark."""
+        p = _make_paragraph(("Hello", None))
+        mgr = IdManager()
+        handle_delete(p, id_manager=mgr, config=_default_config(), preserve_paragraph_mark=False)
+
+        # <w:pPr><w:rPr><w:del> should exist (paragraph mark is deleted)
+        ppr_del = xpath(p, "w:pPr/w:rPr/w:del")
+        assert len(ppr_del) == 1
+
+    def test_preserve_paragraph_mark_true_keeps_mark(self):
+        """Test that preserve_paragraph_mark=True preserves the paragraph mark."""
+        p = _make_paragraph(("Hello", None))
+        mgr = IdManager()
+        handle_delete(p, id_manager=mgr, config=_default_config(), preserve_paragraph_mark=True)
+
+        # <w:pPr><w:rPr><w:del> should NOT exist (paragraph mark is preserved)
+        ppr_del = xpath(p, "w:pPr/w:rPr/w:del")
+        assert len(ppr_del) == 0
+
+        # Content should still be marked as deleted
+        del_els = xpath(p, "w:del")
+        assert len(del_els) == 1
+
+    def test_default_preserve_paragraph_mark_is_false(self):
+        """Test that default behavior is preserve_paragraph_mark=False."""
+        p = _make_paragraph(("Hello", None))
+        mgr = IdManager()
+        handle_delete(p, id_manager=mgr, config=_default_config())
+
+        # Should delete paragraph mark by default
+        ppr_del = xpath(p, "w:pPr/w:rPr/w:del")
+        assert len(ppr_del) == 1
+
 
 # ===================================================================
 # Append handler tests

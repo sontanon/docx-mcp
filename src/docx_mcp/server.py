@@ -1,18 +1,19 @@
 """MCP server for the docx-mcp legal-document redlining engine.
 
 Exposes the redlining pipeline as MCP tools so that LLM clients (Claude Desktop,
-Cursor, ChatGPT, etc.) can extract document fragments, apply tracked changes,
-validate output, and compare document versions -- all via filesystem paths.
+Cursor, ChatGPT, etc.) can extract document fragments (paragraphs and tables),
+apply tracked changes, validate output, and compare document versions -- all via
+filesystem paths.
 
 Tools:
-    extract_fragments   Read a .docx and return paragraph text.
-    apply_changes       Apply tracked changes (inline list).
+    extract_fragments   Read a .docx and return paragraphs and tables as text.
+    apply_changes       Apply tracked changes (inline list) to paragraphs and tables.
     apply_changes_from_file  Apply tracked changes from a JSON file.
     validate_document   Structural validation of a .docx file.
-    diff_fragments      Compare two .docx files paragraph-by-paragraph.
+    diff_fragments      Compare two .docx files (paragraphs and tables).
 
 Resource:
-    docx://{document_path}/fragments  Browse document fragments.
+    docx://{document_path}/fragments  Browse document fragments (paragraphs and tables).
 
 Transport:
     stdio (default, for local CLI integration).
@@ -32,17 +33,32 @@ from __future__ import annotations
 import json
 from collections import Counter
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+from pydantic import BaseModel, Discriminator, Field, Tag, TypeAdapter, ValidationError
 
-from docx_mcp.converter import document_to_fragments, fragments_to_tagged_text
+from docx_mcp.converter import (
+    body_to_fragments,
+    fragments_to_json_interleaved,
+    fragments_to_tagged_text_interleaved,
+)
 from docx_mcp.differ import DmpWordDiffer
 from docx_mcp.document import DocxDocument
-from docx_mcp.models import Change, ChangeType, DiffOp, RedlineConfig
+from docx_mcp.models import (
+    Change,
+    DiffOp,
+    ParagraphChange,
+    ParagraphChangeType,
+    RedlineConfig,
+    SkippedTableInfo,
+    TableChange,
+    TableChangeType,
+    TableInfo,
+)
 from docx_mcp.redliner import apply_redlines
+from docx_mcp.table_utils import parse_cell_id
 from docx_mcp.validator import validate_document as _validate_document
 
 # ---------------------------------------------------------------------------
@@ -60,11 +76,11 @@ mcp = FastMCP(
 )
 
 # ---------------------------------------------------------------------------
-# Pydantic model for tool parameters
+# Pydantic models for tool parameters
 # ---------------------------------------------------------------------------
 
 
-class ChangeParam(BaseModel):
+class ParagraphChangeParam(BaseModel):
     """A single tracked change to apply to a document paragraph.
 
     Represents one modification, deletion, or insertion operation targeting a
@@ -199,6 +215,129 @@ class ChangeParam(BaseModel):
     )
 
 
+class TableChangeParam(BaseModel):
+    """A single tracked change to apply to a table cell.
+
+    Targets a specific cell within a table using dotted cell reference
+    notation: ``"table_id.row.col"`` (e.g., ``"2.1.3"`` for table 2,
+    row 1, column 3).
+
+    Only simple tables are supported (rectangular grid, no merged cells,
+    no nested tables). Cell IDs come from ``extract_fragments`` output.
+
+    Multi-Paragraph Cells
+    ---------------------
+
+    Use ``\\n`` to separate paragraphs within a cell in ``new_text``:
+
+        "Header text\\nBody paragraph\\nFooter paragraph"
+
+    The engine aligns old/new paragraphs positionally:
+    - Same count: each paragraph is modified in place
+    - More new: excess paragraphs are appended
+    - More old: excess paragraphs are deleted
+
+    Change Types
+    ------------
+
+    - ``modify_cell``: Replace cell text (word-level diff on each paragraph)
+    - ``clear_cell``: Mark all cell paragraphs as deleted (cell becomes empty
+      but the ``<w:tc>`` element remains)
+
+    Validation Rules
+    ----------------
+
+    - ``new_text`` is required for ``modify_cell``; must be null/omitted
+      for ``clear_cell``
+    - ``cell_id`` must match an extracted cell from a simple table
+    - Row and column indices must be in range
+
+    Examples
+    --------
+
+    Modify a cell with multiple paragraphs::
+
+        {
+          "cell_id": "2.1.1",
+          "change_type": "modify_cell",
+          "new_text": "**Updated Header**\\nNew body text.",
+          "justification": "Clarified header and updated body."
+        }
+
+    Clear a cell::
+
+        {
+          "cell_id": "3.2.3",
+          "change_type": "clear_cell",
+          "justification": "Removed obsolete data."
+        }
+
+    Attributes
+    ----------
+
+        cell_id: Dotted cell reference ``"table_id.row.col"`` from ``extract_fragments``.
+        change_type: ``"modify_cell"`` or ``"clear_cell"``.
+        new_text: New cell text in pseudo-Markdown. Use ``\\n`` for paragraph
+            breaks. Required for modify_cell; must be None for clear_cell.
+        justification: Human-readable reason. Becomes a Word comment attached
+            to the cell's first paragraph.
+    """
+
+    cell_id: str = Field(
+        description='Dotted cell reference "table_id.row.col" from extract_fragments'
+    )
+    change_type: Literal["modify_cell", "clear_cell"] = Field(
+        description='Type of cell change: "modify_cell" or "clear_cell"'
+    )
+    new_text: str | None = Field(
+        default=None,
+        description=(
+            "New cell text in pseudo-Markdown. Use \\n for paragraph breaks. "
+            "Required for modify_cell. Omit for clear_cell."
+        ),
+    )
+    justification: str = Field(
+        description="Reason for this change. Becomes a Word comment.",
+    )
+
+
+def _discriminate_change_param(v: dict | BaseModel) -> str:
+    """Discriminator function for ChangeParam union.
+
+    Auto-discriminates based on change_type value or field presence
+    (fragment_id vs cell_id) for LLM-friendly API.
+    """
+    change_type = v.get("change_type", "") if isinstance(v, dict) else getattr(v, "change_type", "")
+
+    # Discriminate by change_type value
+    if change_type in ("modify", "delete", "append_after"):
+        return "paragraph"
+    if change_type in ("modify_cell", "clear_cell"):
+        return "table"
+
+    # Fallback: discriminate by field presence
+    if isinstance(v, dict):
+        has_fragment_id = "fragment_id" in v
+        has_cell_id = "cell_id" in v
+    else:
+        has_fragment_id = hasattr(v, "fragment_id")
+        has_cell_id = hasattr(v, "cell_id")
+
+    if has_fragment_id:
+        return "paragraph"
+    if has_cell_id:
+        return "table"
+
+    msg = f"Cannot discriminate change type from: {v}"
+    raise ValueError(msg)
+
+
+ChangeParam = Annotated[
+    Annotated[ParagraphChangeParam, Tag("paragraph")] | Annotated[TableChangeParam, Tag("table")],
+    Discriminator(_discriminate_change_param),
+]
+
+
 # TypeAdapter for validating changes loaded from a JSON file.
 _CHANGES_ADAPTER: TypeAdapter[list[ChangeParam]] = TypeAdapter(list[ChangeParam])
 
@@ -231,20 +370,50 @@ def _resolve_output_path(document_path: str, output_path: str | None) -> Path:
     return p.parent / f"{p.stem}_redlined.docx"
 
 
-def _convert_changes(params: list[ChangeParam]) -> list[Change]:
-    """Convert ``ChangeParam`` tool inputs to core ``Change`` models."""
-    return [
-        Change(
-            fragment_id=p.fragment_id,
-            change_type=ChangeType(p.change_type),
-            new_text=p.new_text,
-            justification=p.justification,
-            blank_lines_before=p.blank_lines_before,
-            blank_lines_after=p.blank_lines_after,
-            delete_next_blanks=p.delete_next_blanks,
+def _convert_change_param_to_change(param: ChangeParam) -> Change:
+    """Convert MCP DTO (ChangeParam) to internal domain model (Change).
+
+    This translation layer allows the MCP API to use LLM-friendly compact
+    representations (no 'kind' field, compact cell_id strings) while the
+    internal code uses type-safe discriminated unions with explicit fields.
+
+    Args:
+        param: User-facing ChangeParam (ParagraphChangeParam or TableChangeParam).
+
+    Returns:
+        Internal domain model (ParagraphChange or TableChange).
+    """
+    if isinstance(param, ParagraphChangeParam):
+        return ParagraphChange(
+            kind="paragraph",
+            fragment_id=param.fragment_id,
+            change_type=ParagraphChangeType(param.change_type),
+            new_text=param.new_text,
+            justification=param.justification,
+            blank_lines_before=param.blank_lines_before,
+            blank_lines_after=param.blank_lines_after,
+            delete_next_blanks=param.delete_next_blanks,
         )
-        for p in params
-    ]
+    else:  # TableChangeParam
+        table_id, row, col = parse_cell_id(param.cell_id)
+        return TableChange(
+            kind="table",
+            table_id=table_id,
+            row=row,
+            col=col,
+            change_type=TableChangeType(param.change_type),
+            new_text=param.new_text,
+            justification=param.justification,
+        )
+
+
+def _convert_changes(params: list[ChangeParam]) -> list[Change]:
+    """Convert a list of ChangeParam DTOs to internal Change models.
+
+    Returns:
+        List of internal domain models (mix of ParagraphChange and TableChange).
+    """
+    return [_convert_change_param_to_change(p) for p in params]
 
 
 def _format_validation(errors: list[str], warnings: list[str]) -> str:
@@ -273,28 +442,33 @@ def _apply_and_save(
     validate: bool,
 ) -> str:
     """Shared implementation for both apply tools."""
+    # Convert MCP params to internal domain models
     changes = _convert_changes(change_params)
     config = RedlineConfig(author=author)
     out = _resolve_output_path(document_path, output_path)
 
     try:
-        doc = apply_redlines(document_path, changes, config=config)
+        doc = apply_redlines(
+            document_path,
+            changes,
+            config=config,
+        )
     except FileNotFoundError as exc:
         msg = f"File not found: {document_path}"
         raise ToolError(msg) from exc
     except ValueError as exc:
         raise ToolError(str(exc)) from exc
 
-    # Build summary
-    counts = Counter(c.change_type for c in change_params)
+    # Build summary (use original params for counting)
+    counts = Counter(p.change_type for p in change_params)
     summary_parts = []
-    for ct in ("modify", "delete", "append_after"):
+    for ct in ("modify", "delete", "append_after", "modify_cell", "clear_cell"):
         if counts[ct]:
             summary_parts.append(f"{counts[ct]} {ct}")
     change_summary = ", ".join(summary_parts)
 
     lines = [
-        f"Applied {len(changes)} change(s) ({change_summary}) to {Path(document_path).name}.",
+        f"Applied {len(change_params)} change(s) ({change_summary}) to {Path(document_path).name}.",
     ]
 
     # Validate if requested
@@ -327,37 +501,69 @@ def extract_fragments(
     format: Literal["tagged", "json"] = "tagged",
     markup: bool = False,
 ) -> str:
-    """Read a .docx file and return its paragraphs as text.
+    """Read a .docx file and return its paragraphs and tables as text.
 
     This is typically the **first step** in a redlining workflow. Each paragraph
-    is identified by a 1-based fragment ID that you will use to target changes
-    in ``apply_changes``.
+    and table is identified by a 1-based fragment ID that you will use to target
+    changes in ``apply_changes``.
 
-    Fragment IDs are position-based, corresponding to top-level ``<w:p>`` elements
-    in ``<w:body>``. Fragment 1 is the first paragraph, fragment 2 is the second,
-    and so on. These IDs remain stable as long as you don't add/remove paragraphs
-    before your target location.
+    Fragment IDs are position-based, corresponding to top-level ``<w:p>`` and
+    ``<w:tbl>`` elements in ``<w:body>`` in document order. Fragment 1 is the
+    first element, fragment 2 is the second, and so on.
+
+    Within tables, cells are identified using the format: ``"table_id.row.col"``
+    (e.g., ``"2.1.3"`` for table 2, row 1, column 3). Row and column numbers are
+    1-based.
 
     Output Formats
     --------------
 
-    The **tagged** format (default) wraps each paragraph with XML-like tags::
+    The **tagged** format (default) wraps each element with XML-like tags:
+
+    Paragraphs::
 
         <f=1>**CONFIDENTIALITY AGREEMENT**</f=1>
         <f=2>This Agreement is entered into as of January 1, 2025.</f=2>
-        <f=3></f=3>
-        <f=4>**1. Definitions.** The following terms have the meanings set forth below.</f=4>
+
+    Tables::
+
+        <table=3 rows=2 cols=3>
+        <cell=3.1.1>Header A</cell=3.1.1>
+        <cell=3.1.2>Header B</cell=3.1.2>
+        <cell=3.1.3>Header C</cell=3.1.3>
+        <cell=3.2.1>Data 1</cell=3.2.1>
+        <cell=3.2.2>Data 2</cell=3.2.2>
+        <cell=3.2.3>Data 3</cell=3.2.3>
+        </table=3>
+
+    Skipped tables (non-simple)::
+
+        <table=4 skipped reason="contains merged cells"/>
 
     The **json** format returns a JSON array of objects::
 
         [
-          {"fragment_id": 1, "text": "**CONFIDENTIALITY AGREEMENT**"},
-          {"fragment_id": 2, "text": "This Agreement is entered into as of January 1, 2025."},
-          {"fragment_id": 3, "text": ""},
+          {"type": "paragraph", "fragment_id": 1, "text": "**CONFIDENTIALITY AGREEMENT**"},
+          {"type": "paragraph", "fragment_id": 2, "text": "This Agreement..."},
           {
-            "fragment_id": 4,
-            "text": "**1. Definitions.** The following terms have the meanings set forth below."
-          }
+            "type": "table",
+            "table_id": 3,
+            "rows": 2,
+            "cols": 3,
+            "cells": [
+              [
+                {"cell_id": "3.1.1", "row": 1, "col": 1, "text": "Header A"},
+                {"cell_id": "3.1.2", "row": 1, "col": 2, "text": "Header B"},
+                {"cell_id": "3.1.3", "row": 1, "col": 3, "text": "Header C"}
+              ],
+              [
+                {"cell_id": "3.2.1", "row": 2, "col": 1, "text": "Data 1"},
+                {"cell_id": "3.2.2", "row": 2, "col": 2, "text": "Data 2"},
+                {"cell_id": "3.2.3", "row": 2, "col": 3, "text": "Data 3"}
+              ]
+            ]
+          },
+          {"type": "table", "table_id": 4, "skipped": true, "reason": "contains merged cells"}
         ]
 
     Text Formatting
@@ -371,6 +577,15 @@ def extract_fragments(
 
     Unicode characters (smart quotes, em dashes, section symbols, non-breaking
     spaces) are preserved as-is.
+
+    Table cells with multiple paragraphs show paragraph breaks as ``\n``.
+
+    Table Support
+    -------------
+
+    Only "simple" tables are extracted (rectangular grid, no merged cells, no
+    nested tables). Non-simple tables are represented as skipped placeholders
+    with a reason.
 
     Tracked Changes (markup=True)
     ------------------------------
@@ -387,8 +602,8 @@ def extract_fragments(
     ----------------
 
     1. Call ``extract_fragments`` to see document structure and get fragment IDs
-    2. Identify which paragraphs need changes (by reading the text)
-    3. Construct a list of ``ChangeParam`` objects with appropriate fragment_ids
+    2. Identify which elements need changes (by reading the text)
+    3. Construct a list of ``ChangeParam`` objects with appropriate IDs
     4. Call ``apply_changes`` with the change list
     5. Open the output file in Microsoft Word to review tracked changes
 
@@ -401,13 +616,13 @@ def extract_fragments(
         Fragment text in the requested format (string).
     """
     doc = _load_document(document_path)
-    fragments = document_to_fragments(doc.paragraphs, markup=markup)
+    items = body_to_fragments(doc.body_elements, markup=markup)
 
     if format == "json":
-        data = [{"fragment_id": fid, "text": text} for fid, text in fragments]
+        data = fragments_to_json_interleaved(items)
         return json.dumps(data, ensure_ascii=False, indent=2)
 
-    return fragments_to_tagged_text(fragments)
+    return fragments_to_tagged_text_interleaved(items)
 
 
 @mcp.tool(
@@ -435,13 +650,13 @@ def apply_changes(
     ----------------
 
     1. Call ``extract_fragments`` to see document structure and get fragment IDs
-    2. Identify which paragraphs need changes (by reading the text)
-    3. Construct a list of ``ChangeParam`` objects with appropriate fragment_ids
+    2. Identify which elements need changes (by reading the text)
+    3. Construct a list of ``ChangeParam`` objects with appropriate fragment_ids or cell_ids
     4. Call this tool (``apply_changes``) with the changes list
     5. Open the output file in Microsoft Word to review tracked changes
 
-    Change Types
-    ------------
+    Paragraph Change Types
+    ----------------------
 
     - **modify**: Word-level diff produces fine-grained tracked insertions and
       deletions. For example, changing "shall deliver" to "must deliver immediately"
@@ -454,6 +669,15 @@ def apply_changes(
       family, size, and color are automatically inherited from the reference
       paragraph. Use ``blank_lines_before`` / ``blank_lines_after`` to maintain
       legal document spacing conventions.
+
+    Table Cell Change Types
+    -----------------------
+
+    - **modify_cell**: Replace cell text (word-level diff on each paragraph).
+      Use ``\n`` to separate multiple paragraphs within the cell. Example:
+      ``"Header\nBody paragraph\nFooter"`` for a 3-paragraph cell.
+
+    - **clear_cell**: Mark all cell content as deleted (cell remains but becomes empty).
 
     Font Inheritance
     ----------------
@@ -482,20 +706,21 @@ def apply_changes(
 
     Common errors that will cause this tool to fail:
 
-    - ``fragment_id`` out of range (must be 1..N where N is total paragraph count)
-    - ``new_text`` missing when required (modify/append_after)
-    - ``new_text`` provided for delete (must be null/omitted)
+    - ``fragment_id`` out of range (must be 1..N where N is total element count)
+    - ``new_text`` missing when required (modify/append_after/modify_cell)
+    - ``new_text`` provided for delete or clear_cell (must be null/omitted)
     - ``delete_next_blanks`` targets a non-blank paragraph (only whitespace-only
       paragraphs can be deleted this way)
-    - ``blank_lines_before`` / ``blank_lines_after`` used with modify or delete
+    - ``blank_lines_before`` / ``blank_lines_after`` used with modify, delete, or clear_cell
       (only valid with append_after)
-    - ``delete_next_blanks`` used with modify or append_after (only valid with
-      delete)
+    - ``delete_next_blanks`` used with modify, append_after, or table changes (only valid
+      with delete)
+    - Cell ID out of range (must exist in extracted table)
 
     Example
     -------
 
-    Applying multiple changes to an NDA::
+    Applying multiple changes to an NDA with table modification::
 
         changes = [
             {
@@ -505,13 +730,19 @@ def apply_changes(
                 "justification": "Updated title and year"
             },
             {
-                "fragment_id": 35,
+                "cell_id": "2.1.1",
+                "change_type": "modify_cell",
+                "new_text": "**Disclosing Party**",
+                "justification": "Clarified table header"
+            },
+            {
+                "fragment_id": 5,
                 "change_type": "delete",
                 "justification": "Removed Section 7 (proprietary rights legends)",
                 "delete_next_blanks": 1
             },
             {
-                "fragment_id": 39,
+                "fragment_id": 10,
                 "change_type": "append_after",
                 "new_text": (
                     "**18. Amendments.** No amendment shall be effective unless "
@@ -531,13 +762,14 @@ def apply_changes(
         )
 
         # Result:
-        # "Applied 3 change(s) (1 modify, 1 delete, 1 append_after) to contract.docx.
+        # "Applied 4 change(s) (1 modify, 1 modify_cell, 1 delete, 1 append_after) to contract.docx.
         #  Output saved to /path/to/contract_redlined.docx.
         #  Validation: passed (0 errors, 0 warnings)."
 
     Args:
         document_path: Absolute path to the input .docx file.
-        changes: List of ``ChangeParam`` objects describing the changes to apply.
+        changes: List of ``ChangeParam`` objects describing the changes to apply
+            (mix of paragraph and table cell changes).
         output_path: Where to save the redlined document. Defaults to
             ``<stem>_redlined.docx`` beside the input file.
         author: Author name for tracked changes and comments (appears in Word's
@@ -583,35 +815,44 @@ def apply_changes_from_file(
 
     1. A JSON array of change objects (bare array)::
 
-        [
-          {
-            "fragment_id": 1,
-            "change_type": "modify",
-            "new_text": "Updated text",
-            "justification": "Reason for change"
-          },
-          {
-            "fragment_id": 5,
-            "change_type": "delete",
-            "justification": "Removed obsolete clause",
-            "delete_next_blanks": 1
-          }
-        ]
+         [
+           {
+             "fragment_id": 1,
+             "change_type": "modify",
+             "new_text": "Updated text",
+             "justification": "Reason for change"
+           },
+           {
+             "fragment_id": 5,
+             "change_type": "delete",
+             "justification": "Removed obsolete clause",
+             "delete_next_blanks": 1
+           },
+           {
+             "cell_id": "2.1.1",
+             "change_type": "modify_cell",
+             "new_text": "Updated cell content",
+             "justification": "Corrected table entry"
+           }
+         ]
 
     2. A JSON object with a ``"changes"`` key containing the array::
 
-        {
-          "changes": [
-            {
-              "fragment_id": 1,
-              "change_type": "modify",
-              "new_text": "Updated text",
-              "justification": "Reason for change"
-            }
-          ]
-        }
+         {
+           "changes": [
+             {
+               "fragment_id": 1,
+               "change_type": "modify",
+               "new_text": "Updated text",
+               "justification": "Reason for change"
+             }
+           ]
+         }
 
-    Each change object supports all fields from ``ChangeParam``:
+    Paragraph Change Parameters
+    ---------------------------
+
+    Each paragraph change object supports:
 
     - ``fragment_id`` (int, required): 1-based paragraph index
     - ``change_type`` (string, required): ``"modify"``, ``"delete"``, or ``"append_after"``
@@ -620,6 +861,18 @@ def apply_changes_from_file(
     - ``blank_lines_before`` (int, optional): Blank paragraphs before (append_after only, default 0)
     - ``blank_lines_after`` (int, optional): Blank paragraphs after (append_after only, default 0)
     - ``delete_next_blanks`` (int, optional): Trailing blanks to delete (delete only, default 0)
+
+    Table Cell Change Parameters
+    ----------------------------
+
+    Each table cell change object supports:
+
+    - ``cell_id`` (string, required): Dotted cell reference in format ``"table_id.row.col"``
+      (e.g., ``"2.1.3"`` for table 2, row 1, column 3)
+    - ``change_type`` (string, required): ``"modify_cell"`` or ``"clear_cell"``
+    - ``new_text`` (string or null): Required for modify_cell; use ``\n`` for multiple
+      paragraphs. Omit for clear_cell.
+    - ``justification`` (string, required): Reason for the change
 
     The file must be UTF-8 encoded. Path separators and spaces in paths are supported.
 
@@ -750,11 +1003,11 @@ def diff_fragments(
     original_path: str,
     modified_path: str,
 ) -> str:
-    """Compare two .docx files and show paragraph-level text differences.
+    """Compare two .docx files and show paragraph and table-level text differences.
 
-    Extracts the pseudo-Markdown text from each paragraph in both documents,
-    then produces a word-level diff for each fragment position. This is useful
-    for understanding what changed between two versions of a document.
+    Extracts the pseudo-Markdown text from each paragraph and table cell in both
+    documents, then produces a word-level diff for each fragment position. This is
+    useful for understanding what changed between two versions of a document.
 
     Use this tool:
 
@@ -766,18 +1019,21 @@ def diff_fragments(
     Important Limitations
     ---------------------
 
-    Paragraphs are matched **by position** (fragment 1 vs fragment 1, fragment 2
-    vs fragment 2, etc.). This tool does **not** detect paragraph reordering or
+    Fragments are matched **by position** (fragment 1 vs fragment 1, fragment 2
+    vs fragment 2, etc.). This tool does **not** detect fragment reordering or
     track moved sections. If the documents have very different structures (different
-    paragraph counts, major reordering), the output will show extensive changes.
+    fragment counts, major reordering), the output will show extensive changes.
 
     Best used for comparing documents with the same basic structure where you made
-    local edits (word changes, clause deletions, appended sections).
+    local edits (word changes, clause deletions, appended sections, table cell
+    modifications).
 
     Output Format
     -------------
 
-    Each fragment is reported with its change status::
+    Each fragment is reported with its change status.
+
+    Paragraphs::
 
         Fragment 1: unchanged
         Fragment 2: modified
@@ -789,8 +1045,20 @@ def diff_fragments(
         Fragment 10: added (only in modified)
           + This is a new clause.
 
+    Tables::
+
+        Table 56: modified
+          Cell 56.2.2: modified
+            - Gwendolyn Mahon, M.Sc., Ph.D
+            + John H. Smith, Ph.D.
+        Table 57: unchanged
+        Table 58: dimensions changed (3x2 → 4x2)
+
     Lines starting with ``-`` show deleted text, ``+`` shows inserted text.
     Unchanged fragments are listed but their text is omitted for brevity.
+
+    For tables, each modified cell is shown with its cell ID (table_id.row.col)
+    followed by the word-level diff of the cell content.
 
     Difference from extract_fragments with markup=True
     --------------------------------------------------
@@ -807,13 +1075,31 @@ def diff_fragments(
 
     Returns:
         Human-readable diff showing changes per fragment, with ``-`` for deletions
-        and ``+`` for insertions.
+        and ``+`` for insertions. Tables show cell-level diffs.
     """
     doc_a = _load_document(original_path)
     doc_b = _load_document(modified_path)
 
-    frags_a = dict(document_to_fragments(doc_a.paragraphs))
-    frags_b = dict(document_to_fragments(doc_b.paragraphs))
+    # Extract fragments (paragraphs and tables) from both documents
+    items_a = body_to_fragments(doc_a.body_elements)
+    items_b = body_to_fragments(doc_b.body_elements)
+
+    # Build dictionaries mapping fragment_id -> FragmentItem
+    frags_a: dict[int, tuple[int, str] | TableInfo | SkippedTableInfo] = {}
+    for item in items_a:
+        if isinstance(item, tuple):
+            fid, _text = item
+            frags_a[fid] = item
+        else:  # TableInfo or SkippedTableInfo
+            frags_a[item.table_id] = item
+
+    frags_b: dict[int, tuple[int, str] | TableInfo | SkippedTableInfo] = {}
+    for item in items_b:
+        if isinstance(item, tuple):
+            fid, _text = item
+            frags_b[fid] = item
+        else:  # TableInfo or SkippedTableInfo
+            frags_b[item.table_id] = item
 
     all_ids = sorted(set(frags_a) | set(frags_b))
     if not all_ids:
@@ -823,33 +1109,109 @@ def diff_fragments(
     lines: list[str] = []
 
     for fid in all_ids:
-        text_a = frags_a.get(fid)
-        text_b = frags_b.get(fid)
+        item_a = frags_a.get(fid)
+        item_b = frags_b.get(fid)
 
-        if text_a is not None and text_b is None:
-            lines.append(f"Fragment {fid}: deleted (only in original)")
-            if text_a:
-                lines.append(f"  - {text_a}")
-        elif text_a is None and text_b is not None:
-            lines.append(f"Fragment {fid}: added (only in modified)")
-            if text_b:
-                lines.append(f"  + {text_b}")
-        elif text_a == text_b:
-            lines.append(f"Fragment {fid}: unchanged")
-        else:
-            assert text_a is not None and text_b is not None
-            chunks = differ.diff(text_a, text_b)
-            has_changes = any(c.op != DiffOp.EQUAL for c in chunks)
-            if not has_changes:
+        # Handle missing fragments
+        if item_a is not None and item_b is None:
+            if isinstance(item_a, tuple):
+                _fid, text_a = item_a
+                lines.append(f"Fragment {fid}: deleted (only in original)")
+                if text_a:
+                    lines.append(f"  - {text_a}")
+            else:  # Table
+                lines.append(f"Table {fid}: deleted (only in original)")
+            continue
+
+        if item_a is None and item_b is not None:
+            if isinstance(item_b, tuple):
+                _fid, text_b = item_b
+                lines.append(f"Fragment {fid}: added (only in modified)")
+                if text_b:
+                    lines.append(f"  + {text_b}")
+            else:  # Table
+                lines.append(f"Table {fid}: added (only in modified)")
+            continue
+
+        # Both exist - compare based on type
+        assert item_a is not None and item_b is not None
+
+        # Case 1: Both are paragraphs
+        if isinstance(item_a, tuple) and isinstance(item_b, tuple):
+            _fid_a, text_a = item_a
+            _fid_b, text_b = item_b
+            if text_a == text_b:
                 lines.append(f"Fragment {fid}: unchanged")
+            else:
+                chunks = differ.diff(text_a, text_b)
+                has_changes = any(c.op != DiffOp.EQUAL for c in chunks)
+                if not has_changes:
+                    lines.append(f"Fragment {fid}: unchanged")
+                else:
+                    lines.append(f"Fragment {fid}: modified")
+                    for chunk in chunks:
+                        if chunk.op == DiffOp.DELETE:
+                            lines.append(f"  - {chunk.text}")
+                        elif chunk.op == DiffOp.INSERT:
+                            lines.append(f"  + {chunk.text}")
+
+        # Case 3: Both are SkippedTableInfo
+        elif isinstance(item_a, SkippedTableInfo) and isinstance(item_b, SkippedTableInfo):
+            if item_a.reason == item_b.reason:
+                lines.append(f"Table {fid}: unchanged (skipped: {item_a.reason})")
+            else:
+                lines.append(f"Table {fid}: skip reason changed")
+                lines.append(f"  - {item_a.reason}")
+                lines.append(f"  + {item_b.reason}")
+
+        # Case 4: One skipped, one not (both must be table types)
+        elif (
+            not isinstance(item_a, tuple)
+            and not isinstance(item_b, tuple)
+            and isinstance(item_a, SkippedTableInfo) != isinstance(item_b, SkippedTableInfo)
+        ):
+            lines.append(f"Table {fid}: skip status changed")
+
+        # Case 5: Both are TableInfo
+        elif isinstance(item_a, TableInfo) and isinstance(item_b, TableInfo):
+            # Check dimensions
+            if item_a.rows != item_b.rows or item_a.cols != item_b.cols:
+                lines.append(
+                    f"Table {fid}: dimensions changed "
+                    f"({item_a.rows}x{item_a.cols} → {item_b.rows}x{item_b.cols})"
+                )
                 continue
-            lines.append(f"Fragment {fid}: modified")
-            for chunk in chunks:
-                if chunk.op == DiffOp.DELETE:
-                    lines.append(f"  - {chunk.text}")
-                elif chunk.op == DiffOp.INSERT:
-                    lines.append(f"  + {chunk.text}")
-                # EQUAL chunks are omitted for brevity
+
+            # Compare cell-by-cell
+            table_has_changes = False
+            cell_changes: list[str] = []
+
+            for row_idx in range(item_a.rows):
+                for col_idx in range(item_a.cols):
+                    cell_a = item_a.cells[row_idx][col_idx]
+                    cell_b = item_b.cells[row_idx][col_idx]
+
+                    if cell_a.text != cell_b.text:
+                        table_has_changes = True
+                        chunks = differ.diff(cell_a.text, cell_b.text)
+                        has_diff = any(c.op != DiffOp.EQUAL for c in chunks)
+                        if has_diff:
+                            cell_changes.append(f"  Cell {cell_a.cell_id}: modified")
+                            for chunk in chunks:
+                                if chunk.op == DiffOp.DELETE:
+                                    cell_changes.append(f"    - {chunk.text}")
+                                elif chunk.op == DiffOp.INSERT:
+                                    cell_changes.append(f"    + {chunk.text}")
+
+            if table_has_changes:
+                lines.append(f"Table {fid}: modified")
+                lines.extend(cell_changes)
+            else:
+                lines.append(f"Table {fid}: unchanged")
+
+        # Case 2: Type mismatch (paragraph vs table)
+        else:
+            lines.append(f"Fragment {fid}: type changed (paragraph ↔ table)")
 
     return "\n".join(lines)
 
@@ -861,14 +1223,14 @@ def diff_fragments(
 
 @mcp.resource("docx-fragments://{document_path}")
 def get_fragments(document_path: str) -> str:
-    """Browse the paragraph fragments of a .docx file.
+    """Browse the paragraph and table fragments of a .docx file.
 
-    Returns the tagged text representation of the document's paragraphs,
-    each identified by a 1-based fragment ID.  No caching -- the file is
-    re-read on every access to reflect the latest state on disk.
+    Returns the tagged text representation of the document's paragraphs and
+    tables, each identified by a 1-based fragment ID. No caching -- the file
+    is re-read on every access to reflect the latest state on disk.
 
     The ``document_path`` in the URI must be URL-encoded if it contains
-    path separators.  For example::
+    path separators. For example::
 
         docx-fragments://%2Fhome%2Fuser%2Fcontract.docx
 
@@ -876,11 +1238,12 @@ def get_fragments(document_path: str) -> str:
         document_path: Path to the .docx file (URL-decoded automatically).
 
     Returns:
-        Tagged text: ``<f=1>text</f=1>`` per paragraph.
+        Tagged text: ``<f=N>text</f=N>`` for paragraphs, ``<table=N ...>`` with
+        ``<cell=id>text</cell=id>`` for table cells.
     """
     doc = _load_document(document_path)
-    fragments = document_to_fragments(doc.paragraphs)
-    return fragments_to_tagged_text(fragments)
+    items = body_to_fragments(doc.body_elements)
+    return fragments_to_tagged_text_interleaved(items)
 
 
 # ---------------------------------------------------------------------------

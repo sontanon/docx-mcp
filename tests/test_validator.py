@@ -5,7 +5,7 @@ from __future__ import annotations
 from lxml import etree
 
 from docx_mcp.document import DocxDocument
-from docx_mcp.models import Change, ChangeType
+from docx_mcp.models import ParagraphChange, ParagraphChangeType
 from docx_mcp.namespaces import qn
 from docx_mcp.redliner import apply_redlines
 from docx_mcp.validator import ValidationResult, validate_document
@@ -49,20 +49,20 @@ class TestAnnotationIdUniqueness:
 
     def test_redlined_document_has_unique_ids(self, simple_5para_path):
         changes = [
-            Change(
+            ParagraphChange(kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="Modified first paragraph.",
                 justification="Test modify.",
             ),
-            Change(
+            ParagraphChange(kind="paragraph",
                 fragment_id=3,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Test delete.",
             ),
-            Change(
+            ParagraphChange(kind="paragraph",
                 fragment_id=5,
-                change_type=ChangeType.APPEND_AFTER,
+                change_type=ParagraphChangeType.APPEND_AFTER,
                 new_text="New paragraph appended.",
                 justification="Test append.",
             ),
@@ -75,9 +75,9 @@ class TestAnnotationIdUniqueness:
 class TestCommentIntegrity:
     def test_redlined_comments_are_intact(self, simple_5para_path):
         changes = [
-            Change(
+            ParagraphChange(kind="paragraph",
                 fragment_id=2,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="Changed second paragraph.",
                 justification="Testing comment integrity.",
             ),
@@ -89,9 +89,9 @@ class TestCommentIntegrity:
     def test_orphaned_comment_in_comments_xml(self, simple_5para_path):
         """A comment in comments.xml without markers in document.xml."""
         changes = [
-            Change(
+            ParagraphChange(kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="Modified first.",
                 justification="Test.",
             ),
@@ -123,9 +123,9 @@ class TestCommentIntegrity:
 class TestTrackedChangeAttributes:
     def test_redlined_changes_have_all_attributes(self, simple_5para_path):
         changes = [
-            Change(
+            ParagraphChange(kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="Modified text here.",
                 justification="Testing attributes.",
             ),
@@ -150,9 +150,9 @@ class TestTrackedChangeAttributes:
 class TestPackageConsistency:
     def test_redlined_package_is_consistent(self, simple_5para_path):
         changes = [
-            Change(
+            ParagraphChange(kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="Test text.",
                 justification="Test.",
             ),
@@ -175,20 +175,20 @@ class TestFullPipelineValidation:
     def test_nda_multi_change_validation(self, nda_skeleton_path):
         """Validate a complex multi-change scenario on the NDA fixture."""
         changes = [
-            Change(
+            ParagraphChange(kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="**MUTUAL NON-DISCLOSURE AGREEMENT**",
                 justification="Changed to mutual NDA.",
             ),
-            Change(
+            ParagraphChange(kind="paragraph",
                 fragment_id=2,
-                change_type=ChangeType.DELETE,
+                change_type=ParagraphChangeType.DELETE,
                 justification="Removed unnecessary clause.",
             ),
-            Change(
+            ParagraphChange(kind="paragraph",
                 fragment_id=3,
-                change_type=ChangeType.APPEND_AFTER,
+                change_type=ParagraphChangeType.APPEND_AFTER,
                 new_text="This agreement shall be governed by the laws of Delaware.",
                 justification="Added governing law clause.",
             ),
@@ -200,9 +200,9 @@ class TestFullPipelineValidation:
     def test_roundtrip_validation(self, simple_5para_path):
         """Validate that a redlined doc survives a save/reload cycle."""
         changes = [
-            Change(
+            ParagraphChange(kind="paragraph",
                 fragment_id=2,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="Roundtrip modified paragraph.",
                 justification="Testing roundtrip.",
             ),

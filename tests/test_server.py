@@ -420,7 +420,7 @@ class TestApplyChangesFromFile:
             ],
         )
         async with Client(mcp) as client:
-            with pytest.raises(Exception, match="Invalid changes"):
+            with pytest.raises(Exception, match=r"Unknown change_type|Invalid"):
                 await client.call_tool(
                     "apply_changes_from_file",
                     {
@@ -561,6 +561,95 @@ class TestDiffFragments:
         # NDA has more paragraphs than simple_5para, so we should see "added"
         assert "added" in text or "modified" in text
 
+    async def test_identical_tables(self, simple_table_path):
+        """Identical tables should be reported as unchanged."""
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "diff_fragments",
+                {
+                    "original_path": str(simple_table_path),
+                    "modified_path": str(simple_table_path),
+                },
+            )
+        text = _text(result)
+        # simple_table has a paragraph at fragment 1, table at fragment 2
+        assert "Table 2: unchanged" in text
+
+    async def test_modified_table_cell(self, simple_table_path, tmp_path):
+        """Modified table cells should be shown with cell-level diffs."""
+        # Create a genuinely modified version by directly manipulating the document
+        # (not using tracked changes, which don't change the extracted text)
+        from docx_mcp.document import DocxDocument
+        from docx_mcp.namespaces import xpath
+
+        output = tmp_path / "modified_table.docx"
+        doc = DocxDocument(simple_table_path)
+
+        # Directly modify cell 2.1.1 text (table at body_elements[1], row 1, col 1)
+        table = doc.body_elements[1]
+        rows = xpath(table, ".//w:tr")
+        first_cell = xpath(rows[0], ".//w:tc")[0]
+        first_para = xpath(first_cell, ".//w:p")[0]
+        first_run = xpath(first_para, ".//w:r")[0]
+        text_elem = xpath(first_run, ".//w:t")[0]
+        text_elem.text = "Changed Header A"
+
+        doc.save(output)
+
+        # Now diff the original and modified
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "diff_fragments",
+                {
+                    "original_path": str(simple_table_path),
+                    "modified_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "Table 2: modified" in text
+        assert "Cell 2.1.1: modified" in text
+
+    async def test_mixed_content_with_table_change(self, mixed_content_path, tmp_path):
+        """Mixed paragraph and table content should diff correctly."""
+        # Create a modified version with both paragraph and table changes
+        output = tmp_path / "modified_mixed.docx"
+        async with Client(mcp) as client:
+            await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(mixed_content_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "modify",
+                            "new_text": "Modified first paragraph.",
+                            "justification": "Test para change.",
+                        },
+                        {
+                            "cell_id": "2.1.1",
+                            "change_type": "modify_cell",
+                            "new_text": "Modified cell content",
+                            "justification": "Test cell change.",
+                        },
+                    ],
+                    "output_path": str(output),
+                    "validate": False,
+                },
+            )
+            # Now diff the original and modified
+            result = await client.call_tool(
+                "diff_fragments",
+                {
+                    "original_path": str(mixed_content_path),
+                    "modified_path": str(output),
+                },
+            )
+        text = _text(result)
+        # Should show both paragraph and table modifications
+        assert "Fragment 1:" in text
+        assert "Table 2: modified" in text or "Table 2:" in text
+        assert "Cell 2.1.1:" in text
+
     async def test_file_not_found(self, simple_5para_path):
         async with Client(mcp) as client:
             with pytest.raises(Exception, match="File not found"):
@@ -681,3 +770,309 @@ class TestExtractFragmentsMarkup:
         text = _text(result)
         assert "++" not in text
         assert "~~" not in text
+
+
+# ---------------------------------------------------------------------------
+# Table extraction tests
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTablesInFragments:
+    """Tests for extracting documents with tables."""
+
+    async def test_extract_simple_table_tagged_format(self, simple_table_path):
+        """Extract a simple table in tagged format."""
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(simple_table_path)},
+            )
+        text = _text(result)
+        # Should have paragraph tags
+        assert "<f=1>" in text
+        assert "</f=1>" in text
+        # Should have table tags (table is ID 2)
+        assert "<table=2 rows=3 cols=3>" in text
+        assert "</table=2>" in text
+        # Should have cell tags
+        assert "<cell=2.1.1>" in text
+        assert "</cell=2.1.1>" in text
+
+    async def test_extract_simple_table_json_format(self, simple_table_path):
+        """Extract a simple table in JSON format."""
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(simple_table_path), "format": "json"},
+            )
+        data = json.loads(_text(result))
+        assert isinstance(data, list)
+        assert len(data) == 3  # para, table, para
+
+        # First item is paragraph
+        assert data[0]["type"] == "paragraph"
+        assert data[0]["fragment_id"] == 1
+
+        # Second item is table
+        assert data[1]["type"] == "table"
+        assert data[1]["table_id"] == 2
+        assert data[1]["rows"] == 3
+        assert data[1]["cols"] == 3
+        assert "cells" in data[1]
+
+    async def test_extract_merged_cell_table_skipped(self, merged_cell_table_path):
+        """Non-simple tables should be skipped with reason."""
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(merged_cell_table_path)},
+            )
+        text = _text(result)
+        # Should have skipped table tag
+        assert "<table=2 skipped" in text
+        assert "reason=" in text
+
+    async def test_extract_mixed_content(self, mixed_content_path):
+        """Extract document with mixed paragraphs and tables."""
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(mixed_content_path)},
+            )
+        text = _text(result)
+        # Should have both paragraph and table tags interleaved
+        assert "<f=1>" in text
+        assert "<table=2" in text
+        assert "<f=3>" in text
+        assert "<table=4" in text
+        assert "<f=5>" in text
+
+
+# ---------------------------------------------------------------------------
+# Table change application tests
+# ---------------------------------------------------------------------------
+
+
+class TestApplyTableChanges:
+    """Tests for applying table changes via MCP tools."""
+
+    async def test_modify_cell_single_para(self, simple_table_path, tmp_path):
+        """Modify a single-paragraph cell."""
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_table_path),
+                    "changes": [
+                        {
+                            "table_id": 2,
+                            "row": 1,
+                            "col": 1,
+                            "cell_id": "2.1.1",
+                            "change_type": "modify_cell",
+                            "new_text": "Modified Header",
+                            "justification": "Update header",
+                        },
+                    ],
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "Applied" in text
+        assert _is_valid_docx(output)
+
+    async def test_clear_cell(self, simple_table_path, tmp_path):
+        """Clear a cell."""
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_table_path),
+                    "changes": [
+                        {
+                            "table_id": 2,
+                            "row": 1,
+                            "col": 1,
+                            "cell_id": "2.1.1",
+                            "change_type": "clear_cell",
+                            "justification": "Remove header",
+                        },
+                    ],
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "Applied" in text
+        assert _is_valid_docx(output)
+
+    async def test_modify_multi_para_cell(self, table_multi_para_path, tmp_path):
+        """Modify a cell with multiple paragraphs."""
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(table_multi_para_path),
+                    "changes": [
+                        {
+                            "table_id": 2,
+                            "row": 2,
+                            "col": 2,
+                            "cell_id": "2.2.2",
+                            "change_type": "modify_cell",
+                            "new_text": "First.\nSecond.\nThird.",
+                            "justification": "Update all paragraphs",
+                        },
+                    ],
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "Applied" in text
+        assert _is_valid_docx(output)
+
+    async def test_paragraph_and_table_changes_together(self, mixed_content_path, tmp_path):
+        """Apply both paragraph and table changes in one operation."""
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(mixed_content_path),
+                    "changes": [
+                        {
+                            "fragment_id": 1,
+                            "change_type": "modify",
+                            "new_text": "Modified intro.",
+                            "justification": "Update intro",
+                        },
+                        {
+                            "table_id": 2,
+                            "row": 1,
+                            "col": 1,
+                            "cell_id": "2.1.1",
+                            "change_type": "modify_cell",
+                            "new_text": "Modified cell",
+                            "justification": "Update cell",
+                        },
+                    ],
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "Applied" in text
+        assert "1 paragraph changes" in text or "1 modify" in text
+        assert "1 table changes" in text or "1 modify_cell" in text
+        assert _is_valid_docx(output)
+
+    async def test_invalid_table_id_raises(self, simple_table_path, tmp_path):
+        """Invalid table ID should raise error."""
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            with pytest.raises(Exception, match="table_id=99"):
+                await client.call_tool(
+                    "apply_changes",
+                    {
+                        "document_path": str(simple_table_path),
+                        "changes": [
+                            {
+                                "table_id": 99,
+                                "row": 1,
+                                "col": 1,
+                                "cell_id": "99.1.1",
+                                "change_type": "modify_cell",
+                                "new_text": "Text",
+                                "justification": "Bad ID",
+                            },
+                        ],
+                        "output_path": str(output),
+                    },
+                )
+
+    async def test_row_out_of_range_raises(self, simple_table_path, tmp_path):
+        """Row out of range should raise error."""
+        output = tmp_path / "output.docx"
+        async with Client(mcp) as client:
+            with pytest.raises(Exception, match="row 99 out of range"):
+                await client.call_tool(
+                    "apply_changes",
+                    {
+                        "document_path": str(simple_table_path),
+                        "changes": [
+                            {
+                                "table_id": 2,
+                                "row": 99,
+                                "col": 1,
+                                "cell_id": "2.99.1",
+                                "change_type": "modify_cell",
+                                "new_text": "Text",
+                                "justification": "Bad row",
+                            },
+                        ],
+                        "output_path": str(output),
+                    },
+                )
+
+    async def test_apply_changes_from_file_with_tables(self, simple_table_path, tmp_path):
+        """Test apply_changes_from_file with table changes."""
+        output = tmp_path / "output.docx"
+        changes_file = _write_changes_json(
+            tmp_path,
+            [
+                {
+                    "table_id": 2,
+                    "row": 1,
+                    "col": 1,
+                    "cell_id": "2.1.1",
+                    "change_type": "modify_cell",
+                    "new_text": "Modified Header",
+                    "justification": "Update via file",
+                },
+            ],
+        )
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "apply_changes_from_file",
+                {
+                    "document_path": str(simple_table_path),
+                    "changes_file": str(changes_file),
+                    "output_path": str(output),
+                },
+            )
+        text = _text(result)
+        assert "Applied" in text
+        assert _is_valid_docx(output)
+
+    async def test_extract_modified_table_with_markup(self, simple_table_path, tmp_path):
+        """Extract a modified table with markup=True shows tracked changes."""
+        output = tmp_path / "redlined.docx"
+        async with Client(mcp) as client:
+            # Apply change
+            await client.call_tool(
+                "apply_changes",
+                {
+                    "document_path": str(simple_table_path),
+                    "changes": [
+                        {
+                            "table_id": 2,
+                            "row": 2,
+                            "col": 2,
+                            "cell_id": "2.2.2",
+                            "change_type": "modify_cell",
+                            "new_text": "New content",
+                            "justification": "Test markup",
+                        },
+                    ],
+                    "output_path": str(output),
+                },
+            )
+            # Extract with markup
+            result = await client.call_tool(
+                "extract_fragments",
+                {"document_path": str(output), "markup": True},
+            )
+        text = _text(result)
+        # Should have tracked change markers somewhere
+        assert "++" in text or "~~" in text

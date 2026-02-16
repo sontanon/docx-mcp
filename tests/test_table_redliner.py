@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from docx_mcp.converter import body_to_fragments, paragraph_to_pseudo_markdown
-from docx_mcp.models import ChangeType, RedlineConfig, TableChange, TableInfo
+from docx_mcp.models import RedlineConfig, TableChange, TableChangeType, TableInfo
 from docx_mcp.namespaces import xpath
 from docx_mcp.redliner import apply_redlines
 from docx_mcp.table_utils import get_cell_element, get_cell_paragraphs
@@ -24,17 +24,17 @@ class TestModifyCell:
         """Modify a cell with a single paragraph."""
         changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=1,
                 col=1,
-                cell_id="2.1.1",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="Modified Header",
                 justification="Update header text",
             ),
         ]
 
-        doc = apply_redlines(simple_table_path, [], table_changes=changes)
+        doc = apply_redlines(simple_table_path, changes)
 
         # Verify the cell was modified
         tables = xpath(doc.body, ".//w:tbl")
@@ -60,17 +60,17 @@ class TestModifyCell:
         """Modify a cell where new text has same paragraph count as old."""
         changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=2,
                 col=1,
-                cell_id="2.2.1",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="New first para.\nNew second para.",
                 justification="Update both paragraphs",
             ),
         ]
 
-        doc = apply_redlines(table_multi_para_path, [], table_changes=changes)
+        doc = apply_redlines(table_multi_para_path, changes)
 
         tables = xpath(doc.body, ".//w:tbl")
         tbl = tables[0]
@@ -90,17 +90,17 @@ class TestModifyCell:
         # Original cell 2.2.2 has 3 paragraphs
         changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=2,
                 col=2,
-                cell_id="2.2.2",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="Single combined paragraph",
                 justification="Consolidate paragraphs",
             ),
         ]
 
-        doc = apply_redlines(table_multi_para_path, [], table_changes=changes)
+        doc = apply_redlines(table_multi_para_path, changes)
 
         tables = xpath(doc.body, ".//w:tbl")
         tbl = tables[0]
@@ -125,17 +125,17 @@ class TestModifyCell:
         # Original cell 2.2.1 has 2 paragraphs
         changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=2,
                 col=1,
-                cell_id="2.2.1",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="First.\nSecond.\nThird.\nFourth.",
                 justification="Add more paragraphs",
             ),
         ]
 
-        doc = apply_redlines(table_multi_para_path, [], table_changes=changes)
+        doc = apply_redlines(table_multi_para_path, changes)
 
         tables = xpath(doc.body, ".//w:tbl")
         tbl = tables[0]
@@ -155,17 +155,17 @@ class TestModifyCell:
         """Modify a cell that has formatting."""
         changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=1,
                 col=1,
-                cell_id="2.1.1",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="**Updated Bold** Header",
                 justification="Change header",
             ),
         ]
 
-        doc = apply_redlines(formatted_table_path, [], table_changes=changes)
+        doc = apply_redlines(formatted_table_path, changes)
 
         tables = xpath(doc.body, ".//w:tbl")
         tbl = tables[0]
@@ -177,20 +177,18 @@ class TestModifyCell:
 
     def test_modify_cell_without_new_text_raises(self, simple_table_path: Path) -> None:
         """Modify cell without new_text should raise error."""
-        changes = [
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError, match="new_text is required for MODIFY_CELL"):
             TableChange(
+                kind="table",
                 table_id=2,
                 row=1,
                 col=1,
-                cell_id="2.1.1",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text=None,
                 justification="Missing text",
-            ),
-        ]
-
-        with pytest.raises(ValueError, match="requires new_text"):
-            apply_redlines(simple_table_path, [], table_changes=changes)
+            )
 
 
 class TestClearCell:
@@ -200,16 +198,16 @@ class TestClearCell:
         """Clear a cell with a single paragraph."""
         changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=1,
                 col=1,
-                cell_id="2.1.1",
-                change_type=ChangeType.CLEAR_CELL,
+                change_type=TableChangeType.CLEAR_CELL,
                 justification="Remove header",
             ),
         ]
 
-        doc = apply_redlines(simple_table_path, [], table_changes=changes)
+        doc = apply_redlines(simple_table_path, changes)
 
         tables = xpath(doc.body, ".//w:tbl")
         tbl = tables[0]
@@ -234,16 +232,16 @@ class TestClearCell:
         """Clear a cell with multiple paragraphs."""
         changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=2,
                 col=2,
-                cell_id="2.2.2",
-                change_type=ChangeType.CLEAR_CELL,
+                change_type=TableChangeType.CLEAR_CELL,
                 justification="Clear all content",
             ),
         ]
 
-        doc = apply_redlines(table_multi_para_path, [], table_changes=changes)
+        doc = apply_redlines(table_multi_para_path, changes)
 
         tables = xpath(doc.body, ".//w:tbl")
         tbl = tables[0]
@@ -267,69 +265,69 @@ class TestTableChangeValidation:
         """Table ID that doesn't exist should raise error."""
         changes = [
             TableChange(
+                kind="table",
                 table_id=99,
                 row=1,
                 col=1,
-                cell_id="99.1.1",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="Text",
                 justification="Bad table ID",
             ),
         ]
 
         with pytest.raises(ValueError, match="table_id=99"):
-            apply_redlines(simple_table_path, [], table_changes=changes)
+            apply_redlines(simple_table_path, changes)
 
     def test_table_id_pointing_to_paragraph_raises(self, mixed_content_path: Path) -> None:
         """Table ID that points to a paragraph should raise error."""
         changes = [
             TableChange(
+                kind="table",
                 table_id=1,  # First element is a paragraph
                 row=1,
                 col=1,
-                cell_id="1.1.1",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="Text",
                 justification="Wrong element type",
             ),
         ]
 
-        with pytest.raises(ValueError, match="is <w:p>, not <w:tbl>"):
-            apply_redlines(mixed_content_path, [], table_changes=changes)
+        with pytest.raises(ValueError, match=r"is a <w:p>, not <w:tbl>"):
+            apply_redlines(mixed_content_path, changes)
 
     def test_row_out_of_range_raises(self, simple_table_path: Path) -> None:
         """Row index beyond table bounds should raise error."""
         changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=99,
                 col=1,
-                cell_id="2.99.1",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="Text",
                 justification="Bad row",
             ),
         ]
 
         with pytest.raises(ValueError, match="row 99 out of range"):
-            apply_redlines(simple_table_path, [], table_changes=changes)
+            apply_redlines(simple_table_path, changes)
 
     def test_col_out_of_range_raises(self, simple_table_path: Path) -> None:
         """Column index beyond table bounds should raise error."""
         changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=1,
                 col=99,
-                cell_id="2.1.99",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="Text",
                 justification="Bad col",
             ),
         ]
 
         with pytest.raises(ValueError, match="col 99 out of range"):
-            apply_redlines(simple_table_path, [], table_changes=changes)
+            apply_redlines(simple_table_path, changes)
 
 
 class TestMixedChanges:
@@ -337,30 +335,28 @@ class TestMixedChanges:
 
     def test_paragraph_and_table_changes_together(self, mixed_content_path: Path) -> None:
         """Apply both paragraph and table changes in same operation."""
-        from docx_mcp.models import Change
+        from docx_mcp.models import ParagraphChange, ParagraphChangeType
 
-        para_changes = [
-            Change(
+        changes = [
+            ParagraphChange(
+                kind="paragraph",
                 fragment_id=1,
-                change_type=ChangeType.MODIFY,
+                change_type=ParagraphChangeType.MODIFY,
                 new_text="Modified intro paragraph.",
                 justification="Update intro",
             ),
-        ]
-
-        table_changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=1,
                 col=1,
-                cell_id="2.1.1",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="Modified cell",
                 justification="Update cell",
             ),
         ]
 
-        doc = apply_redlines(mixed_content_path, para_changes, table_changes=table_changes)
+        doc = apply_redlines(mixed_content_path, changes)
 
         # Check paragraph change
         paras = doc.paragraphs
@@ -391,17 +387,17 @@ class TestCommentAttachment:
         """Comment should be attached to first paragraph of multi-para cell."""
         changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=2,
                 col=2,
-                cell_id="2.2.2",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="Modified",
                 justification="Test comment attachment",
             ),
         ]
 
-        doc = apply_redlines(table_multi_para_path, [], table_changes=changes)
+        doc = apply_redlines(table_multi_para_path, changes)
 
         # Get first paragraph of the cell
         tables = xpath(doc.body, ".//w:tbl")
@@ -424,17 +420,17 @@ class TestRoundTrip:
         """Extract table after modification shows tracked changes in markup mode."""
         changes = [
             TableChange(
+                kind="table",
                 table_id=2,
                 row=2,
                 col=2,
-                cell_id="2.2.2",
-                change_type=ChangeType.MODIFY_CELL,
+                change_type=TableChangeType.MODIFY_CELL,
                 new_text="New content",
                 justification="Test extraction",
             ),
         ]
 
-        doc = apply_redlines(simple_table_path, [], table_changes=changes)
+        doc = apply_redlines(simple_table_path, changes)
 
         # Extract with markup=True
         items = body_to_fragments(doc.body_elements, markup=True)

@@ -5,12 +5,18 @@ with comments, indistinguishable from a lawyer's Word redlines.
 
 Basic usage::
 
-    from docx_mcp import apply_redlines, Change, ChangeType, RedlineConfig
+    from docx_mcp import (
+        apply_redlines,
+        ParagraphChange,
+        ParagraphChangeType,
+        RedlineConfig,
+    )
 
     changes = [
-        Change(
+        ParagraphChange(
+            kind="paragraph",
             fragment_id=3,
-            change_type=ChangeType.MODIFY,
+            change_type=ParagraphChangeType.MODIFY,
             new_text="The Company **shall** provide written notice.",
             justification="Strengthened obligation language.",
         ),
@@ -28,17 +34,29 @@ from docx_mcp.converter import (
     pseudo_markdown_to_raw,
 )
 from docx_mcp.document import DocxDocument
-from docx_mcp.models import Change, ChangeType, DiffChunk, DiffOp, RedlineConfig
+from docx_mcp.models import (
+    Change,
+    DiffChunk,
+    DiffOp,
+    ParagraphChange,
+    ParagraphChangeType,
+    RedlineConfig,
+    TableChange,
+    TableChangeType,
+)
 from docx_mcp.redliner import apply_redlines
 from docx_mcp.validator import ValidationResult, validate_document
 
 __all__ = [
     "Change",
-    "ChangeType",
     "DiffChunk",
     "DiffOp",
     "DocxDocument",
+    "ParagraphChange",
+    "ParagraphChangeType",
     "RedlineConfig",
+    "TableChange",
+    "TableChangeType",
     "ValidationResult",
     "apply_redlines",
     "document_to_fragments",

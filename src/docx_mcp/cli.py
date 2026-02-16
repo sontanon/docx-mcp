@@ -22,8 +22,16 @@ from pathlib import Path
 
 from docx_mcp.converter import document_to_fragments, fragments_to_tagged_text
 from docx_mcp.document import DocxDocument
-from docx_mcp.models import Change, ChangeType, RedlineConfig
+from docx_mcp.models import (
+    Change,
+    ParagraphChange,
+    ParagraphChangeType,
+    RedlineConfig,
+    TableChange,
+    TableChangeType,
+)
 from docx_mcp.redliner import apply_redlines
+from docx_mcp.table_utils import parse_cell_id
 from docx_mcp.validator import validate_document
 
 
@@ -209,14 +217,24 @@ def _cmd_validate(args: argparse.Namespace) -> int:
 def _parse_changes(raw: list[dict] | dict) -> list[Change]:
     """Parse a changes JSON structure into Change objects.
 
+    Auto-detects change type based on field presence (fragment_id vs cell_id).
+    No 'kind' field required in JSON for user-friendliness.
+
     Accepts either:
     - A list of change dicts
     - A dict with a "changes" key containing a list
 
-    Each change dict must have:
+    Each paragraph change dict must have:
     - fragment_id (int)
     - change_type (str: "modify", "delete", "append_after")
     - new_text (str, required for modify/append_after)
+    - justification (str)
+    - Optional: blank_lines_before, blank_lines_after, delete_next_blanks
+
+    Each table change dict must have:
+    - cell_id (str: "table_id.row.col")
+    - change_type (str: "modify_cell", "clear_cell")
+    - new_text (str, required for modify_cell)
     - justification (str)
     """
     if isinstance(raw, dict):
@@ -224,12 +242,35 @@ def _parse_changes(raw: list[dict] | dict) -> list[Change]:
 
     changes: list[Change] = []
     for item in raw:
-        change = Change(
-            fragment_id=item["fragment_id"],
-            change_type=ChangeType(item["change_type"]),
-            new_text=item.get("new_text"),
-            justification=item.get("justification", ""),
-        )
+        # Auto-detect type based on field presence
+        if "fragment_id" in item:
+            # Paragraph change
+            change = ParagraphChange(
+                kind="paragraph",
+                fragment_id=item["fragment_id"],
+                change_type=ParagraphChangeType(item["change_type"]),
+                new_text=item.get("new_text"),
+                justification=item.get("justification", ""),
+                blank_lines_before=item.get("blank_lines_before", 0),
+                blank_lines_after=item.get("blank_lines_after", 0),
+                delete_next_blanks=item.get("delete_next_blanks", 0),
+            )
+        elif "cell_id" in item:
+            # Table change
+            table_id, row, col = parse_cell_id(item["cell_id"])
+            change = TableChange(
+                kind="table",
+                table_id=table_id,
+                row=row,
+                col=col,
+                change_type=TableChangeType(item["change_type"]),
+                new_text=item.get("new_text"),
+                justification=item.get("justification", ""),
+            )
+        else:
+            msg = f"Change must have either 'fragment_id' or 'cell_id' field: {item}"
+            raise ValueError(msg)
+
         changes.append(change)
 
     return changes

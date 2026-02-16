@@ -48,11 +48,13 @@ from docx_mcp.differ import DmpWordDiffer
 from docx_mcp.document import DocxDocument
 from docx_mcp.models import (
     Change,
-    ChangeType,
     DiffOp,
+    ParagraphChange,
+    ParagraphChangeType,
     RedlineConfig,
     SkippedTableInfo,
     TableChange,
+    TableChangeType,
     TableInfo,
 )
 from docx_mcp.redliner import apply_redlines
@@ -299,22 +301,40 @@ class TableChangeParam(BaseModel):
     )
 
 
-def _discriminate_change(v: dict | BaseModel) -> str:
-    """Discriminator function for ChangeParam union."""
+def _discriminate_change_param(v: dict | BaseModel) -> str:
+    """Discriminator function for ChangeParam union.
+
+    Auto-discriminates based on change_type value or field presence
+    (fragment_id vs cell_id) for LLM-friendly API.
+    """
     change_type = v.get("change_type", "") if isinstance(v, dict) else getattr(v, "change_type", "")
 
+    # Discriminate by change_type value
     if change_type in ("modify", "delete", "append_after"):
         return "paragraph"
     if change_type in ("modify_cell", "clear_cell"):
         return "table"
 
-    msg = f"Unknown change_type: {change_type}"
+    # Fallback: discriminate by field presence
+    if isinstance(v, dict):
+        has_fragment_id = "fragment_id" in v
+        has_cell_id = "cell_id" in v
+    else:
+        has_fragment_id = hasattr(v, "fragment_id")
+        has_cell_id = hasattr(v, "cell_id")
+
+    if has_fragment_id:
+        return "paragraph"
+    if has_cell_id:
+        return "table"
+
+    msg = f"Cannot discriminate change type from: {v}"
     raise ValueError(msg)
 
 
 ChangeParam = Annotated[
     Annotated[ParagraphChangeParam, Tag("paragraph")] | Annotated[TableChangeParam, Tag("table")],
-    Discriminator(_discriminate_change),
+    Discriminator(_discriminate_change_param),
 ]
 
 
@@ -350,43 +370,50 @@ def _resolve_output_path(document_path: str, output_path: str | None) -> Path:
     return p.parent / f"{p.stem}_redlined.docx"
 
 
-def _convert_changes(params: list[ChangeParam]) -> tuple[list[Change], list[TableChange]]:
-    """Convert ``ChangeParam`` tool inputs to core ``Change`` and ``TableChange`` models.
+def _convert_change_param_to_change(param: ChangeParam) -> Change:
+    """Convert MCP DTO (ChangeParam) to internal domain model (Change).
+
+    This translation layer allows the MCP API to use LLM-friendly compact
+    representations (no 'kind' field, compact cell_id strings) while the
+    internal code uses type-safe discriminated unions with explicit fields.
+
+    Args:
+        param: User-facing ChangeParam (ParagraphChangeParam or TableChangeParam).
 
     Returns:
-        Tuple of (paragraph_changes, table_changes).
+        Internal domain model (ParagraphChange or TableChange).
     """
-    paragraph_changes: list[Change] = []
-    table_changes: list[TableChange] = []
+    if isinstance(param, ParagraphChangeParam):
+        return ParagraphChange(
+            kind="paragraph",
+            fragment_id=param.fragment_id,
+            change_type=ParagraphChangeType(param.change_type),
+            new_text=param.new_text,
+            justification=param.justification,
+            blank_lines_before=param.blank_lines_before,
+            blank_lines_after=param.blank_lines_after,
+            delete_next_blanks=param.delete_next_blanks,
+        )
+    else:  # TableChangeParam
+        table_id, row, col = parse_cell_id(param.cell_id)
+        return TableChange(
+            kind="table",
+            table_id=table_id,
+            row=row,
+            col=col,
+            change_type=TableChangeType(param.change_type),
+            new_text=param.new_text,
+            justification=param.justification,
+        )
 
-    for p in params:
-        if isinstance(p, ParagraphChangeParam):
-            paragraph_changes.append(
-                Change(
-                    fragment_id=p.fragment_id,
-                    change_type=ChangeType(p.change_type),
-                    new_text=p.new_text,
-                    justification=p.justification,
-                    blank_lines_before=p.blank_lines_before,
-                    blank_lines_after=p.blank_lines_after,
-                    delete_next_blanks=p.delete_next_blanks,
-                )
-            )
-        elif isinstance(p, TableChangeParam):
-            table_id, row, col = parse_cell_id(p.cell_id)
-            table_changes.append(
-                TableChange(
-                    table_id=table_id,
-                    row=row,
-                    col=col,
-                    cell_id=p.cell_id,
-                    change_type=ChangeType(p.change_type),
-                    new_text=p.new_text,
-                    justification=p.justification,
-                )
-            )
 
-    return paragraph_changes, table_changes
+def _convert_changes(params: list[ChangeParam]) -> list[Change]:
+    """Convert a list of ChangeParam DTOs to internal Change models.
+
+    Returns:
+        List of internal domain models (mix of ParagraphChange and TableChange).
+    """
+    return [_convert_change_param_to_change(p) for p in params]
 
 
 def _format_validation(errors: list[str], warnings: list[str]) -> str:
@@ -415,16 +442,16 @@ def _apply_and_save(
     validate: bool,
 ) -> str:
     """Shared implementation for both apply tools."""
-    paragraph_changes, table_changes = _convert_changes(change_params)
+    # Convert MCP params to internal domain models
+    changes = _convert_changes(change_params)
     config = RedlineConfig(author=author)
     out = _resolve_output_path(document_path, output_path)
 
     try:
         doc = apply_redlines(
             document_path,
-            paragraph_changes,
+            changes,
             config=config,
-            table_changes=table_changes,
         )
     except FileNotFoundError as exc:
         msg = f"File not found: {document_path}"
@@ -432,7 +459,7 @@ def _apply_and_save(
     except ValueError as exc:
         raise ToolError(str(exc)) from exc
 
-    # Build summary
+    # Build summary (use original params for counting)
     counts = Counter(p.change_type for p in change_params)
     summary_parts = []
     for ct in ("modify", "delete", "append_after", "modify_cell", "clear_cell"):

@@ -12,18 +12,30 @@ Coordinates the full pipeline:
 
 Usage::
 
-    from docx_mcp.models import Change, ChangeType, RedlineConfig
+    from docx_mcp.models import ParagraphChange, ParagraphChangeType, RedlineConfig
     from docx_mcp.redliner import apply_redlines
 
     changes = [
-        Change(fragment_id=3, change_type=ChangeType.MODIFY,
-               new_text="The Company must provide notice.",
-               justification="Strengthened obligation language."),
-        Change(fragment_id=5, change_type=ChangeType.DELETE,
-               justification="Removed redundant clause."),
-        Change(fragment_id=7, change_type=ChangeType.APPEND_AFTER,
-               new_text="The foregoing shall survive termination.",
-               justification="Added survival provision."),
+        ParagraphChange(
+            kind="paragraph",
+            fragment_id=3,
+            change_type=ParagraphChangeType.MODIFY,
+            new_text="The Company must provide notice.",
+            justification="Strengthened obligation language.",
+        ),
+        ParagraphChange(
+            kind="paragraph",
+            fragment_id=5,
+            change_type=ParagraphChangeType.DELETE,
+            justification="Removed redundant clause.",
+        ),
+        ParagraphChange(
+            kind="paragraph",
+            fragment_id=7,
+            change_type=ParagraphChangeType.APPEND_AFTER,
+            new_text="The foregoing shall survive termination.",
+            justification="Added survival provision.",
+        ),
     ]
 
     doc = apply_redlines("input.docx", changes)
@@ -42,7 +54,13 @@ from docx_mcp.handlers.append import handle_append_after
 from docx_mcp.handlers.delete import handle_delete
 from docx_mcp.handlers.modify import handle_modify
 from docx_mcp.id_manager import IdManager
-from docx_mcp.models import Change, ChangeType, RedlineConfig, TableChange
+from docx_mcp.models import (
+    Change,
+    ParagraphChange,
+    ParagraphChangeType,
+    RedlineConfig,
+    TableChange,
+)
 from docx_mcp.namespaces import xpath
 from docx_mcp.table_redliner import apply_table_changes
 from docx_mcp.table_utils import is_simple_table
@@ -55,16 +73,17 @@ def apply_redlines(
     source: Path | str | bytes,
     changes: list[Change],
     config: RedlineConfig | None = None,
-    table_changes: list[TableChange] | None = None,
 ) -> DocxDocument:
     """Apply tracked changes to a .docx document.
 
+    Accepts a unified list of changes that can include both paragraph changes
+    (modify, delete, append_after) and table cell changes (modify_cell, clear_cell).
+
     Args:
         source: Path to a ``.docx`` file, or raw bytes of one.
-        changes: List of paragraph changes to apply.
+        changes: List of changes to apply (mix of ParagraphChange and TableChange).
         config: Redline configuration (author, date). Defaults to
             ``RedlineConfig()`` which uses "AI Review" and current time.
-        table_changes: List of table cell changes to apply (optional).
 
     Returns:
         A :class:`DocxDocument` with all changes applied as tracked
@@ -78,9 +97,6 @@ def apply_redlines(
     if config is None:
         config = RedlineConfig()
 
-    if table_changes is None:
-        table_changes = []
-
     # --- 1. Load ---
     doc = DocxDocument(data=source) if isinstance(source, bytes) else DocxDocument(path=source)
 
@@ -88,20 +104,30 @@ def apply_redlines(
     element_map = doc.interleaved_element_map()
     max_id = max(element_map.keys()) if element_map else 0
 
-    # --- 3. Validate changes ---
-    _validate_changes(changes, max_id, element_map)
+    # --- 3. Split changes by type ---
+    paragraph_changes: list[ParagraphChange] = []
+    table_changes: list[TableChange] = []
+
+    for change in changes:
+        if isinstance(change, ParagraphChange):
+            paragraph_changes.append(change)
+        else:  # TableChange
+            table_changes.append(change)
+
+    # --- 4. Validate changes ---
+    _validate_paragraph_changes(paragraph_changes, max_id, element_map)
     _validate_table_changes(table_changes, max_id, element_map)
 
-    # --- 4. ID manager ---
+    # --- 5. ID manager ---
     id_manager = IdManager(start_after=doc.max_annotation_id())
 
-    # --- 5. Sort and apply paragraph changes ---
-    sorted_changes = _sort_changes(changes)
+    # --- 6. Sort and apply paragraph changes ---
+    sorted_para_changes = _sort_paragraph_changes(paragraph_changes)
 
-    for change in sorted_changes:
+    for change in sorted_para_changes:
         paragraph = element_map[change.fragment_id]
 
-        if change.change_type == ChangeType.MODIFY:
+        if change.change_type == ParagraphChangeType.MODIFY:
             assert change.new_text is not None
             annotation_ids = handle_modify(
                 paragraph,
@@ -121,7 +147,7 @@ def apply_redlines(
                     range_elements=range_els if range_els else None,
                 )
 
-        elif change.change_type == ChangeType.DELETE:
+        elif change.change_type == ParagraphChangeType.DELETE:
             handle_delete(
                 paragraph,
                 id_manager=id_manager,
@@ -147,7 +173,7 @@ def apply_redlines(
                     config=config,
                 )
 
-        elif change.change_type == ChangeType.APPEND_AFTER:
+        elif change.change_type == ParagraphChangeType.APPEND_AFTER:
             assert change.new_text is not None
             new_p, _ = handle_append_after(
                 paragraph,
@@ -166,7 +192,7 @@ def apply_redlines(
                 config=config,
             )
 
-    # --- 6. Apply table changes ---
+    # --- 7. Apply table changes ---
     if table_changes:
         apply_table_changes(
             doc,
@@ -179,8 +205,8 @@ def apply_redlines(
     return doc
 
 
-def _validate_changes(
-    changes: list[Change],
+def _validate_paragraph_changes(
+    changes: list[ParagraphChange],
     max_id: int,
     element_map: dict[int, etree._Element],
 ) -> None:
@@ -192,66 +218,24 @@ def _validate_changes(
         element_map: Mapping of element_id → element.
 
     Raises:
-        ValueError: If a change is invalid.
+        ValueError: If a change is invalid or targets the wrong element type.
     """
     for change in changes:
         if change.fragment_id < 1 or change.fragment_id > max_id:
             msg = (
-                f"Change references fragment_id={change.fragment_id}, "
+                f"Paragraph change references fragment_id={change.fragment_id}, "
                 f"but document has elements 1..{max_id}"
             )
             raise ValueError(msg)
 
-        # Verify it targets a paragraph
+        # Verify it targets a paragraph, not a table
         el = element_map[change.fragment_id]
         tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
         if tag_local != "p":
             msg = (
                 f"Paragraph change references fragment_id={change.fragment_id}, "
-                f"but the element at that position is <w:{tag_local}>, not <w:p>"
-            )
-            raise ValueError(msg)
-
-        # Verify change_type is a paragraph type
-        if change.change_type not in (
-            ChangeType.MODIFY,
-            ChangeType.DELETE,
-            ChangeType.APPEND_AFTER,
-        ):
-            msg = (
-                f"Paragraph change on fragment {change.fragment_id} has invalid "
-                f"change_type '{change.change_type.value}'. For table changes, "
-                f"use cell_id instead of fragment_id."
-            )
-            raise ValueError(msg)
-
-        if (
-            change.change_type in (ChangeType.MODIFY, ChangeType.APPEND_AFTER)
-            and change.new_text is None
-        ):
-            msg = (
-                f"Change type {change.change_type.value} on "
-                f"fragment {change.fragment_id} requires new_text"
-            )
-            raise ValueError(msg)
-
-        # blank_lines_before / blank_lines_after are only valid with append_after
-        if change.change_type != ChangeType.APPEND_AFTER and (
-            change.blank_lines_before > 0 or change.blank_lines_after > 0
-        ):
-            msg = (
-                f"blank_lines_before/blank_lines_after are only valid with "
-                f"append_after, but fragment {change.fragment_id} has "
-                f"change_type={change.change_type.value}"
-            )
-            raise ValueError(msg)
-
-        # delete_next_blanks is only valid with delete
-        if change.change_type != ChangeType.DELETE and change.delete_next_blanks > 0:
-            msg = (
-                f"delete_next_blanks is only valid with delete, "
-                f"but fragment {change.fragment_id} has "
-                f"change_type={change.change_type.value}"
+                f"but element {change.fragment_id} is a <w:{tag_local}>, not <w:p>. "
+                f"Use TableChange with cell_id for table changes."
             )
             raise ValueError(msg)
 
@@ -269,21 +253,21 @@ def _validate_table_changes(
         element_map: Mapping of element_id → element.
 
     Raises:
-        ValueError: If a table change is invalid.
+        ValueError: If a table change is invalid or targets the wrong element type.
     """
     for change in table_changes:
         if change.table_id < 1 or change.table_id > max_id:
             msg = (
-                f"Table change references table_id={change.table_id}, "
+                f"Table change references table_id={change.table_id} (cell_id={change.cell_id}), "
                 f"but document has elements 1..{max_id}"
             )
             raise ValueError(msg)
 
-        # Verify it targets a table
+        # Verify it targets a table, not a paragraph
         el = element_map.get(change.table_id)
         if el is None:
             msg = (
-                f"Table change references table_id={change.table_id}, "
+                f"Table change references table_id={change.table_id} (cell_id={change.cell_id}), "
                 f"but no element exists at that position"
             )
             raise ValueError(msg)
@@ -291,8 +275,9 @@ def _validate_table_changes(
         tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
         if tag_local != "tbl":
             msg = (
-                f"Table change references table_id={change.table_id}, "
-                f"but the element at that position is <w:{tag_local}>, not <w:tbl>"
+                f"Table change references table_id={change.table_id} (cell_id={change.cell_id}), "
+                f"but element {change.table_id} is a <w:{tag_local}>, not <w:tbl>. "
+                f"Use ParagraphChange with fragment_id for paragraph changes."
             )
             raise ValueError(msg)
 
@@ -313,26 +298,9 @@ def _validate_table_changes(
             )
             raise ValueError(msg)
 
-        # Validate change_type is a table type
-        if change.change_type not in (ChangeType.MODIFY_CELL, ChangeType.CLEAR_CELL):
-            msg = (
-                f"Table change for cell_id={change.cell_id} has invalid change_type "
-                f"'{change.change_type.value}'. Must be 'modify_cell' or 'clear_cell'."
-            )
-            raise ValueError(msg)
 
-        # Validate new_text requirements
-        if change.change_type == ChangeType.MODIFY_CELL and change.new_text is None:
-            msg = f"modify_cell on cell_id={change.cell_id} requires new_text"
-            raise ValueError(msg)
-
-        if change.change_type == ChangeType.CLEAR_CELL and change.new_text is not None:
-            msg = f"clear_cell on cell_id={change.cell_id} must not have new_text"
-            raise ValueError(msg)
-
-
-def _sort_changes(changes: list[Change]) -> list[Change]:
-    """Sort changes for correct processing order.
+def _sort_paragraph_changes(changes: list[ParagraphChange]) -> list[ParagraphChange]:
+    """Sort paragraph changes for correct processing order.
 
     Ordering rules:
     - Modify changes first (they need original text for diffing).
@@ -341,15 +309,15 @@ def _sort_changes(changes: list[Change]) -> list[Change]:
       appends don't shift earlier targets).
     """
     type_order = {
-        ChangeType.MODIFY: 0,
-        ChangeType.DELETE: 1,
-        ChangeType.APPEND_AFTER: 2,
+        ParagraphChangeType.MODIFY: 0,
+        ParagraphChangeType.DELETE: 1,
+        ParagraphChangeType.APPEND_AFTER: 2,
     }
 
-    def sort_key(c: Change) -> tuple[int, int]:
+    def sort_key(c: ParagraphChange) -> tuple[int, int]:
         order = type_order[c.change_type]
         # For append_after, reverse fragment order (high IDs first)
-        fid = -c.fragment_id if c.change_type == ChangeType.APPEND_AFTER else c.fragment_id
+        fid = -c.fragment_id if c.change_type == ParagraphChangeType.APPEND_AFTER else c.fragment_id
         return (order, fid)
 
     return sorted(changes, key=sort_key)

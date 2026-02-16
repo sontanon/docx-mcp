@@ -19,7 +19,7 @@ from docx_mcp.handlers.append import handle_append_after
 from docx_mcp.handlers.delete import handle_delete
 from docx_mcp.handlers.modify import handle_modify
 from docx_mcp.id_manager import IdManager
-from docx_mcp.models import ChangeType, RedlineConfig, TableChange
+from docx_mcp.models import RedlineConfig, TableChange, TableChangeType
 from docx_mcp.table_utils import get_cell_element, get_cell_paragraphs
 
 
@@ -78,7 +78,7 @@ def apply_table_changes(
             raise ValueError(msg)
 
         # Dispatch by change type
-        if change.change_type == ChangeType.MODIFY_CELL:
+        if change.change_type == TableChangeType.MODIFY_CELL:
             _modify_cell(paras, change, id_manager=id_manager, config=config)
             # Attach comment to first paragraph
             add_comment(
@@ -89,7 +89,7 @@ def apply_table_changes(
                 config=config,
             )
 
-        elif change.change_type == ChangeType.CLEAR_CELL:
+        elif change.change_type == TableChangeType.CLEAR_CELL:
             _clear_cell(paras, id_manager=id_manager, config=config)
             # Attach comment to first paragraph
             add_comment(

@@ -20,7 +20,7 @@ from docx_mcp.handlers.delete import handle_delete
 from docx_mcp.handlers.modify import handle_modify
 from docx_mcp.id_manager import IdManager
 from docx_mcp.models import RedlineConfig, TableChange, TableChangeType
-from docx_mcp.table_utils import get_cell_element, get_cell_paragraphs
+from docx_mcp.table_utils import get_cell_at_grid, get_cell_paragraphs
 
 
 def apply_table_changes(

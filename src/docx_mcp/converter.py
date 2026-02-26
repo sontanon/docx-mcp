@@ -20,7 +20,7 @@ from lxml import etree
 
 from docx_mcp.models import CellInfo, SkippedTableInfo, TableInfo
 from docx_mcp.namespaces import qn, xpath
-from docx_mcp.table_utils import get_cell_paragraphs, is_simple_table, table_dimensions
+from docx_mcp.table_utils import get_cell_paragraphs, get_grid_span, is_simple_table, table_dimensions
 
 
 def _has_bool_property(rpr: etree._Element | None, local_name: str) -> bool:
@@ -308,17 +308,20 @@ def _extract_table_info(
 ) -> TableInfo | SkippedTableInfo:
     """Extract structured table info from a <w:tbl> element.
 
+    Uses grid-based addressing: cells are reported at their starting grid
+    column with a ``grid_span`` indicating how many columns they span.
+
     Args:
         tbl: A ``<w:tbl>`` element.
         table_id: 1-based table index in document order.
         markup: When True, include tracked-change markers in cell text.
 
     Returns:
-        TableInfo if the table is simple, or SkippedTableInfo if not.
+        TableInfo if the table is supported, or SkippedTableInfo if not.
     """
-    is_simple, reason = is_simple_table(tbl)
+    is_supported, reason = is_simple_table(tbl)
 
-    if not is_simple:
+    if not is_supported:
         return SkippedTableInfo(table_id=table_id, reason=reason)
 
     rows_count, cols_count = table_dimensions(tbl)
@@ -329,9 +332,11 @@ def _extract_table_info(
     for row_idx, row in enumerate(rows, start=1):
         cell_row: list[CellInfo] = []
         tcs = list(xpath(row, "./w:tc"))
+        grid_col = 1  # Track current grid column position
 
-        for col_idx, tc in enumerate(tcs, start=1):
-            cell_id = f"{table_id}.{row_idx}.{col_idx}"
+        for tc in tcs:
+            span = get_grid_span(tc)
+            cell_id = f"{table_id}.{row_idx}.{grid_col}"
             paras = get_cell_paragraphs(tc)
 
             cell_text_parts: list[str] = []
@@ -344,10 +349,12 @@ def _extract_table_info(
             cell_info = CellInfo(
                 cell_id=cell_id,
                 row=row_idx,
-                col=col_idx,
+                col=grid_col,  # Starting grid column
                 text=cell_text,
+                grid_span=span,
             )
             cell_row.append(cell_info)
+            grid_col += span  # Advance by the span
 
         cells.append(cell_row)
 
@@ -466,6 +473,7 @@ def fragments_to_json_interleaved(items: list[FragmentItem]) -> list[dict]:
                         "row": cell.row,
                         "col": cell.col,
                         "text": cell.text,
+                        "grid_span": cell.grid_span,
                     }
                     for cell in row
                 ]

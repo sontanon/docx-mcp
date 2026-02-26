@@ -209,15 +209,18 @@ class CellInfo(BaseModel):
     Attributes:
         cell_id: Dotted cell reference "table_id.row.col".
         row: 1-based row index.
-        col: 1-based column index.
+        col: 1-based grid column index (starting position).
         text: Cell text in pseudo-Markdown format. Multiple paragraphs
             within the cell are joined with \n.
+        grid_span: Number of grid columns this cell spans. Default is 1.
+            For horizontally merged cells, this is the value of w:gridSpan.
     """
 
     cell_id: str
     row: int
     col: int
     text: str
+    grid_span: int = 1
 
     model_config = {"frozen": True}
 

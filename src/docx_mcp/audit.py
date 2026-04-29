@@ -17,7 +17,9 @@ class AuditReport:
     """Structural audit results for a .docx file."""
 
     header_parts: int = 0
+    header_paragraphs: int = 0
     footer_parts: int = 0
+    footer_paragraphs: int = 0
     images_body: int = 0
     images_header: int = 0
     images_footer: int = 0
@@ -33,8 +35,12 @@ class AuditReport:
     def to_text(self) -> str:
         """Format as human-readable text."""
         lines: list[str] = ["Document Audit Report", "=" * 40]
-        lines.append(f"Headers: {self.header_parts} part(s)")
-        lines.append(f"Footers: {self.footer_parts} part(s)")
+        lines.append(
+            f"Headers: {self.header_parts} part(s), {self.header_paragraphs} paragraph(s)"
+        )
+        lines.append(
+            f"Footers: {self.footer_parts} part(s), {self.footer_paragraphs} paragraph(s)"
+        )
         total_images = self.images_body + self.images_header + self.images_footer
         lines.append(
             f"Images: {total_images} "
@@ -55,7 +61,9 @@ class AuditReport:
         """Format as JSON-serializable dict."""
         return {
             "header_parts": self.header_parts,
+            "header_paragraphs": self.header_paragraphs,
             "footer_parts": self.footer_parts,
+            "footer_paragraphs": self.footer_paragraphs,
             "images": {
                 "body": self.images_body,
                 "header": self.images_header,
@@ -89,6 +97,18 @@ def audit_document(doc: DocxDocument) -> AuditReport:
     # Headers / footers
     report.header_parts = len(doc.header_trees)
     report.footer_parts = len(doc.footer_trees)
+
+    for tree in doc.header_trees.values():
+        for child in tree:
+            tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if tag == "p":
+                report.header_paragraphs += 1
+
+    for tree in doc.footer_trees.values():
+        for child in tree:
+            tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if tag == "p":
+                report.footer_paragraphs += 1
 
     # Images in body
     for para in doc.paragraphs:

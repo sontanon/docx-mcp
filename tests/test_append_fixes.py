@@ -13,6 +13,10 @@ from docx_mcp.redliner import _sort_paragraph_changes
 class TestSortParagraphChanges:
     """Tests for _sort_paragraph_changes ordering."""
 
+    def _make_element_map(self, ids):
+        """Build a minimal element map for sorting tests."""
+        return {str(i): None for i in ids}
+
     def test_append_same_fragment_reversed(self):
         """Multiple appends to the same fragment should be reversed."""
         changes = [
@@ -31,7 +35,8 @@ class TestSortParagraphChanges:
                 justification="Test 2",
             ),
         ]
-        sorted_changes = _sort_paragraph_changes(changes)
+        element_map = self._make_element_map([1, 2, 3, 4, 5])
+        sorted_changes = _sort_paragraph_changes(changes, element_map)
         assert sorted_changes[0].new_text == "Second append"
         assert sorted_changes[1].new_text == "First append"
 
@@ -53,9 +58,10 @@ class TestSortParagraphChanges:
                 justification="Test",
             ),
         ]
-        sorted_changes = _sort_paragraph_changes(changes)
-        assert sorted_changes[0].fragment_id == 5
-        assert sorted_changes[1].fragment_id == 3
+        element_map = self._make_element_map([1, 2, 3, 4, 5])
+        sorted_changes = _sort_paragraph_changes(changes, element_map)
+        assert sorted_changes[0].fragment_id == "5"
+        assert sorted_changes[1].fragment_id == "3"
 
     def test_mixed_changes_ordered_correctly(self):
         """Modify comes before delete comes before append."""
@@ -81,7 +87,8 @@ class TestSortParagraphChanges:
                 justification="Test",
             ),
         ]
-        sorted_changes = _sort_paragraph_changes(changes)
+        element_map = self._make_element_map([1, 2, 3, 4, 5])
+        sorted_changes = _sort_paragraph_changes(changes, element_map)
         assert sorted_changes[0].change_type == ParagraphChangeType.MODIFY
         assert sorted_changes[1].change_type == ParagraphChangeType.DELETE
         assert sorted_changes[2].change_type == ParagraphChangeType.APPEND_AFTER

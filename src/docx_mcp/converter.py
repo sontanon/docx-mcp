@@ -19,6 +19,7 @@ from collections.abc import Callable
 
 from lxml import etree
 
+from docx_mcp.document import DocxDocument
 from docx_mcp.models import CellInfo, SkippedTableInfo, TableInfo
 from docx_mcp.namespaces import qn, xpath
 from docx_mcp.table_utils import get_cell_paragraphs, is_simple_table, table_dimensions
@@ -373,7 +374,7 @@ def _extract_table_info(
     Returns:
         TableInfo if the table is simple, or SkippedTableInfo if not.
     """
-    is_simple, reason = is_simple_table(tbl)
+    is_simple, reason = is_simple_table(tbl, table_id=table_id)
 
     if not is_simple:
         return SkippedTableInfo(table_id=table_id, reason=reason)
@@ -418,7 +419,7 @@ def _extract_table_info(
     )
 
 
-FragmentItem = tuple[int, str] | TableInfo | SkippedTableInfo
+FragmentItem = tuple[str, str] | TableInfo | SkippedTableInfo
 
 
 class FragmentResult:
@@ -463,7 +464,7 @@ def body_to_fragments(
             md = paragraph_to_pseudo_markdown(
                 el, markup=markup, hyperlink_resolver=hyperlink_resolver
             )
-            result.items.append((i, md))
+            result.items.append((str(i), md))
             # Check for images in the paragraph (<w:drawing>/<w:pict> are inside <w:r>)
             if xpath(el, ".//w:drawing") or xpath(el, ".//w:pict"):
                 result.skipped_elements.append(
@@ -500,6 +501,98 @@ def body_to_fragments(
                             "reason": "contains nested table",
                         }
                     )
+
+    return result
+
+
+def full_to_fragments(
+    doc: DocxDocument,
+    markup: bool = False,
+    hyperlink_resolver: Callable[[str], str | None] | None = None,
+) -> FragmentResult:
+    """Convert all extractable content (body, headers, footers) to fragments.
+
+    Body paragraphs and tables are included with their normal numeric IDs.
+    Header and footer paragraphs use prefixed IDs (``header_1.1``, ``footer_2.1``).
+    Tables inside headers/footers are reported as skipped elements.
+
+    Args:
+        doc: :class:`DocxDocument` instance.
+        markup: When True, include tracked-change markers in text.
+        hyperlink_resolver: Optional callable to resolve hyperlink URLs.
+
+    Returns:
+        :class:`FragmentResult` with all fragments and skipped elements.
+    """
+    from docx_mcp.document import DocxDocument
+
+    assert isinstance(doc, DocxDocument)
+
+    # Start with body content
+    result = body_to_fragments(
+        doc.body_elements,
+        markup=markup,
+        hyperlink_resolver=hyperlink_resolver,
+    )
+
+    # Header paragraphs
+    for part_idx, (_rel_id, tree) in enumerate(doc.header_trees.items(), start=1):
+        para_idx = 0
+        for child in tree:
+            tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if tag_local == "p":
+                para_idx += 1
+                fid = f"header_{part_idx}.{para_idx}"
+                md = paragraph_to_pseudo_markdown(
+                    child, markup=markup, hyperlink_resolver=hyperlink_resolver
+                )
+                result.items.append((fid, md))
+                # Check for images
+                if xpath(child, ".//w:drawing") or xpath(child, ".//w:pict"):
+                    result.skipped_elements.append(
+                        {
+                            "type": "image",
+                            "location": fid,
+                            "description": "inline image in header",
+                        }
+                    )
+            elif tag_local == "tbl":
+                result.skipped_elements.append(
+                    {
+                        "type": "table",
+                        "location": f"header_{part_idx}",
+                        "reason": "tables in headers are not editable in this version",
+                    }
+                )
+
+    # Footer paragraphs
+    for part_idx, (_rel_id, tree) in enumerate(doc.footer_trees.items(), start=1):
+        para_idx = 0
+        for child in tree:
+            tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if tag_local == "p":
+                para_idx += 1
+                fid = f"footer_{part_idx}.{para_idx}"
+                md = paragraph_to_pseudo_markdown(
+                    child, markup=markup, hyperlink_resolver=hyperlink_resolver
+                )
+                result.items.append((fid, md))
+                if xpath(child, ".//w:drawing") or xpath(child, ".//w:pict"):
+                    result.skipped_elements.append(
+                        {
+                            "type": "image",
+                            "location": fid,
+                            "description": "inline image in footer",
+                        }
+                    )
+            elif tag_local == "tbl":
+                result.skipped_elements.append(
+                    {
+                        "type": "table",
+                        "location": f"footer_{part_idx}",
+                        "reason": "tables in footers are not editable in this version",
+                    }
+                )
 
     return result
 

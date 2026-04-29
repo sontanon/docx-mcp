@@ -74,7 +74,7 @@ class TestExtractFragments:
         assert isinstance(fragments, list)
         assert len(fragments) == 5
         assert fragments[0]["type"] == "paragraph"
-        assert fragments[0]["fragment_id"] == 1
+        assert fragments[0]["fragment_id"] == "1"
         assert "text" in fragments[0]
 
     async def test_file_not_found(self):
@@ -111,10 +111,10 @@ class TestApplyChanges:
                     "document_path": str(simple_5para_path),
                     "changes": [
                         {
-                            "fragment_id": 1,
+                            "fragment_id": "1",
                             "change_type": "modify",
                             "new_text": "The Modified Seller shall transfer the goods.",
-                            "justification": "Updated party name.",
+                            "justification": "Test markup extraction.",
                         },
                     ],
                     "output_path": str(output),
@@ -135,7 +135,7 @@ class TestApplyChanges:
                     "document_path": str(simple_5para_path),
                     "changes": [
                         {
-                            "fragment_id": 2,
+                            "fragment_id": "2",
                             "change_type": "delete",
                             "justification": "Removed redundant clause.",
                         },
@@ -156,7 +156,7 @@ class TestApplyChanges:
                     "document_path": str(simple_5para_path),
                     "changes": [
                         {
-                            "fragment_id": 3,
+                            "fragment_id": "3",
                             "change_type": "append_after",
                             "new_text": "The foregoing shall survive termination.",
                             "justification": "Added survival provision.",
@@ -178,18 +178,18 @@ class TestApplyChanges:
                     "document_path": str(simple_5para_path),
                     "changes": [
                         {
-                            "fragment_id": 1,
+                            "fragment_id": "1",
                             "change_type": "modify",
                             "new_text": "Modified paragraph one.",
                             "justification": "Edit first paragraph.",
                         },
                         {
-                            "fragment_id": 3,
+                            "fragment_id": "3",
                             "change_type": "delete",
                             "justification": "Remove third paragraph.",
                         },
                         {
-                            "fragment_id": 5,
+                            "fragment_id": "5",
                             "change_type": "append_after",
                             "new_text": "A new final paragraph.",
                             "justification": "Add conclusion.",
@@ -212,7 +212,7 @@ class TestApplyChanges:
                         "document_path": str(simple_5para_path),
                         "changes": [
                             {
-                                "fragment_id": 1,
+                                "fragment_id": "1",
                                 "change_type": "delete",
                                 "justification": "Test default path.",
                             },
@@ -233,11 +233,11 @@ class TestApplyChanges:
                 {
                     "document_path": str(simple_5para_path),
                     "changes": [
-                        {
-                            "fragment_id": 1,
-                            "change_type": "delete",
-                            "justification": "Test validation.",
-                        },
+                            {
+                                "fragment_id": "1",
+                                "change_type": "delete",
+                                "justification": "Test validation.",
+                            },
                     ],
                     "output_path": str(output),
                 },
@@ -253,11 +253,11 @@ class TestApplyChanges:
                 {
                     "document_path": str(simple_5para_path),
                     "changes": [
-                        {
-                            "fragment_id": 1,
-                            "change_type": "delete",
-                            "justification": "Test no validation.",
-                        },
+                            {
+                                "fragment_id": "1",
+                                "change_type": "delete",
+                                "justification": "Test no validation.",
+                            },
                     ],
                     "output_path": str(output),
                     "validate": False,
@@ -276,7 +276,7 @@ class TestApplyChanges:
                         "document_path": str(simple_5para_path),
                         "changes": [
                             {
-                                "fragment_id": 99,
+                                "fragment_id": "99",
                                 "change_type": "delete",
                                 "justification": "Bad ID.",
                             },
@@ -294,7 +294,7 @@ class TestApplyChanges:
                         "document_path": "/nonexistent/file.docx",
                         "changes": [
                             {
-                                "fragment_id": 1,
+                                "fragment_id": "1",
                                 "change_type": "delete",
                                 "justification": "Test.",
                             },
@@ -310,11 +310,11 @@ class TestApplyChanges:
                 {
                     "document_path": str(simple_5para_path),
                     "changes": [
-                        {
-                            "fragment_id": 1,
-                            "change_type": "delete",
-                            "justification": "Test author.",
-                        },
+                            {
+                                "fragment_id": "1",
+                                "change_type": "delete",
+                                "justification": "Test author.",
+                            },
                     ],
                     "output_path": str(output),
                     "author": "Jane Doe",
@@ -346,7 +346,7 @@ class TestApplyChangesFromFile:
             tmp_path,
             [
                 {
-                    "fragment_id": 1,
+                    "fragment_id": "1",
                     "change_type": "modify",
                     "new_text": "Paragraph one modified via file.",
                     "justification": "Test file-based apply.",
@@ -373,7 +373,7 @@ class TestApplyChangesFromFile:
             {
                 "changes": [
                     {
-                        "fragment_id": 2,
+                        "fragment_id": "2",
                         "change_type": "delete",
                         "justification": "Test dict wrapper.",
                     },
@@ -474,7 +474,7 @@ class TestValidateDocument:
                     "document_path": str(simple_5para_path),
                     "changes": [
                         {
-                            "fragment_id": 1,
+                            "fragment_id": "1",
                             "change_type": "modify",
                             "new_text": "Changed text for validation test.",
                             "justification": "Test.",
@@ -531,7 +531,7 @@ class TestDiffFragments:
                     "document_path": str(simple_5para_path),
                     "changes": [
                         {
-                            "fragment_id": 1,
+                            "fragment_id": "1",
                             "change_type": "modify",
                             "new_text": "Completely different text here.",
                             "justification": "Test diff.",
@@ -626,7 +626,7 @@ class TestDiffFragments:
                     "document_path": str(mixed_content_path),
                     "changes": [
                         {
-                            "fragment_id": 1,
+                            "fragment_id": "1",
                             "change_type": "modify",
                             "new_text": "Modified first paragraph.",
                             "justification": "Test para change.",
@@ -729,7 +729,7 @@ class TestExtractFragmentsMarkup:
                     "document_path": str(simple_5para_path),
                     "changes": [
                         {
-                            "fragment_id": 1,
+                            "fragment_id": "1",
                             "change_type": "modify",
                             "new_text": "The Modified Seller shall transfer the goods.",
                             "justification": "Test markup extraction.",
@@ -756,7 +756,7 @@ class TestExtractFragmentsMarkup:
                     "document_path": str(simple_5para_path),
                     "changes": [
                         {
-                            "fragment_id": 1,
+                            "fragment_id": "1",
                             "change_type": "modify",
                             "new_text": "The Modified Seller shall transfer the goods.",
                             "justification": "Test markup extraction.",
@@ -814,7 +814,7 @@ class TestExtractTablesInFragments:
 
         # First item is paragraph
         assert fragments[0]["type"] == "paragraph"
-        assert fragments[0]["fragment_id"] == 1
+        assert fragments[0]["fragment_id"] == "1"
 
         # Second item is table
         assert fragments[1]["type"] == "table"
@@ -946,7 +946,7 @@ class TestApplyTableChanges:
                     "document_path": str(mixed_content_path),
                     "changes": [
                         {
-                            "fragment_id": 1,
+                            "fragment_id": "1",
                             "change_type": "modify",
                             "new_text": "Modified intro.",
                             "justification": "Update intro",

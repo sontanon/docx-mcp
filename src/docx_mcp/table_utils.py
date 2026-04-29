@@ -14,7 +14,11 @@ from lxml import etree
 from docx_mcp.namespaces import xpath
 
 
-def is_simple_table(tbl: etree._Element) -> tuple[bool, str]:
+def is_simple_table(
+    tbl: etree._Element,
+    *,
+    table_id: int | None = None,
+) -> tuple[bool, str]:
     """Check if *tbl* is a simple rectangular table without merged cells.
 
     A "simple" table has:
@@ -25,14 +29,17 @@ def is_simple_table(tbl: etree._Element) -> tuple[bool, str]:
 
     Args:
         tbl: A ``<w:tbl>`` element.
+        table_id: Optional table fragment ID to include in error messages.
 
     Returns:
         A tuple of (is_simple, reason). If simple, returns (True, "").
         If not simple, returns (False, "reason message").
     """
+    prefix = f"table {table_id}, " if table_id is not None else ""
+
     rows = list(xpath(tbl, "./w:tr"))
     if not rows:
-        return False, "table has no rows"
+        return False, f"{prefix}table has no rows"
 
     expected_cells: int | None = None
 
@@ -42,7 +49,7 @@ def is_simple_table(tbl: etree._Element) -> tuple[bool, str]:
         if expected_cells is None:
             expected_cells = len(cells)
         elif len(cells) != expected_cells:
-            msg = f"row {row_idx} has {len(cells)} cells, expected {expected_cells}"
+            msg = f"{prefix}row {row_idx} has {len(cells)} cells, expected {expected_cells}"
             return False, msg
 
         for col_idx, cell in enumerate(cells, start=1):
@@ -51,16 +58,16 @@ def is_simple_table(tbl: etree._Element) -> tuple[bool, str]:
                 tcPr = tcPr_list[0]
 
                 if xpath(tcPr, "./w:gridSpan"):
-                    msg = f"cell {row_idx}.{col_idx} has horizontal merge (gridSpan)"
+                    msg = f"{prefix}cell {row_idx}.{col_idx} has horizontal merge (gridSpan)"
                     return False, msg
 
                 if xpath(tcPr, "./w:vMerge"):
-                    msg = f"cell {row_idx}.{col_idx} has vertical merge (vMerge)"
+                    msg = f"{prefix}cell {row_idx}.{col_idx} has vertical merge (vMerge)"
                     return False, msg
 
             nested_tables = xpath(cell, ".//w:tbl")
             if nested_tables:
-                msg = f"cell {row_idx}.{col_idx} contains nested table"
+                msg = f"{prefix}cell {row_idx}.{col_idx} contains nested table"
                 return False, msg
 
     return True, ""

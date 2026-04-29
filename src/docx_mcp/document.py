@@ -56,6 +56,8 @@ class DocxDocument:
         self._rels_tree: etree._Element | None = None  # word/_rels/document.xml.rels
         self._header_trees: dict[str, etree._Element] = {}
         self._footer_trees: dict[str, etree._Element] = {}
+        self._header_paths: dict[str, str] = {}  # rel_id -> zip entry path
+        self._footer_paths: dict[str, str] = {}  # rel_id -> zip entry path
 
         self._parse_zip(raw)
 
@@ -110,10 +112,12 @@ class DocxDocument:
                 xml_bytes = self._zip_entries.get(target_path)
                 if xml_bytes is not None:
                     self._header_trees[rel_id] = etree.fromstring(xml_bytes)
+                    self._header_paths[rel_id] = target_path
             elif rel_type == f"{ns}/footer":
                 xml_bytes = self._zip_entries.get(target_path)
                 if xml_bytes is not None:
                     self._footer_trees[rel_id] = etree.fromstring(xml_bytes)
+                    self._footer_paths[rel_id] = target_path
 
     @property
     def document_tree(self) -> etree._Element:
@@ -176,6 +180,76 @@ class DocxDocument:
             Dict mapping fragment_id (1..N) to the <w:p> lxml element.
         """
         return {i: para for i, para in enumerate(self.paragraphs, start=1)}
+
+    def full_element_map(self) -> dict[str, etree._Element]:
+        """Build a unified element map for body, headers, and footers.
+
+        Body elements use plain numeric keys (``"1"``, ``"2"``, …).
+        Header paragraphs use ``"header_{part_index}.{element_index}"``.
+        Footer paragraphs use ``"footer_{part_index}.{element_index}"``.
+
+        Only ``<w:p>`` elements are included for headers/footers.
+        Tables inside headers/footers are omitted and should be reported
+        in ``skipped_elements`` by the caller.
+
+        Returns:
+            Dict mapping fragment_id (str) to the lxml element.
+        """
+        result: dict[str, etree._Element] = {}
+
+        # Body elements (paragraphs and tables)
+        for i, el in enumerate(self.body_elements, start=1):
+            result[str(i)] = el
+
+        # Header paragraphs
+        for part_idx, (_rel_id, tree) in enumerate(self._header_trees.items(), start=1):
+            para_idx = 0
+            for child in tree:
+                tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+                if tag_local == "p":
+                    para_idx += 1
+                    result[f"header_{part_idx}.{para_idx}"] = child
+                elif tag_local == "tbl":
+                    # Tables in headers are not editable; skip
+                    pass
+
+        # Footer paragraphs
+        for part_idx, (_rel_id, tree) in enumerate(self._footer_trees.items(), start=1):
+            para_idx = 0
+            for child in tree:
+                tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+                if tag_local == "p":
+                    para_idx += 1
+                    result[f"footer_{part_idx}.{para_idx}"] = child
+                elif tag_local == "tbl":
+                    pass
+
+        return result
+
+    def resolve_fragment_id(self, fragment_id: str) -> tuple[etree._Element, str]:
+        """Resolve a fragment ID to its element and parent tree type.
+
+        Args:
+            fragment_id: Fragment ID (e.g. ``"5"``, ``"header_1.3"``).
+
+        Returns:
+            Tuple of (element, tree_type) where tree_type is one of
+            ``"body"``, ``"header"``, ``"footer"``.
+
+        Raises:
+            ValueError: If the fragment_id is unknown or malformed.
+        """
+        element_map = self.full_element_map()
+        element = element_map.get(fragment_id)
+        if element is not None:
+            if fragment_id.startswith("header_"):
+                return element, "header"
+            if fragment_id.startswith("footer_"):
+                return element, "footer"
+            return element, "body"
+
+        msg = f"Unknown fragment_id: {fragment_id!r}"
+        raise ValueError(msg)
 
     @property
     def comments_tree(self) -> etree._Element | None:
@@ -367,6 +441,21 @@ class DocxDocument:
             entries["word/_rels/document.xml.rels"] = etree.tostring(
                 self._rels_tree, xml_declaration=True, encoding="UTF-8", standalone=True
             )
+
+        # Re-serialize modified header/footer parts
+        for rel_id, tree in self._header_trees.items():
+            path = self._header_paths.get(rel_id)
+            if path is not None:
+                entries[path] = etree.tostring(
+                    tree, xml_declaration=True, encoding="UTF-8", standalone=True
+                )
+
+        for rel_id, tree in self._footer_trees.items():
+            path = self._footer_paths.get(rel_id)
+            if path is not None:
+                entries[path] = etree.tostring(
+                    tree, xml_declaration=True, encoding="UTF-8", standalone=True
+                )
 
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
             for entry_path, entry_bytes in entries.items():

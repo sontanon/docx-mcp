@@ -815,6 +815,71 @@ def generate_multiple_hyperlinks() -> Path:
     return path
 
 
+def generate_header_footer_text() -> Path:
+    """Document with plain text in header and footer."""
+    doc = Document()
+    doc.add_paragraph("First body paragraph.")
+    doc.add_paragraph("Second body paragraph.")
+
+    section = doc.sections[0]
+    header = section.header
+    header_para = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+    header_para.text = "Header paragraph text."
+
+    footer = section.footer
+    footer_para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+    footer_para.text = "Footer paragraph text."
+
+    path = _ensure_dir() / "header_footer_text.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_two_section() -> Path:
+    """Document with two sections separated by a section break."""
+    doc = Document()
+    doc.add_paragraph("Paragraph in first section.")
+
+    # Add a section break with different page size
+    new_section = doc.add_section()
+    new_section.page_width = 15840000  # landscape-ish (in EMUs)
+    new_section.page_height = 10080000
+    doc.add_paragraph("Paragraph in second section.")
+
+    path = _ensure_dir() / "two_section.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_table_empty_cell() -> Path:
+    """Simple table with one empty cell."""
+    doc = Document()
+    table = doc.add_table(rows=2, cols=2)
+    table.rows[0].cells[0].text = "Header A"
+    table.rows[0].cells[1].text = "Header B"
+    table.rows[1].cells[0].text = "Data 1"
+    # Cell 1.2 is intentionally empty
+
+    path = _ensure_dir() / "table_empty_cell.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_wide_table() -> Path:
+    """10-column table for stress testing."""
+    doc = Document()
+    table = doc.add_table(rows=2, cols=10)
+    headers = [f"Col {i}" for i in range(1, 11)]
+    for col_idx, header in enumerate(headers):
+        table.rows[0].cells[col_idx].text = header
+    for col_idx in range(10):
+        table.rows[1].cells[col_idx].text = f"Data {col_idx + 1}"
+
+    path = _ensure_dir() / "wide_table.docx"
+    doc.save(str(path))
+    return path
+
+
 ALL_GENERATORS: list[tuple[str, Callable[[], Path]]] = [
     ("simple_5para", generate_simple_5para),
     ("formatted_runs", generate_formatted_runs),
@@ -837,6 +902,10 @@ ALL_GENERATORS: list[tuple[str, Callable[[], Path]]] = [
     ("hyperlink_paragraph", generate_hyperlink_paragraph),
     ("hyperlink_formatted", generate_hyperlink_formatted),
     ("multiple_hyperlinks", generate_multiple_hyperlinks),
+    ("header_footer_text", generate_header_footer_text),
+    ("two_section", generate_two_section),
+    ("table_empty_cell", generate_table_empty_cell),
+    ("wide_table", generate_wide_table),
 ]
 
 

@@ -40,9 +40,9 @@ from fastmcp.exceptions import ToolError
 from pydantic import BaseModel, Discriminator, Field, Tag, TypeAdapter, ValidationError
 
 from docx_mcp.converter import (
-    body_to_fragments,
     fragments_to_json_interleaved,
     fragments_to_tagged_text_interleaved,
+    full_to_fragments,
 )
 from docx_mcp.differ import DmpWordDiffer
 from docx_mcp.document import DocxDocument
@@ -168,7 +168,10 @@ class ParagraphChangeParam(BaseModel):
             (delete only, default 0).
     """
 
-    fragment_id: int = Field(description="1-based paragraph index")
+    fragment_id: str = Field(
+        description="Fragment ID. Body paragraphs use plain integers (e.g. '5'). "
+        "Headers and footers use prefixed IDs (e.g. 'header_1.3', 'footer_2.1')."
+    )
     change_type: Literal["modify", "delete", "append_after"] = Field(
         description='Type of change: "modify", "delete", or "append_after"',
     )
@@ -626,8 +629,8 @@ def extract_fragments(
         )
         raise ToolError(msg)
 
-    result = body_to_fragments(
-        doc.body_elements,
+    result = full_to_fragments(
+        doc,
         markup=markup,
         hyperlink_resolver=doc.resolve_hyperlink_url,
     )
@@ -1136,25 +1139,25 @@ def diff_fragments(
     doc_b = _load_document(modified_path)
 
     # Extract fragments (paragraphs and tables) from both documents
-    result_a = body_to_fragments(doc_a.body_elements)
-    result_b = body_to_fragments(doc_b.body_elements)
+    result_a = full_to_fragments(doc_a)
+    result_b = full_to_fragments(doc_b)
 
     # Build dictionaries mapping fragment_id -> FragmentItem
-    frags_a: dict[int, tuple[int, str] | TableInfo | SkippedTableInfo] = {}
+    frags_a: dict[str, tuple[str, str] | TableInfo | SkippedTableInfo] = {}
     for item in result_a.items:
         if isinstance(item, tuple):
             fid, _text = item
             frags_a[fid] = item
         else:  # TableInfo or SkippedTableInfo
-            frags_a[item.table_id] = item
+            frags_a[str(item.table_id)] = item
 
-    frags_b: dict[int, tuple[int, str] | TableInfo | SkippedTableInfo] = {}
+    frags_b: dict[str, tuple[str, str] | TableInfo | SkippedTableInfo] = {}
     for item in result_b.items:
         if isinstance(item, tuple):
             fid, _text = item
             frags_b[fid] = item
         else:  # TableInfo or SkippedTableInfo
-            frags_b[item.table_id] = item
+            frags_b[str(item.table_id)] = item
 
     all_ids = sorted(set(frags_a) | set(frags_b))
     if not all_ids:
@@ -1297,7 +1300,7 @@ def get_fragments(document_path: str) -> str:
         ``<cell=id>text</cell=id>`` for table cells.
     """
     doc = _load_document(document_path)
-    result = body_to_fragments(doc.body_elements)
+    result = full_to_fragments(doc)
     return fragments_to_tagged_text_interleaved(result.items)
 
 

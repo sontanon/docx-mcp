@@ -93,7 +93,7 @@ class TestBodyToFragments:
 
         # First item: paragraph
         assert isinstance(items[0], tuple)
-        assert items[0][0] == 1
+        assert items[0][0] == "1"
 
         # Second item: table
         assert isinstance(items[1], TableInfo)
@@ -103,7 +103,7 @@ class TestBodyToFragments:
 
         # Third item: paragraph
         assert isinstance(items[2], tuple)
-        assert items[2][0] == 3
+        assert items[2][0] == "3"
 
         # Fourth item: table
         assert isinstance(items[3], TableInfo)
@@ -113,7 +113,7 @@ class TestBodyToFragments:
 
         # Fifth item: paragraph
         assert isinstance(items[4], tuple)
-        assert items[4][0] == 5
+        assert items[4][0] == "5"
 
     def test_cell_ids_are_correct(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)
@@ -229,7 +229,7 @@ class TestFragmentsToJsonInterleaved:
 
         # First item: paragraph
         assert json_list[0]["type"] == "paragraph"
-        assert json_list[0]["fragment_id"] == 1
+        assert json_list[0]["fragment_id"] == "1"
         assert "text" in json_list[0]
 
         # Second item: table
@@ -240,7 +240,7 @@ class TestFragmentsToJsonInterleaved:
 
         # Third item: paragraph
         assert json_list[2]["type"] == "paragraph"
-        assert json_list[2]["fragment_id"] == 3
+        assert json_list[2]["fragment_id"] == "3"
 
         # Fourth item: table
         assert json_list[3]["type"] == "table"
@@ -248,7 +248,7 @@ class TestFragmentsToJsonInterleaved:
 
         # Fifth item: paragraph
         assert json_list[4]["type"] == "paragraph"
-        assert json_list[4]["fragment_id"] == 5
+        assert json_list[4]["fragment_id"] == "5"
 
     def test_skipped_table_json_output(self, merged_cell_table_path: Path) -> None:
         doc = DocxDocument(path=merged_cell_table_path)

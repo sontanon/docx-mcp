@@ -110,9 +110,8 @@ def apply_redlines(
         )
         raise ValueError(msg)
 
-    # --- 2. Element map (interleaved paragraphs and tables) ---
-    element_map = doc.interleaved_element_map()
-    max_id = max(element_map.keys()) if element_map else 0
+    # --- 2. Element map (body, headers, footers) ---
+    element_map = doc.full_element_map()
 
     # --- 3. Split changes by type ---
     paragraph_changes: list[ParagraphChange] = []
@@ -125,14 +124,14 @@ def apply_redlines(
             table_changes.append(change)
 
     # --- 4. Validate changes ---
-    _validate_paragraph_changes(paragraph_changes, max_id, element_map)
-    _validate_table_changes(table_changes, max_id, element_map)
+    _validate_paragraph_changes(paragraph_changes, element_map)
+    _validate_table_changes(table_changes, element_map)
 
     # --- 5. ID manager ---
     id_manager = IdManager(start_after=doc.max_annotation_id())
 
     # --- 6. Sort and apply paragraph changes ---
-    sorted_para_changes = _sort_paragraph_changes(paragraph_changes)
+    sorted_para_changes = _sort_paragraph_changes(paragraph_changes, element_map)
 
     for change in sorted_para_changes:
         paragraph = element_map[change.fragment_id]
@@ -218,24 +217,22 @@ def apply_redlines(
 
 def _validate_paragraph_changes(
     changes: list[ParagraphChange],
-    max_id: int,
-    element_map: dict[int, etree._Element],
+    element_map: dict[str, etree._Element],
 ) -> None:
     """Validate all paragraph changes before applying any.
 
     Args:
         changes: List of paragraph changes.
-        max_id: Maximum valid element ID.
-        element_map: Mapping of element_id → element.
+        element_map: Mapping of fragment_id → element.
 
     Raises:
         ValueError: If a change is invalid or targets the wrong element type.
     """
     for change in changes:
-        if change.fragment_id < 1 or change.fragment_id > max_id:
+        if change.fragment_id not in element_map:
             msg = (
                 f"Paragraph change references fragment_id={change.fragment_id}, "
-                f"but document has elements 1..{max_id}"
+                f"but no such fragment exists in the document"
             )
             raise ValueError(msg)
 
@@ -245,7 +242,7 @@ def _validate_paragraph_changes(
         if tag_local != "p":
             msg = (
                 f"Paragraph change references fragment_id={change.fragment_id}, "
-                f"but element {change.fragment_id} is a <w:{tag_local}>, not <w:p>. "
+                f"but element is a <w:{tag_local}>, not <w:p>. "
                 f"Use TableChange with cell_id for table changes."
             )
             raise ValueError(msg)
@@ -253,29 +250,20 @@ def _validate_paragraph_changes(
 
 def _validate_table_changes(
     table_changes: list[TableChange],
-    max_id: int,
-    element_map: dict[int, etree._Element],
+    element_map: dict[str, etree._Element],
 ) -> None:
     """Validate all table changes before applying any.
 
     Args:
         table_changes: List of table cell changes.
-        max_id: Maximum valid element ID.
-        element_map: Mapping of element_id → element.
+        element_map: Mapping of fragment_id → element.
 
     Raises:
         ValueError: If a table change is invalid or targets the wrong element type.
     """
     for change in table_changes:
-        if change.table_id < 1 or change.table_id > max_id:
-            msg = (
-                f"Table change references table_id={change.table_id} (cell_id={change.cell_id}), "
-                f"but document has elements 1..{max_id}"
-            )
-            raise ValueError(msg)
-
-        # Verify it targets a table, not a paragraph
-        el = element_map.get(change.table_id)
+        table_key = str(change.table_id)
+        el = element_map.get(table_key)
         if el is None:
             msg = (
                 f"Table change references table_id={change.table_id} (cell_id={change.cell_id}), "
@@ -287,17 +275,17 @@ def _validate_table_changes(
         if tag_local != "tbl":
             msg = (
                 f"Table change references table_id={change.table_id} (cell_id={change.cell_id}), "
-                f"but element {change.table_id} is a <w:{tag_local}>, not <w:tbl>. "
+                f"but element is a <w:{tag_local}>, not <w:tbl>. "
                 f"Use ParagraphChange with fragment_id for paragraph changes."
             )
             raise ValueError(msg)
 
         # Check if table is simple
-        is_simple, reason = is_simple_table(el)
+        is_simple, reason = is_simple_table(el, table_id=change.table_id)
         if not is_simple:
             msg = (
                 f"Table change for cell_id={change.cell_id} targets "
-                f"a non-simple table (table_id={change.table_id}): {reason}"
+                f"a non-simple table: {reason}"
             )
             raise ValueError(msg)
 
@@ -310,13 +298,16 @@ def _validate_table_changes(
             raise ValueError(msg)
 
 
-def _sort_paragraph_changes(changes: list[ParagraphChange]) -> list[ParagraphChange]:
+def _sort_paragraph_changes(
+    changes: list[ParagraphChange],
+    element_map: dict[str, etree._Element],
+) -> list[ParagraphChange]:
     """Sort paragraph changes for correct processing order.
 
     Ordering rules:
     - Modify changes first (they need original text for diffing).
     - Then delete changes.
-    - Then append_after changes (in reverse fragment order, so later
+    - Then append_after changes (in reverse document order, so later
       appends don't shift earlier targets).
     - Within append_after changes to the same fragment, reverse the order
       so the first user-listed append ends up first in the document.
@@ -327,18 +318,22 @@ def _sort_paragraph_changes(changes: list[ParagraphChange]) -> list[ParagraphCha
         ParagraphChangeType.APPEND_AFTER: 2,
     }
 
-    # Group append_after changes by fragment_id
     from itertools import groupby
+
+    # Build position index for document-order sorting
+    position_index = {fid: idx for idx, fid in enumerate(element_map.keys())}
 
     def _group_key(c: ParagraphChange) -> tuple[int, int]:
         order = type_order[c.change_type]
-        fid = -c.fragment_id if c.change_type == ParagraphChangeType.APPEND_AFTER else c.fragment_id
-        return (order, fid)
+        pos = position_index.get(c.fragment_id, 0)
+        if c.change_type == ParagraphChangeType.APPEND_AFTER:
+            return (order, -pos)
+        return (order, pos)
 
     sorted_by_key = sorted(changes, key=_group_key)
 
     result: list[ParagraphChange] = []
-    for (_order, _fid), group in groupby(sorted_by_key, key=_group_key):
+    for (_order, _pos), group in groupby(sorted_by_key, key=_group_key):
         group_list = list(group)
         if _order == type_order[ParagraphChangeType.APPEND_AFTER]:
             # Reverse within the group so first-listed append is processed last
@@ -397,7 +392,7 @@ def _delete_trailing_blanks(
     paragraph: etree._Element,
     *,
     count: int,
-    fragment_id: int,
+    fragment_id: str,
     id_manager: IdManager,
     config: RedlineConfig,
 ) -> None:

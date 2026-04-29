@@ -76,7 +76,20 @@ def handle_append_after(
         hyperlink_creator=hyperlink_creator,
     )
 
-    # --- 3. Insert into the tree: blanks_before → content → blanks_after ---
+    # --- 3. Handle section break immediately following reference ---
+    # If the next sibling is <w:sectPr>, we must insert BEFORE it so the
+    # new paragraph stays in the same section as the reference.
+    next_sib = reference_paragraph.getnext()
+    sectpr_to_restore = None
+    if next_sib is not None:
+        next_tag = etree.QName(next_sib.tag).localname if isinstance(next_sib.tag, str) else ""
+        if next_tag == "sectPr":
+            sectpr_to_restore = next_sib
+            parent = next_sib.getparent()
+            if parent is not None:
+                parent.remove(next_sib)
+
+    # --- 4. Insert into the tree: blanks_before → content → blanks_after ---
     # addnext inserts immediately after the reference. We insert
     # blanks_before first (closest to reference), then content, then
     # blanks_after (furthest from reference), updating the anchor each time.
@@ -107,6 +120,10 @@ def handle_append_after(
         )
         anchor.addnext(blank_p)
         anchor = blank_p
+
+    # Restore section break at the end of the inserted block
+    if sectpr_to_restore is not None:
+        anchor.addnext(sectpr_to_restore)
 
     return new_p, ins_id
 

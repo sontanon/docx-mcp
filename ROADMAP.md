@@ -176,89 +176,70 @@ Reports:
 
 ## Tier 2: Expand Coverage
 
-### T2.1 Header/footer extraction & redlining
+### T2.1 Header/footer extraction & redlining **[DONE]**
 
 **Problem:** Headers and footers are invisible. Any text that needs redlining in a header/footer is unreachable.
 
-**Decision:** Load header/footer XML parts and expose their paragraphs/tables via prefixed fragment IDs.
+**Decision:** Load header/footer XML parts and expose their paragraphs via prefixed fragment IDs. Tables inside headers/footers are extracted as skipped elements, not editable.
 
 **Implementation notes:**
 
 1. **Loading (`document.py`):**
-   - Parse `word/_rels/document.xml.rels` to discover relationships of type `http://schemas.openxmlformats.org/officeDocument/2006/relationships/header` and `.../footer`.
-   - Load each referenced XML part into a dict: `self._header_trees: dict[str, etree._Element]` keyed by relationship ID.
-   - Similarly `self._footer_trees: dict[str, etree._Element]`.
-   - Expose properties `header_trees` and `footer_trees`.
+   - Parse `word/_rels/document.xml.rels` to discover header/footer relationships.
+   - Load each referenced XML part into `self._header_trees` / `self._footer_trees`.
+   - Store ZIP entry paths (`_header_paths` / `_footer_paths`) for re-serialization.
 
-2. **Fragment indexing (`document.py` or new module):**
-   - Build element maps for each header/footer part.
-   - Prefix format: `header_{part_index}.{element_index}` where `part_index` is 1-based across all header relationships, and `element_index` is 1-based within that part's top-level `<w:p>` / `<w:tbl>` children.
-   - Same for `footer_{part_index}.{element_index}`.
-   - The main `interleaved_element_map` remains for body content (plain integers). A new `full_element_map` could merge body + headers + footers with string keys.
+2. **Fragment indexing (`document.py`):**
+   - `full_element_map()` returns a unified `dict[str, etree._Element]`:
+     - Body: `"1"`, `"2"`, ...
+     - Headers: `"header_1.1"`, `"header_1.2"`, ...
+     - Footers: `"footer_1.1"`, `"footer_1.2"`, ...
+   - Only `<w:p>` elements are included for headers/footers; tables are skipped.
+   - `resolve_fragment_id()` returns `(element, tree_type)`.
 
 3. **Extraction (`converter.py` + `server.py`):**
-   - `extract_fragments` should include header/footer text in the output.
-   - Tagged format: `<header_1.3>Confidential</header_1.3>` and `<footer_1.1>Page 1</footer_1.1>`.
+   - `full_to_fragments()` processes body + headers + footers.
+   - Tagged format: `<f=header_1.1>Confidential</f=header_1.1>`.
    - JSON format: `{"type": "paragraph", "fragment_id": "header_1.3", "text": "..."}`.
 
 4. **Change model (`models.py`):**
-   - `ParagraphChange.fragment_id` currently typed as `int`. Change to `str | int` (or always `str` with plain numbers for body).
-   - Validation must accept `"header_1.3"`, `"footer_2.1"`, and plain `5`.
-   - Parse prefix → (part_type, part_index, element_index).
+   - `ParagraphChange.fragment_id` changed to `str` with `coerce_numbers_to_str=True`.
+   - Pydantic auto-coerces `5` → `"5"` for backward-compatible JSON/API usage.
 
 5. **Applying changes (`redliner.py` + handlers):**
-   - Resolve prefixed ID to the correct XML tree and element.
-   - `handle_modify`, `handle_delete`, `handle_append_after` work the same way; they operate on an `<w:p>` element regardless of which tree it lives in.
-   - **Comments in headers/footers:** `add_comment` inserts `<w:commentRangeStart>` / `<w:commentRangeEnd>` inside the target paragraph. This works in any XML tree, but the `comments.xml` part is global. Ensure `comments.xml` and `[Content_Types].xml` are updated correctly (already handled).
-   - **ID manager:** `max_annotation_id()` must scan all header/footer trees in addition to `document.xml` and `comments.xml`. This prevents collisions with existing tracked changes or comments in headers/footers.
+   - Uses `full_element_map()` for all paragraph changes.
+   - `_sort_paragraph_changes()` uses document-order position index for stable sorting.
+   - `handle_modify` / `handle_delete` / `handle_append_after` work unchanged (operate on `<w:p>`).
+   - Comments in headers/footers work correctly (global `comments.xml`).
 
 6. **Serialization (`document.py`):**
-   - `to_bytes()` must re-serialize modified header/footer XML parts back into the ZIP.
+   - `to_bytes()` re-serializes modified header/footer trees back into the ZIP.
 
-**Tests needed:**
-- Fixture with header text; extract_fragments returns `<header_1.1>...`.
-- Apply `modify` to `header_1.1` → tracked changes appear in header XML.
-- Apply `delete` to `footer_1.2` → paragraph marked as deleted in footer XML.
-- Comment on header paragraph → comment ranges in header XML, comment entry in comments.xml.
-- ID manager avoids collision with existing header tracked change.
+**Tests:**
+- `test_header_footer.py`: Extraction, modify, delete, append, comment, serialization roundtrip.
 
 ---
 
-### T2.2 Section-break & multi-column validation
+### T2.2 Section-break handling **[DONE]**
 
-**Problem:** Unknown whether `append_after` behaves correctly across section breaks or in multi-column layouts.
+**Decision:** Defensive fix in `handle_append_after`: if the next sibling of the reference paragraph is `<w:sectPr>`, temporarily remove it, perform all insertions, then restore the `sectPr` at the end of the inserted block. This ensures the new paragraph stays in the same section.
 
-**Decision:** Add test fixtures, observe behavior, then decide if explicit validation is needed.
-
-**Implementation notes:**
-- Generate fixtures with:
-  - Two sections, different page sizes.
-  - Two sections, multi-column (`<w:cols w:num="2"/>`).
-  - Section break between paragraphs.
-- Test `append_after` on the last paragraph of a section → verify the new paragraph lands in the same section.
-- Test `extract_fragments` on multi-column document → verify no regressions.
-- If bugs are found, add section-break-aware validation in `append_after` (e.g., refuse to append if a `<w:sectPr>` immediately follows the reference paragraph).
-
-**Tests needed:**
-- Multi-column fixture: extraction and append work correctly.
-- Multi-section fixture: appended paragraph stays in correct section.
+**Tests:**
+- `test_section_breaks.py`: Append after last paragraph before section break, multi-section extraction.
 
 ---
 
-### T2.3 Table robustness improvements
+### T2.3 Table robustness improvements **[DONE]**
 
-**Decision:** Improve test coverage and edge-case handling for simple tables without adding merged-cell support yet.
+**Decision:** Improve test coverage and error messages for simple tables.
 
 **Implementation notes:**
-- Add tests for empty cells (`<w:tc>` with zero paragraphs).
-- Add tests for empty rows.
-- Add tests for pre-existing tracked changes inside table cells (currently unsupported; should be caught by T1.1 hard-reject).
-- Stress-test very wide tables (e.g., 10-column signatory table).
-- Improve error messages when a table is skipped: include the table's fragment ID and the first offending cell coordinate.
+- `is_simple_table()` accepts optional `table_id` parameter; error messages include `table {id}, ...` prefix.
+- Empty cells extract as `""`.
+- Wide tables (10 columns) are fully addressable.
 
-**Tests needed:**
-- Empty cell table fixture → extraction returns `""` for that cell.
-- 10-column table fixture → modify cell 1.1.10 works.
+**Tests:**
+- `test_table_robustness.py`: Empty cell extraction/modify, wide table extraction/modify, improved error messages.
 
 ---
 
@@ -354,4 +335,6 @@ Reports:
 | Date | Author | Change |
 |------|--------|--------|
 | 2026-04-27 | AI Assistant | Initial roadmap drafted after codebase review and structured Q&A. |
+| 2026-04-29 | AI Assistant | Tier 1 completed: tracked-change rejection, hyperlink support, append fixes, lossiness infra. |
+| 2026-04-29 | AI Assistant | Tier 2 completed: header/footer extraction & redlining, section-break handling, table robustness. |
 

@@ -129,3 +129,23 @@ def hyperlink_formatted_path(fixtures_dir: Path) -> Path:
 @pytest.fixture
 def multiple_hyperlinks_path(fixtures_dir: Path) -> Path:
     return fixtures_dir / "multiple_hyperlinks.docx"
+
+
+@pytest.fixture
+def header_footer_text_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "header_footer_text.docx"
+
+
+@pytest.fixture
+def two_section_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "two_section.docx"
+
+
+@pytest.fixture
+def table_empty_cell_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "table_empty_cell.docx"
+
+
+@pytest.fixture
+def wide_table_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "wide_table.docx"

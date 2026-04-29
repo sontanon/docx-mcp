@@ -15,6 +15,7 @@ reason.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 
 from lxml import etree
 
@@ -188,10 +189,45 @@ def _format_run(run: etree._Element, *, include_del_text: bool = False) -> str:
     return _wrap_formatting(escaped, bold=bold, italic=italic, underline=underline)
 
 
+def _collect_formatted_from_container(
+    container: etree._Element,
+    *,
+    include_del_text: bool = False,
+    hyperlink_resolver: Callable[[str], str | None] | None = None,
+) -> list[str]:
+    """Collect formatted text segments from runs and hyperlinks inside *container*.
+
+    Returns a list of formatted strings (already escaped and wrapped).
+    """
+    parts: list[str] = []
+    for child in container:
+        tag = etree.QName(child.tag).localname if isinstance(child.tag, str) else ""
+        if tag == "r":
+            formatted = _format_run(child, include_del_text=include_del_text)
+            if formatted:
+                parts.append(formatted)
+        elif tag == "hyperlink":
+            rel_id = child.get(qn("r", "id"))
+            url = hyperlink_resolver(rel_id) if hyperlink_resolver and rel_id else None
+            link_parts: list[str] = []
+            for run in xpath(child, "w:r"):
+                formatted = _format_run(run, include_del_text=include_del_text)
+                if formatted:
+                    link_parts.append(formatted)
+            if link_parts:
+                link_text = "".join(link_parts)
+                if url:
+                    parts.append(f"[{link_text}]({url})")
+                else:
+                    parts.append(f"[{link_text}]")
+    return parts
+
+
 def paragraph_to_pseudo_markdown(
     paragraph: etree._Element,
     *,
     markup: bool = False,
+    hyperlink_resolver: Callable[[str], str | None] | None = None,
 ) -> str:
     """Convert a single <w:p> element to pseudo-Markdown text.
 
@@ -210,15 +246,20 @@ def paragraph_to_pseudo_markdown(
     This allows round-trip validation of redlined documents.  When
     *markup* is False (the default), only direct ``<w:r>`` children
     of the paragraph are processed, giving the "original" view.
+
+    Args:
+        paragraph: The ``<w:p>`` element to convert.
+        markup: When True, include tracked-change markers.
+        hyperlink_resolver: Optional callable that takes a relationship ID
+            and returns the target URL. If provided, hyperlinks are rendered
+            as ``[text](url)``.
     """
     segments: list[str] = []
 
     if not markup:
-        # Original behaviour: only direct <w:r> children.
-        for run in xpath(paragraph, "w:r"):
-            formatted = _format_run(run)
-            if formatted:
-                segments.append(formatted)
+        segments = _collect_formatted_from_container(
+            paragraph, hyperlink_resolver=hyperlink_resolver
+        )
     else:
         # Tracked-change-aware: walk all children in document order.
         for child in paragraph:
@@ -230,24 +271,38 @@ def paragraph_to_pseudo_markdown(
                 if formatted:
                     segments.append(formatted)
 
-            elif tag == "ins":
-                # Inserted region — collect all runs inside <w:ins>
-                ins_parts: list[str] = []
+            elif tag == "hyperlink":
+                # Direct hyperlink (unchanged text)
+                rel_id = child.get(qn("r", "id"))
+                url = hyperlink_resolver(rel_id) if hyperlink_resolver and rel_id else None
+                link_parts: list[str] = []
                 for run in xpath(child, "w:r"):
                     formatted = _format_run(run)
                     if formatted:
-                        ins_parts.append(formatted)
+                        link_parts.append(formatted)
+                if link_parts:
+                    link_text = "".join(link_parts)
+                    if url:
+                        segments.append(f"[{link_text}]({url})")
+                    else:
+                        segments.append(f"[{link_text}]")
+
+            elif tag == "ins":
+                # Inserted region — collect all runs/hyperlinks inside <w:ins>
+                ins_parts = _collect_formatted_from_container(
+                    child,
+                    hyperlink_resolver=hyperlink_resolver,
+                )
                 if ins_parts:
                     segments.append(f"++{''.join(ins_parts)}++")
 
             elif tag == "del":
-                # Deleted region — collect all runs inside <w:del>
-                # Deleted runs use <w:delText> instead of <w:t>
-                del_parts: list[str] = []
-                for run in xpath(child, "w:r"):
-                    formatted = _format_run(run, include_del_text=True)
-                    if formatted:
-                        del_parts.append(formatted)
+                # Deleted region — collect all runs/hyperlinks inside <w:del>
+                del_parts = _collect_formatted_from_container(
+                    child,
+                    include_del_text=True,
+                    hyperlink_resolver=hyperlink_resolver,
+                )
                 if del_parts:
                     segments.append(f"~~{''.join(del_parts)}~~")
 
@@ -305,6 +360,7 @@ def _extract_table_info(
     table_id: int,
     *,
     markup: bool = False,
+    hyperlink_resolver: Callable[[str], str | None] | None = None,
 ) -> TableInfo | SkippedTableInfo:
     """Extract structured table info from a <w:tbl> element.
 
@@ -312,6 +368,7 @@ def _extract_table_info(
         tbl: A ``<w:tbl>`` element.
         table_id: 1-based table index in document order.
         markup: When True, include tracked-change markers in cell text.
+        hyperlink_resolver: Optional callable to resolve hyperlink URLs.
 
     Returns:
         TableInfo if the table is simple, or SkippedTableInfo if not.
@@ -336,7 +393,9 @@ def _extract_table_info(
 
             cell_text_parts: list[str] = []
             for para in paras:
-                para_md = paragraph_to_pseudo_markdown(para, markup=markup)
+                para_md = paragraph_to_pseudo_markdown(
+                    para, markup=markup, hyperlink_resolver=hyperlink_resolver
+                )
                 cell_text_parts.append(para_md)
 
             cell_text = "\n".join(cell_text_parts)
@@ -362,11 +421,25 @@ def _extract_table_info(
 FragmentItem = tuple[int, str] | TableInfo | SkippedTableInfo
 
 
+class FragmentResult:
+    """Result of converting body elements to fragments.
+
+    Attributes:
+        items: List of FragmentItem (paragraphs, tables, skipped tables).
+        skipped_elements: List of dicts describing skipped content.
+    """
+
+    def __init__(self) -> None:
+        self.items: list[FragmentItem] = []
+        self.skipped_elements: list[dict] = []
+
+
 def body_to_fragments(
     body_elements: list[etree._Element],
     *,
     markup: bool = False,
-) -> list[FragmentItem]:
+    hyperlink_resolver: Callable[[str], str | None] | None = None,
+) -> FragmentResult:
     """Convert mixed <w:p>/<w:tbl> elements to fragment items.
 
     Tables and paragraphs share the same 1-based ID space in document order.
@@ -375,25 +448,60 @@ def body_to_fragments(
         body_elements: List of ``<w:p>`` and ``<w:tbl>`` elements
             (typically from DocxDocument.body_elements).
         markup: When True, include tracked-change markers in text.
+        hyperlink_resolver: Optional callable to resolve hyperlink URLs.
 
     Returns:
-        List of FragmentItem (either (id, text) for paragraphs or
-        TableInfo/SkippedTableInfo for tables).
+        :class:`FragmentResult` with ``items`` (FragmentItem list) and
+        ``skipped_elements`` (metadata about skipped content).
     """
-    items: list[FragmentItem] = []
+    result = FragmentResult()
 
     for i, el in enumerate(body_elements, start=1):
         tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
 
         if tag_local == "p":
-            md = paragraph_to_pseudo_markdown(el, markup=markup)
-            items.append((i, md))
+            md = paragraph_to_pseudo_markdown(
+                el, markup=markup, hyperlink_resolver=hyperlink_resolver
+            )
+            result.items.append((i, md))
+            # Check for images in the paragraph (<w:drawing>/<w:pict> are inside <w:r>)
+            if xpath(el, ".//w:drawing") or xpath(el, ".//w:pict"):
+                result.skipped_elements.append(
+                    {
+                        "type": "image",
+                        "location": f"body paragraph {i}",
+                        "description": "inline image",
+                    }
+                )
 
         elif tag_local == "tbl":
-            table_info = _extract_table_info(el, table_id=i, markup=markup)
-            items.append(table_info)
+            table_info = _extract_table_info(
+                el, table_id=i, markup=markup, hyperlink_resolver=hyperlink_resolver
+            )
+            result.items.append(table_info)
+            if isinstance(table_info, SkippedTableInfo):
+                result.skipped_elements.append(
+                    {
+                        "type": "merged_table"
+                        if "merge" in table_info.reason.lower()
+                        else "skipped_table",
+                        "table_id": table_info.table_id,
+                        "reason": table_info.reason,
+                    }
+                )
+            else:
+                # Check for nested tables
+                nested = xpath(el, ".//w:tbl")
+                if len(nested) > 1:  # includes self
+                    result.skipped_elements.append(
+                        {
+                            "type": "nested_table",
+                            "table_id": table_info.table_id,
+                            "reason": "contains nested table",
+                        }
+                    )
 
-    return items
+    return result
 
 
 def fragments_to_tagged_text_interleaved(items: list[FragmentItem]) -> str:

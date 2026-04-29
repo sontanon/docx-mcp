@@ -9,6 +9,7 @@ from zipfile import ZipFile
 
 import pytest
 from fastmcp import Client
+from fastmcp.exceptions import ToolError
 
 from docx_mcp.server import mcp
 
@@ -66,10 +67,15 @@ class TestExtractFragments:
                 {"document_path": str(simple_5para_path), "format": "json"},
             )
         data = json.loads(_text(result))
-        assert isinstance(data, list)
-        assert len(data) == 5
-        assert data[0]["fragment_id"] == 1
-        assert "text" in data[0]
+        assert isinstance(data, dict)
+        assert "fragments" in data
+        assert "skipped_elements" in data
+        fragments = data["fragments"]
+        assert isinstance(fragments, list)
+        assert len(fragments) == 5
+        assert fragments[0]["type"] == "paragraph"
+        assert fragments[0]["fragment_id"] == 1
+        assert "text" in fragments[0]
 
     async def test_file_not_found(self):
         async with Client(mcp) as client:
@@ -712,8 +718,8 @@ class TestExtractFragmentsMarkup:
             )
         assert _text(result_default) == _text(result_markup)
 
-    async def test_markup_on_redlined_doc(self, simple_5para_path, tmp_path):
-        """markup=True on a redlined doc should show ++ and ~~ markers."""
+    async def test_markup_on_redlined_doc_rejected(self, simple_5para_path, tmp_path):
+        """Extracting from a redlined doc is rejected (pre-existing tracked changes)."""
         output = tmp_path / "redlined.docx"
         async with Client(mcp) as client:
             # Create a redlined doc with a modify change
@@ -733,18 +739,15 @@ class TestExtractFragmentsMarkup:
                     "validate": False,
                 },
             )
-            # Now extract with markup=True
-            result = await client.call_tool(
-                "extract_fragments",
-                {"document_path": str(output), "markup": True},
-            )
-        text = _text(result)
-        # Should contain tracked-change markers
-        assert "++" in text  # insertion markers
-        assert "~~" in text  # deletion markers
+            # Now extract should be rejected
+            with pytest.raises(ToolError, match="pre-existing tracked changes"):
+                await client.call_tool(
+                    "extract_fragments",
+                    {"document_path": str(output), "markup": True},
+                )
 
-    async def test_markup_false_on_redlined_doc(self, simple_5para_path, tmp_path):
-        """markup=False on a redlined doc should not show ++ or ~~ markers."""
+    async def test_extract_redlined_doc_rejected(self, simple_5para_path, tmp_path):
+        """Extracting from any redlined doc is rejected regardless of markup flag."""
         output = tmp_path / "redlined.docx"
         async with Client(mcp) as client:
             await client.call_tool(
@@ -763,13 +766,11 @@ class TestExtractFragmentsMarkup:
                     "validate": False,
                 },
             )
-            result = await client.call_tool(
-                "extract_fragments",
-                {"document_path": str(output), "markup": False},
-            )
-        text = _text(result)
-        assert "++" not in text
-        assert "~~" not in text
+            with pytest.raises(ToolError, match="pre-existing tracked changes"):
+                await client.call_tool(
+                    "extract_fragments",
+                    {"document_path": str(output), "markup": False},
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -806,19 +807,21 @@ class TestExtractTablesInFragments:
                 {"document_path": str(simple_table_path), "format": "json"},
             )
         data = json.loads(_text(result))
-        assert isinstance(data, list)
-        assert len(data) == 3  # para, table, para
+        assert isinstance(data, dict)
+        fragments = data["fragments"]
+        assert isinstance(fragments, list)
+        assert len(fragments) == 3  # para, table, para
 
         # First item is paragraph
-        assert data[0]["type"] == "paragraph"
-        assert data[0]["fragment_id"] == 1
+        assert fragments[0]["type"] == "paragraph"
+        assert fragments[0]["fragment_id"] == 1
 
         # Second item is table
-        assert data[1]["type"] == "table"
-        assert data[1]["table_id"] == 2
-        assert data[1]["rows"] == 3
-        assert data[1]["cols"] == 3
-        assert "cells" in data[1]
+        assert fragments[1]["type"] == "table"
+        assert fragments[1]["table_id"] == 2
+        assert fragments[1]["rows"] == 3
+        assert fragments[1]["cols"] == 3
+        assert "cells" in fragments[1]
 
     async def test_extract_merged_cell_table_skipped(self, merged_cell_table_path):
         """Non-simple tables should be skipped with reason."""
@@ -1068,11 +1071,9 @@ class TestApplyTableChanges:
                     "output_path": str(output),
                 },
             )
-            # Extract with markup
-            result = await client.call_tool(
-                "extract_fragments",
-                {"document_path": str(output), "markup": True},
-            )
-        text = _text(result)
-        # Should have tracked change markers somewhere
-        assert "++" in text or "~~" in text
+            # Extract with markup should be rejected (pre-existing tracked changes)
+            with pytest.raises(ToolError, match="pre-existing tracked changes"):
+                await client.call_tool(
+                    "extract_fragments",
+                    {"document_path": str(output), "markup": True},
+                )

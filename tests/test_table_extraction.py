@@ -19,7 +19,8 @@ class TestBodyToFragments:
 
     def test_simple_table_extraction(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Simple table doc has: para, table, para
         assert len(items) == 3
@@ -34,7 +35,8 @@ class TestBodyToFragments:
 
     def test_formatted_table_extraction(self, formatted_table_path: Path) -> None:
         doc = DocxDocument(path=formatted_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Formatted table doc has: para, table
         assert len(items) == 2
@@ -50,7 +52,8 @@ class TestBodyToFragments:
 
     def test_multi_paragraph_cell_extraction(self, table_multi_para_path: Path) -> None:
         doc = DocxDocument(path=table_multi_para_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Multi-para doc has: para, table
         assert len(items) == 2
@@ -70,7 +73,8 @@ class TestBodyToFragments:
 
     def test_merged_cell_table_skipped(self, merged_cell_table_path: Path) -> None:
         doc = DocxDocument(path=merged_cell_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Merged cell doc has: para, table
         assert len(items) == 2
@@ -81,7 +85,8 @@ class TestBodyToFragments:
 
     def test_mixed_content_interleaved(self, mixed_content_path: Path) -> None:
         doc = DocxDocument(path=mixed_content_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Mixed content has: para, table(2x2), para, table(1x3), para
         assert len(items) == 5
@@ -112,7 +117,8 @@ class TestBodyToFragments:
 
     def test_cell_ids_are_correct(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Table is second element
         item = items[1]
@@ -130,7 +136,8 @@ class TestFragmentsToTaggedTextInterleaved:
 
     def test_simple_table_tagged_output(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         tagged = fragments_to_tagged_text_interleaved(items)
 
         # Should have table tags (table is ID 2)
@@ -145,7 +152,8 @@ class TestFragmentsToTaggedTextInterleaved:
 
     def test_mixed_content_tagged_output(self, mixed_content_path: Path) -> None:
         doc = DocxDocument(path=mixed_content_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         tagged = fragments_to_tagged_text_interleaved(items)
 
         # Should have paragraph tags
@@ -162,7 +170,8 @@ class TestFragmentsToTaggedTextInterleaved:
 
     def test_skipped_table_tagged_output(self, merged_cell_table_path: Path) -> None:
         doc = DocxDocument(path=merged_cell_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         tagged = fragments_to_tagged_text_interleaved(items)
 
         # Should have skipped table tag (table is ID 2)
@@ -171,7 +180,8 @@ class TestFragmentsToTaggedTextInterleaved:
 
     def test_multi_paragraph_cell_preserves_newlines(self, table_multi_para_path: Path) -> None:
         doc = DocxDocument(path=table_multi_para_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         _tagged = fragments_to_tagged_text_interleaved(items)
 
         # Multi-paragraph cells should have newlines in their text
@@ -186,7 +196,8 @@ class TestFragmentsToJsonInterleaved:
 
     def test_simple_table_json_output(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         json_list = fragments_to_json_interleaved(items)
 
         # Should have 3 items: para, table, para
@@ -210,7 +221,8 @@ class TestFragmentsToJsonInterleaved:
 
     def test_mixed_content_json_output(self, mixed_content_path: Path) -> None:
         doc = DocxDocument(path=mixed_content_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         json_list = fragments_to_json_interleaved(items)
 
         assert len(json_list) == 5
@@ -240,7 +252,8 @@ class TestFragmentsToJsonInterleaved:
 
     def test_skipped_table_json_output(self, merged_cell_table_path: Path) -> None:
         doc = DocxDocument(path=merged_cell_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         json_list = fragments_to_json_interleaved(items)
 
         # Should have 2 items: para, table
@@ -255,7 +268,8 @@ class TestFragmentsToJsonInterleaved:
 
     def test_json_is_serializable(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         json_list = fragments_to_json_interleaved(items)
 
         # Should be JSON-serializable
@@ -268,7 +282,8 @@ class TestFragmentsToJsonInterleaved:
 
     def test_multi_paragraph_cell_json(self, table_multi_para_path: Path) -> None:
         doc = DocxDocument(path=table_multi_para_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         json_list = fragments_to_json_interleaved(items)
 
         # Table is second item

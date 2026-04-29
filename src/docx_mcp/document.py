@@ -54,6 +54,8 @@ class DocxDocument:
         self._comments_tree: etree._Element | None = None
         self._content_types_tree: etree._Element | None = None
         self._rels_tree: etree._Element | None = None  # word/_rels/document.xml.rels
+        self._header_trees: dict[str, etree._Element] = {}
+        self._footer_trees: dict[str, etree._Element] = {}
 
         self._parse_zip(raw)
 
@@ -84,6 +86,34 @@ class DocxDocument:
         rels_xml = self._zip_entries.get("word/_rels/document.xml.rels")
         if rels_xml is not None:
             self._rels_tree = etree.fromstring(rels_xml)
+            self._load_header_footer_trees()
+
+    def _load_header_footer_trees(self) -> None:
+        """Discover and parse header/footer XML parts from relationships."""
+        if self._rels_tree is None:
+            return
+
+        ns = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+        for rel in self._rels_tree:
+            rel_type = rel.get("Type", "")
+            target = rel.get("Target", "")
+            rel_id = rel.get("Id", "")
+            if not target:
+                continue
+
+            # Resolve target path relative to word/
+            target_path = target if not target.startswith("/") else target[1:]
+            if not target_path.startswith("word/"):
+                target_path = f"word/{target_path}"
+
+            if rel_type == f"{ns}/header":
+                xml_bytes = self._zip_entries.get(target_path)
+                if xml_bytes is not None:
+                    self._header_trees[rel_id] = etree.fromstring(xml_bytes)
+            elif rel_type == f"{ns}/footer":
+                xml_bytes = self._zip_entries.get(target_path)
+                if xml_bytes is not None:
+                    self._footer_trees[rel_id] = etree.fromstring(xml_bytes)
 
     @property
     def document_tree(self) -> etree._Element:
@@ -167,30 +197,140 @@ class DocxDocument:
         """The root element of word/_rels/document.xml.rels."""
         return self._rels_tree
 
+    @property
+    def header_trees(self) -> dict[str, etree._Element]:
+        """Dict of relationship ID → header XML tree."""
+        return self._header_trees
+
+    @property
+    def footer_trees(self) -> dict[str, etree._Element]:
+        """Dict of relationship ID → footer XML tree."""
+        return self._footer_trees
+
+    def has_tracked_changes(self) -> list[str]:
+        """Check for pre-existing tracked changes in any document part.
+
+        Scans document.xml, all header parts, all footer parts, and
+        comments.xml for ``<w:ins>``, ``<w:del>``, ``<w:moveFrom>``,
+        and ``<w:moveTo>`` elements.
+
+        Returns:
+            List of part names that contain tracked changes.
+            Empty list if the document is clean.
+        """
+        tracked_tags = {"ins", "del", "moveFrom", "moveTo"}
+        dirty_parts: list[str] = []
+
+        def _part_has_changes(tree: etree._Element, part_name: str) -> bool:
+            for el in tree.iter():
+                tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
+                if tag_local in tracked_tags:
+                    return True
+            return False
+
+        if _part_has_changes(self.document_tree, "word/document.xml"):
+            dirty_parts.append("word/document.xml")
+
+        for rel_id, tree in self._header_trees.items():
+            if _part_has_changes(tree, f"header ({rel_id})"):
+                dirty_parts.append(f"word/header ({rel_id})")
+
+        for rel_id, tree in self._footer_trees.items():
+            if _part_has_changes(tree, f"footer ({rel_id})"):
+                dirty_parts.append(f"word/footer ({rel_id})")
+
+        if self._comments_tree is not None and _part_has_changes(
+            self._comments_tree, "word/comments.xml"
+        ):
+            dirty_parts.append("word/comments.xml")
+
+        return dirty_parts
+
     def max_annotation_id(self) -> int:
         """Find the highest annotation ID used in the document.
 
-        Scans all w:id attributes across document.xml and comments.xml
-        to find the maximum. Returns 0 if no annotations exist.
+        Scans all w:id attributes across document.xml, comments.xml,
+        and all header/footer parts to find the maximum. Returns 0 if
+        no annotations exist.
         """
         max_id = 0
 
-        # Scan document.xml for w:id attributes
-        for el in self.document_tree.iter():
-            wid = el.get(qn("w", "id"))
-            if wid is not None:
-                with contextlib.suppress(ValueError):
-                    max_id = max(max_id, int(wid))
-
-        # Also scan comments.xml if it exists
+        trees = [self.document_tree]
+        trees.extend(self._header_trees.values())
+        trees.extend(self._footer_trees.values())
         if self._comments_tree is not None:
-            for el in self._comments_tree.iter():
+            trees.append(self._comments_tree)
+
+        for tree in trees:
+            for el in tree.iter():
                 wid = el.get(qn("w", "id"))
                 if wid is not None:
                     with contextlib.suppress(ValueError):
                         max_id = max(max_id, int(wid))
 
         return max_id
+
+    def resolve_hyperlink_url(self, rel_id: str) -> str | None:
+        """Resolve a hyperlink relationship ID to its target URL.
+
+        Looks up the ``r:id`` in ``word/_rels/document.xml.rels``.
+
+        Args:
+            rel_id: The relationship ID (e.g., ``"rId4"``).
+
+        Returns:
+            The target URL, or ``None`` if the relationship is not found
+            or is not an external hyperlink.
+        """
+        if self._rels_tree is None:
+            return None
+
+        hyperlink_type = (
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
+        )
+        for rel in self._rels_tree:
+            if rel.get("Id") == rel_id:
+                if rel.get("Type") == hyperlink_type:
+                    return rel.get("Target")
+                return None
+        return None
+
+    def create_hyperlink_relationship(self, url: str) -> str:
+        """Create a new hyperlink relationship and return its ``r:id``.
+
+        Appends a new ``<Relationship>`` element to
+        ``word/_rels/document.xml.rels`` with a unique ID.
+
+        Args:
+            url: The target URL for the hyperlink.
+
+        Returns:
+            The newly allocated relationship ID (e.g., ``"rId999"``).
+        """
+        if self._rels_tree is None:
+            msg = "Cannot create hyperlink relationship: document has no rels tree"
+            raise RuntimeError(msg)
+
+        hyperlink_type = (
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
+        )
+
+        # Find the highest existing rId number
+        max_num = 0
+        for rel in self._rels_tree:
+            rid = rel.get("Id", "")
+            if rid.startswith("rId"):
+                with contextlib.suppress(ValueError):
+                    max_num = max(max_num, int(rid[3:]))
+
+        new_rid = f"rId{max_num + 1}"
+        new_rel = etree.SubElement(self._rels_tree, qn("r", "Relationship"))
+        new_rel.set("Id", new_rid)
+        new_rel.set("Type", hyperlink_type)
+        new_rel.set("Target", url)
+        new_rel.set("TargetMode", "External")
+
+        return new_rid
 
     def deepcopy(self) -> DocxDocument:
         """Create a deep copy of this document (for validation comparisons)."""

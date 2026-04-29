@@ -616,13 +616,31 @@ def extract_fragments(
         Fragment text in the requested format (string).
     """
     doc = _load_document(document_path)
-    items = body_to_fragments(doc.body_elements, markup=markup)
+
+    dirty_parts = doc.has_tracked_changes()
+    if dirty_parts:
+        locations = ", ".join(dirty_parts)
+        msg = (
+            f"Document contains pre-existing tracked changes in {locations}. "
+            "Please accept or reject all changes before redlining."
+        )
+        raise ToolError(msg)
+
+    result = body_to_fragments(
+        doc.body_elements,
+        markup=markup,
+        hyperlink_resolver=doc.resolve_hyperlink_url,
+    )
 
     if format == "json":
-        data = fragments_to_json_interleaved(items)
-        return json.dumps(data, ensure_ascii=False, indent=2)
+        data = fragments_to_json_interleaved(result.items)
+        output = {
+            "fragments": data,
+            "skipped_elements": result.skipped_elements,
+        }
+        return json.dumps(output, ensure_ascii=False, indent=2)
 
-    return fragments_to_tagged_text_interleaved(items)
+    return fragments_to_tagged_text_interleaved(result.items)
 
 
 @mcp.tool(
@@ -999,6 +1017,43 @@ def validate_document_tool(document_path: str) -> str:
         "openWorldHint": False,
     },
 )
+def audit_document_tool(
+    document_path: str,
+    format: Literal["text", "json"] = "text",
+) -> str:
+    """Audit a .docx file for structural issues and skipped content.
+
+    Reports headers, footers, images, tables, section breaks, tracked changes,
+    comments, and unsupported elements (footnotes, endnotes, text boxes).
+
+    Args:
+        document_path: Absolute path to the .docx file.
+        format: Output format -- ``"text"`` (default) or ``"json"``.
+
+    Returns:
+        Audit report in the requested format.
+    """
+    from docx_mcp.audit import audit_document
+
+    doc = _load_document(document_path)
+    report = audit_document(doc)
+
+    if format == "json":
+        import json
+
+        return json.dumps(report.to_dict(), indent=2, ensure_ascii=False)
+
+    return report.to_text()
+
+
+@mcp.tool(
+    annotations={
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    },
+)
 def diff_fragments(
     original_path: str,
     modified_path: str,
@@ -1081,12 +1136,12 @@ def diff_fragments(
     doc_b = _load_document(modified_path)
 
     # Extract fragments (paragraphs and tables) from both documents
-    items_a = body_to_fragments(doc_a.body_elements)
-    items_b = body_to_fragments(doc_b.body_elements)
+    result_a = body_to_fragments(doc_a.body_elements)
+    result_b = body_to_fragments(doc_b.body_elements)
 
     # Build dictionaries mapping fragment_id -> FragmentItem
     frags_a: dict[int, tuple[int, str] | TableInfo | SkippedTableInfo] = {}
-    for item in items_a:
+    for item in result_a.items:
         if isinstance(item, tuple):
             fid, _text = item
             frags_a[fid] = item
@@ -1094,7 +1149,7 @@ def diff_fragments(
             frags_a[item.table_id] = item
 
     frags_b: dict[int, tuple[int, str] | TableInfo | SkippedTableInfo] = {}
-    for item in items_b:
+    for item in result_b.items:
         if isinstance(item, tuple):
             fid, _text = item
             frags_b[fid] = item
@@ -1242,8 +1297,8 @@ def get_fragments(document_path: str) -> str:
         ``<cell=id>text</cell=id>`` for table cells.
     """
     doc = _load_document(document_path)
-    items = body_to_fragments(doc.body_elements)
-    return fragments_to_tagged_text_interleaved(items)
+    result = body_to_fragments(doc.body_elements)
+    return fragments_to_tagged_text_interleaved(result.items)
 
 
 # ---------------------------------------------------------------------------

@@ -45,32 +45,59 @@ def handle_delete(
     author = config.author
     date = config.date_iso()
 
-    # --- 1. Wrap all <w:r> elements in <w:del> ---
-    # Collect runs first to avoid mutating during iteration
-    runs = list(xpath(paragraph, "w:r"))
-
-    if runs:
-        # Create a single <w:del> wrapper for all runs
-        del_el = etree.Element(qn("w", "del"))
-        del_el.set(qn("w", "id"), str(del_id))
-        del_el.set(qn("w", "author"), author)
-        del_el.set(qn("w", "date"), date)
-
-        # Insert <w:del> where the first run is
-        first_run = runs[0]
-        first_run.addprevious(del_el)
-
-        # Move all runs into the <w:del>
-        for run in runs:
-            # Convert <w:t> to <w:delText>
-            _convert_t_to_del_text(run)
-            del_el.append(run)
+    # --- 1. Wrap all runs in <w:del> ---
+    # We handle both direct <w:r> children and <w:r> inside <w:hyperlink>.
+    # For hyperlinks, the <w:del> goes inside the <w:hyperlink> wrapper.
+    _wrap_runs_in_del(paragraph, del_id=del_id, author=author, date=date)
 
     # --- 2. Mark the paragraph mark as deleted ---
     if not preserve_paragraph_mark:
         _mark_paragraph_mark_deleted(paragraph, del_id=del_id, author=author, date=date)
 
     return del_id
+
+
+def _wrap_runs_in_del(
+    paragraph: etree._Element,
+    *,
+    del_id: int,
+    author: str,
+    date: str,
+) -> None:
+    """Wrap all text-bearing runs in *paragraph* with ``<w:del>``.
+
+    Direct ``<w:r>`` children are replaced by a ``<w:del>`` containing
+    the run.  Runs inside ``<w:hyperlink>`` are wrapped in a ``<w:del>``
+    that is placed *inside* the hyperlink wrapper so the relationship is
+    preserved.
+    """
+    del_attribs = {
+        qn("w", "id"): str(del_id),
+        qn("w", "author"): author,
+        qn("w", "date"): date,
+    }
+
+    for child in list(paragraph):
+        tag = etree.QName(child.tag).localname if isinstance(child.tag, str) else ""
+
+        if tag == "r":
+            # Direct run — wrap in <w:del>
+            _convert_t_to_del_text(child)
+            del_el = etree.Element(qn("w", "del"))
+            for k, v in del_attribs.items():
+                del_el.set(k, v)
+            child.addprevious(del_el)
+            del_el.append(child)
+
+        elif tag == "hyperlink":
+            # Wrap the entire <w:hyperlink> in <w:del> (consistent with modify)
+            for run in xpath(child, "w:r"):
+                _convert_t_to_del_text(run)
+            del_el = etree.Element(qn("w", "del"))
+            for k, v in del_attribs.items():
+                del_el.set(k, v)
+            child.addprevious(del_el)
+            del_el.append(child)
 
 
 def _convert_t_to_del_text(run: etree._Element) -> None:

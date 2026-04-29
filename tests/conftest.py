@@ -94,3 +94,38 @@ def merged_cell_table_path(fixtures_dir: Path) -> Path:
 @pytest.fixture
 def mixed_content_path(fixtures_dir: Path) -> Path:
     return fixtures_dir / "mixed_content.docx"
+
+
+@pytest.fixture
+def body_tracked_changes_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "body_tracked_changes.docx"
+
+
+@pytest.fixture
+def header_tracked_changes_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "header_tracked_changes.docx"
+
+
+@pytest.fixture
+def footer_tracked_changes_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "footer_tracked_changes.docx"
+
+
+@pytest.fixture
+def comments_tracked_changes_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "comments_tracked_changes.docx"
+
+
+@pytest.fixture
+def hyperlink_paragraph_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "hyperlink_paragraph.docx"
+
+
+@pytest.fixture
+def hyperlink_formatted_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "hyperlink_formatted.docx"
+
+
+@pytest.fixture
+def multiple_hyperlinks_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "multiple_hyperlinks.docx"

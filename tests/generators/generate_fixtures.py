@@ -8,12 +8,15 @@ Or invoke via the pytest conftest session fixture (automatic).
 
 from __future__ import annotations
 
+import io
+import zipfile
 from collections.abc import Callable
 from pathlib import Path
 
 from docx import Document
 from docx.enum.text import WD_UNDERLINE
 from docx.oxml.ns import qn
+from lxml import etree
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "generated"
 
@@ -558,6 +561,260 @@ def generate_mixed_content() -> Path:
     return path
 
 
+# ---------------------------------------------------------------------------
+# Tracked-change fixtures (for T1.1 rejection tests)
+# ---------------------------------------------------------------------------
+
+
+def _inject_tracked_change_into_paragraph(paragraph: etree._Element, tag: str) -> None:
+    """Inject a tracked-change wrapper around the first run in a paragraph."""
+    runs = paragraph.findall(qn("w:r"))
+    if not runs:
+        # Create a dummy run if none exists
+        run = etree.SubElement(paragraph, qn("w:r"))
+        t = etree.SubElement(run, qn("w:t"))
+        t.text = "tracked"
+        runs = [run]
+
+    # Build wrapper: <w:ins w:id="1" w:author="Test" w:date="2026-01-01T00:00:00Z">
+    wrapper = etree.Element(qn(f"w:{tag}"))
+    wrapper.set(qn("w:id"), "1")
+    wrapper.set(qn("w:author"), "Test")
+    wrapper.set(qn("w:date"), "2026-01-01T00:00:00Z")
+
+    # Move all runs inside the wrapper
+    for run in runs:
+        wrapper.append(run)
+
+    # Insert wrapper where first_run was
+    paragraph.insert(0, wrapper)
+
+
+def generate_body_tracked_changes() -> Path:
+    """Document with <w:ins> inside a body paragraph."""
+    doc = Document()
+    doc.add_paragraph("This paragraph has tracked changes.")
+    doc.add_paragraph("This one is clean.")
+
+    # Post-process XML
+    tree = doc.element
+    body = tree.body
+    paragraphs = body.findall(qn("w:p"))
+    _inject_tracked_change_into_paragraph(paragraphs[0], "ins")
+
+    path = _ensure_dir() / "body_tracked_changes.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_header_tracked_changes() -> Path:
+    """Document with <w:del> inside a header paragraph."""
+    doc = Document()
+    doc.add_paragraph("Body paragraph.")
+
+    # Add a header
+    section = doc.sections[0]
+    header = section.header
+    header_para = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+    header_para.text = "Header with tracked change."
+
+    doc.save(str(path := _ensure_dir() / "header_tracked_changes_tmp.docx"))
+
+    # Post-process: inject <w:del> into header XML
+    with zipfile.ZipFile(path, "r") as zin:
+        entries = {name: zin.read(name) for name in zin.namelist()}
+
+    # Find header file
+    header_entry = None
+    for name in entries:
+        if name.startswith("word/header") and name.endswith(".xml"):
+            header_entry = name
+            break
+
+    if header_entry:
+        header_tree = etree.fromstring(entries[header_entry])
+        paragraphs = header_tree.findall(f".//{{{etree.QName(qn('w:p')).namespace}}}p")
+        if paragraphs:
+            _inject_tracked_change_into_paragraph(paragraphs[0], "del")
+        entries[header_entry] = etree.tostring(
+            header_tree, xml_declaration=True, encoding="UTF-8", standalone=True
+        )
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zout:
+        for name, data in entries.items():
+            zout.writestr(name, data)
+
+    final_path = _ensure_dir() / "header_tracked_changes.docx"
+    final_path.write_bytes(buf.getvalue())
+    path.unlink()
+    return final_path
+
+
+def generate_footer_tracked_changes() -> Path:
+    """Document with <w:moveFrom> inside a footer paragraph."""
+    doc = Document()
+    doc.add_paragraph("Body paragraph.")
+
+    section = doc.sections[0]
+    footer = section.footer
+    footer_para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+    footer_para.text = "Footer with tracked change."
+
+    doc.save(str(path := _ensure_dir() / "footer_tracked_changes_tmp.docx"))
+
+    with zipfile.ZipFile(path, "r") as zin:
+        entries = {name: zin.read(name) for name in zin.namelist()}
+
+    footer_entry = None
+    for name in entries:
+        if name.startswith("word/footer") and name.endswith(".xml"):
+            footer_entry = name
+            break
+
+    if footer_entry:
+        footer_tree = etree.fromstring(entries[footer_entry])
+        paragraphs = footer_tree.findall(f".//{{{etree.QName(qn('w:p')).namespace}}}p")
+        if paragraphs:
+            _inject_tracked_change_into_paragraph(paragraphs[0], "moveFrom")
+        entries[footer_entry] = etree.tostring(
+            footer_tree, xml_declaration=True, encoding="UTF-8", standalone=True
+        )
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zout:
+        for name, data in entries.items():
+            zout.writestr(name, data)
+
+    final_path = _ensure_dir() / "footer_tracked_changes.docx"
+    final_path.write_bytes(buf.getvalue())
+    path.unlink()
+    return final_path
+
+
+def generate_comments_tracked_changes() -> Path:
+    """Document with <w:moveTo> inside comments.xml."""
+    doc = Document()
+    doc.add_paragraph("Body paragraph.")
+
+    # Add comments part with a tracked change inside
+    comments_xml = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        '<w:comment w:id="1" w:author="Test" w:initials="T" '
+        'w:date="2026-01-01T00:00:00Z">'
+        "<w:p>"
+        "<w:r><w:t>Clean text.</w:t></w:r>"
+        '<w:moveTo w:id="2" w:author="Test" w:date="2026-01-01T00:00:00Z">'
+        "<w:r><w:t>Moved text.</w:t></w:r>"
+        "</w:moveTo>"
+        "</w:p>"
+        "</w:comment>"
+        "</w:comments>"
+    )
+
+    from docx.opc.packuri import PackURI
+    from docx.opc.part import Part
+
+    comments_part = Part(
+        PackURI("/word/comments.xml"),
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
+        comments_xml.encode("utf-8"),
+        doc.part.package,
+    )
+    doc.part.relate_to(
+        comments_part,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+    )
+
+    path = _ensure_dir() / "comments_tracked_changes.docx"
+    doc.save(str(path))
+    return path
+
+
+def _add_hyperlink_to_run(
+    paragraph,
+    run_index: int,
+    url: str,
+    doc,
+) -> None:
+    """Post-process a python-docx paragraph to wrap a run in a hyperlink.
+
+    Inserts a ``<w:hyperlink>`` wrapper around the run at *run_index*
+    and creates the relationship in the document's rels.
+    """
+    from docx.opc.constants import RELATIONSHIP_TYPE as RT
+
+    # Get the run element (only direct children, not descendants inside hyperlinks)
+    p_element = paragraph._element
+    runs = [child for child in p_element if etree.QName(child.tag).localname == "r"]
+    target_run = runs[run_index]
+
+    # Create relationship
+    part = doc.part
+    r_id = part.relate_to(
+        url,
+        RT.HYPERLINK,
+        is_external=True,
+    )
+
+    # Build hyperlink wrapper
+    hyperlink = etree.Element(qn("w:hyperlink"))
+    hyperlink.set(qn("r:id"), r_id)
+
+    # Move run into hyperlink
+    target_run.addprevious(hyperlink)
+    hyperlink.append(target_run)
+
+
+def generate_hyperlink_paragraph() -> Path:
+    """Paragraph with a plain hyperlink."""
+    doc = Document()
+    p = doc.add_paragraph("Visit ")
+    p.add_run("our website")
+    p.add_run(" for more info.")
+
+    _add_hyperlink_to_run(p, 1, "https://example.com", doc)
+
+    path = _ensure_dir() / "hyperlink_paragraph.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_hyperlink_formatted() -> Path:
+    """Paragraph with hyperlink containing bold and italic text."""
+    doc = Document()
+    p = doc.add_paragraph("See ")
+    run = p.add_run("important terms")
+    run.bold = True
+    run.italic = True
+    p.add_run(" for details.")
+
+    _add_hyperlink_to_run(p, 1, "https://example.com/terms", doc)
+
+    path = _ensure_dir() / "hyperlink_formatted.docx"
+    doc.save(str(path))
+    return path
+
+
+def generate_multiple_hyperlinks() -> Path:
+    """Paragraph with two separate hyperlinks."""
+    doc = Document()
+    p = doc.add_paragraph("Contact ")
+    p.add_run("sales")
+    p.add_run(" or ")
+    p.add_run("support")
+    p.add_run(".")
+
+    # Add in reverse order so indices don't shift after wrapping
+    _add_hyperlink_to_run(p, 3, "https://example.com/support", doc)
+    _add_hyperlink_to_run(p, 1, "https://example.com/sales", doc)
+
+    path = _ensure_dir() / "multiple_hyperlinks.docx"
+    doc.save(str(path))
+    return path
+
+
 ALL_GENERATORS: list[tuple[str, Callable[[], Path]]] = [
     ("simple_5para", generate_simple_5para),
     ("formatted_runs", generate_formatted_runs),
@@ -573,6 +830,13 @@ ALL_GENERATORS: list[tuple[str, Callable[[], Path]]] = [
     ("table_multi_para", generate_table_multi_para),
     ("merged_cell_table", generate_merged_cell_table),
     ("mixed_content", generate_mixed_content),
+    ("body_tracked_changes", generate_body_tracked_changes),
+    ("header_tracked_changes", generate_header_tracked_changes),
+    ("footer_tracked_changes", generate_footer_tracked_changes),
+    ("comments_tracked_changes", generate_comments_tracked_changes),
+    ("hyperlink_paragraph", generate_hyperlink_paragraph),
+    ("hyperlink_formatted", generate_hyperlink_formatted),
+    ("multiple_hyperlinks", generate_multiple_hyperlinks),
 ]
 
 

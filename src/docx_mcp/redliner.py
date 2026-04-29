@@ -100,6 +100,16 @@ def apply_redlines(
     # --- 1. Load ---
     doc = DocxDocument(data=source) if isinstance(source, bytes) else DocxDocument(path=source)
 
+    # --- 1b. Reject documents with pre-existing tracked changes ---
+    dirty_parts = doc.has_tracked_changes()
+    if dirty_parts:
+        locations = ", ".join(dirty_parts)
+        msg = (
+            f"Document contains pre-existing tracked changes in {locations}. "
+            "Please accept or reject all changes before redlining."
+        )
+        raise ValueError(msg)
+
     # --- 2. Element map (interleaved paragraphs and tables) ---
     element_map = doc.interleaved_element_map()
     max_id = max(element_map.keys()) if element_map else 0
@@ -182,6 +192,7 @@ def apply_redlines(
                 config=config,
                 blank_lines_before=change.blank_lines_before,
                 blank_lines_after=change.blank_lines_after,
+                hyperlink_creator=doc.create_hyperlink_relationship,
             )
             # Comment on the new paragraph
             add_comment(
@@ -307,6 +318,8 @@ def _sort_paragraph_changes(changes: list[ParagraphChange]) -> list[ParagraphCha
     - Then delete changes.
     - Then append_after changes (in reverse fragment order, so later
       appends don't shift earlier targets).
+    - Within append_after changes to the same fragment, reverse the order
+      so the first user-listed append ends up first in the document.
     """
     type_order = {
         ParagraphChangeType.MODIFY: 0,
@@ -314,13 +327,26 @@ def _sort_paragraph_changes(changes: list[ParagraphChange]) -> list[ParagraphCha
         ParagraphChangeType.APPEND_AFTER: 2,
     }
 
-    def sort_key(c: ParagraphChange) -> tuple[int, int]:
+    # Group append_after changes by fragment_id
+    from itertools import groupby
+
+    def _group_key(c: ParagraphChange) -> tuple[int, int]:
         order = type_order[c.change_type]
-        # For append_after, reverse fragment order (high IDs first)
         fid = -c.fragment_id if c.change_type == ParagraphChangeType.APPEND_AFTER else c.fragment_id
         return (order, fid)
 
-    return sorted(changes, key=sort_key)
+    sorted_by_key = sorted(changes, key=_group_key)
+
+    result: list[ParagraphChange] = []
+    for (_order, _fid), group in groupby(sorted_by_key, key=_group_key):
+        group_list = list(group)
+        if _order == type_order[ParagraphChangeType.APPEND_AFTER]:
+            # Reverse within the group so first-listed append is processed last
+            # and ends up closest to the reference paragraph
+            group_list = list(reversed(group_list))
+        result.extend(group_list)
+
+    return result
 
 
 def _get_tracked_change_elements(paragraph: etree._Element) -> list[etree._Element]:

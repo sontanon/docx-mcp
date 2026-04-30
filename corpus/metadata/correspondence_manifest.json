@@ -1,0 +1,52 @@
+[
+  {
+    "id": "17f2564dc24b339ef27daaae5842ac5231d77bae95678384dc0353f79caa9a31",
+    "filename": "tableft.docx",
+    "type": "correspondence",
+    "topic": "general",
+    "language": "en",
+    "word_count": 7,
+    "confidence": 0.8991661667823792,
+    "url": "https://docxcorp.us/documents/17f2564dc24b339ef27daaae5842ac5231d77bae95678384dc0353f79caa9a31.docx"
+  },
+  {
+    "id": "ee619d011433c1d2765a60f42b52952244bdaaea6367b251cef1d9e2e4178d58",
+    "filename": "138",
+    "type": "correspondence",
+    "topic": "government",
+    "language": "en",
+    "word_count": 128278,
+    "confidence": 0.8104042410850525,
+    "url": "https://docxcorp.us/documents/ee619d011433c1d2765a60f42b52952244bdaaea6367b251cef1d9e2e4178d58.docx"
+  },
+  {
+    "id": "91abe38694877000683868c2925174a1a9218a0ea99fbdc1c53a9f1ab15cf447",
+    "filename": "638481651349770000",
+    "type": "correspondence",
+    "topic": "general",
+    "language": "en",
+    "word_count": 254,
+    "confidence": 0.9434434771537781,
+    "url": "https://docxcorp.us/documents/91abe38694877000683868c2925174a1a9218a0ea99fbdc1c53a9f1ab15cf447.docx"
+  },
+  {
+    "id": "83beef8e7a023c98f1b521386df8db57f1c245212af1a0465f500240628347f5",
+    "filename": "parish-pump-february-2023",
+    "type": "correspondence",
+    "topic": "government",
+    "language": "en",
+    "word_count": 457,
+    "confidence": 0.9725702404975891,
+    "url": "https://docxcorp.us/documents/83beef8e7a023c98f1b521386df8db57f1c245212af1a0465f500240628347f5.docx"
+  },
+  {
+    "id": "2d5bf5131ae4a8b21e749d38299d0d1b98334cc35d6ae0265ca4c7fd79cc0a84",
+    "filename": "2306-08__Fort_Drum_officials_name_conference_room_after_first_10th_Mountain_Division_Soldier_to_report_for_duty.docx",
+    "type": "correspondence",
+    "topic": "government",
+    "language": "en",
+    "word_count": 828,
+    "confidence": 0.810178279876709,
+    "url": "https://docxcorp.us/documents/2d5bf5131ae4a8b21e749d38299d0d1b98334cc35d6ae0265ca4c7fd79cc0a84.docx"
+  }
+]

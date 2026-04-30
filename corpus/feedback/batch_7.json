@@ -1,0 +1,121 @@
+[
+  {
+    "id": "ae7c9554466c3577211658ba730e2d18a5ebb7e4448337c739bd07013b6e6a40",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/ae7c9554466c3577211658ba730e2d18a5ebb7e4448337c739bd07013b6e6a40.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "medium",
+      "strengths": [
+        "8 header paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 98,
+      "header_paragraphs": 8,
+      "footer_paragraphs": 0,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 651,
+      "tagged_lines": 106
+    },
+    "tagged_preview": [
+      "<f=1></f=1>",
+      "<f=2>**__MEMORIAL OFFICE__**</f=2>",
+      "<f=3></f=3>",
+      "<f=4></f=4>",
+      "<f=5></f=5>",
+      "<f=6> WEST</f=6>",
+      "<f=7></f=7>",
+      "<f=8>TELEPHONE (423) 698-3423</f=8>",
+      "<f=9>FAX (423) 698-1380</f=9>",
+      "<f=10></f=10>",
+      "<f=11></f=11>",
+      "<f=12>**SHARON N. FARBER, M.D. **</f=12>",
+      "<f=13>ADULT NEUROLOGY</f=13>",
+      "<f=14></f=14>",
+      "<f=15>**TARECK A. KADRIE, M.D.**</f=15>",
+      "<f=16>SLEEP DISORDERS, EMG, BOTOX</f=16>",
+      "<f=17>& ADULT NEUROLOGY</f=17>",
+      "<f=18></f=18>",
+      "<f=19>**NATHAN B. WYATT, M.D.**</f=19>",
+      "<f=20>ADULT NEUROLOGY, BOTOX & EMG</f=20>",
+      "<f=21></f=21>",
+      "<f=22>**PHILLIP G. TALLENT, M.D.**</f=22>",
+      "<f=23>SLEEP DISORDERS & ADULT NEUROLOGY</f=23>",
+      "<f=24></f=24>",
+      "<f=25>**HOWARD A. KRAFT, M.D.**</f=25>",
+      "<f=26>ADULT NEUROLOGY, BOTOX & EMG</f=26>",
+      "<f=27></f=27>",
+      "<f=28></f=28>",
+      "<f=29></f=29>",
+      "<f=30>**__PARKRIDGE OFFICE__**</f=30>"
+    ]
+  },
+  {
+    "id": "545e6d0fd8c0d20a226cd079bb824e6bb60a4968cd8378ac1cc8dc9495a6ee43",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/545e6d0fd8c0d20a226cd079bb824e6bb60a4968cd8378ac1cc8dc9495a6ee43.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "high",
+      "strengths": [
+        "1 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [],
+      "improvements": []
+    },
+    "stats": {
+      "body_paragraphs": 25,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 1,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 444,
+      "tagged_lines": 31
+    },
+    "tagged_preview": [
+      "<f=1>Article information:</f=1>",
+      "<f=2>The Competitive Advantage of NIKE | by Lauren Robinson | Strategic Selling | Medium[__https://medium.com/strategicselling/the-competitive-advantage-of-nike-eb6d7c23b21c__]</f=2>",
+      "<f=3>Article summary:</f=3>",
+      "<f=4>1. NIKE is the largest sports apparel and footwear company in the world, holding approximately 27.4% of the global market share in athletic footwear.</f=4>",
+      "<f=5>2. NIKE stands out in quality, brand recognition, and consumer demand due to their early competitive advantage of redesigning the classic track shoe to be more comfortable, durable, and light.</f=5>",
+      "<f=6>3. NIKE's investment in innovation, sustainability, and technology has contributed greatly to their competitive edge as a brand. They have strong goals regarding their efforts in innovation and sustainability and are supporting their goals by staffing in areas of biomechanics, chemistry, exercise physiology, engineering, digital technologies, industrial design, sustainability, and more.</f=6>",
+      "<f=7>Article rating:</f=7>",
+      "<f=8>Appears moderately imbalanced: The article provides some useful information, but is missing several important points or pieces of evidence that would be required to present the discussed topics in a balanced and reliable way. You are encouraged to seek a more balanced perspective on the presented issues by exploring the provided research topics and looking at different information sources.</f=8>",
+      "<f=9>Article analysis:</f=9>",
+      "<f=10>The article provides a comprehensive overview of NIKE's competitive advantage in the sports, footwear, and apparel industry. However, it is important to note that the article may have some biases towards NIKE as it focuses primarily on their strengths and advantages over their competitors. The article does not provide a balanced view of the industry as a whole and does not explore potential weaknesses or challenges faced by NIKE.</f=10>",
+      "<f=11></f=11>",
+      "<f=12>The article also lacks evidence for some of its claims, such as the statement that NIKE has a \"reputable track record for employee satisfaction.\" While this may be true, there is no evidence provided to support this claim. Additionally, the article does not explore potential counterarguments or criticisms of NIKE's business practices.</f=12>",
+      "<f=13></f=13>",
+      "<f=14>Furthermore, while the article briefly mentions the issue of labor exploitation in offshore manufacturing countries, it does not fully address this issue or provide any solutions or actions taken by NIKE to address it. This is an important consideration in any analysis of the sports apparel industry and should be given more attention.</f=14>",
+      "<f=15></f=15>",
+      "<f=16>Overall, while the article provides valuable insights into NIKE's competitive advantage, it could benefit from a more balanced approach and deeper exploration of potential challenges and criticisms faced by the company.</f=16>",
+      "<f=17>Topics for further research:</f=17>",
+      "<f=18>Criticisms of NIKE's business practices",
+      "</f=18>",
+      "<f=19>Labor exploitation in offshore manufacturing countries in the sports apparel industry",
+      "</f=19>",
+      "<f=20>NIKE's sustainability initiatives and practices",
+      "</f=20>",
+      "<f=21>NIKE's impact on local communities and economies",
+      "</f=21>",
+      "<f=22>Competitors' strategies and strengths in the sports apparel industry",
+      "</f=22>",
+      "<f=23>Consumer perceptions and attitudes towards NIKE and its competitors.</f=23>",
+      "<f=24>Report location:</f=24>",
+      "<f=25>[__https://www.fullpicture.app/item/890a07f83fe2f327d30b4083ea793c3f__]</f=25>"
+    ]
+  }
+]

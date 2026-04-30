@@ -1,0 +1,269 @@
+[
+  {
+    "id": "17f2564dc24b339ef27daaae5842ac5231d77bae95678384dc0353f79caa9a31",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/17f2564dc24b339ef27daaae5842ac5231d77bae95678384dc0353f79caa9a31.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [],
+      "weaknesses": [],
+      "improvements": []
+    },
+    "stats": {
+      "body_paragraphs": 1,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 0,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 1,
+      "body_words_approx": 0,
+      "tagged_lines": 1
+    },
+    "tagged_preview": [
+      "<f=1></f=1>"
+    ]
+  },
+  {
+    "id": "ee619d011433c1d2765a60f42b52952244bdaaea6367b251cef1d9e2e4178d58",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/ee619d011433c1d2765a60f42b52952244bdaaea6367b251cef1d9e2e4178d58.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "4 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading",
+        "Many literal tabs (222) in text \u2014 may represent tables or alignment but look odd as plain text"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 6318,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 4,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 128255,
+      "tagged_lines": 6322
+    },
+    "tagged_preview": [
+      "<f=1>**H4A ****New****s Clips**</f=1>",
+      "<f=2>**July 25****, 2015**</f=2>",
+      "<f=3></f=3>",
+      "<f=4>TODAY\u2019S KEY STORIES\t7</f=4>",
+      "<f=5>__Hillary Clinton Eyes Corporations in Proposals for Economy__ // NYT // Maggie Haberman - July 24, 2015\t7</f=5>",
+      "<f=6>__Hillary Clinton on e-mail controversy: \u2018Maybe the heat is getting to everybody\u2019__ // WaPo // Jose A. DelReal - July 24, 2015\t9</f=6>",
+      "<f=7>__New York Times issues correction on Clinton email story__ // CNN // Tom LoBianco - July 24, 2015\t10</f=7>",
+      "<f=8>__Clinton: The tyranny of quarterly earnings hurts innovation__ // Wired // Issie Lapowsky - July 24, 2015\t11</f=8>",
+      "<f=9>HRC NATIONAL COVERAGE\t13</f=9>",
+      "<f=10>__Hillary Clinton Email Said to Contain Classified Information__ // NYT // Michael S. Schmidt and Matt Apuzzo - July 24, 2015\t13</f=10>",
+      "<f=11>__Hillary Clinton to Back $15 Fast-Food Minimum Wage in New York__ // NYT // Maggie Haberman - July 24, 2015\t15</f=11>",
+      "<f=12>__1993 Video Reveals a More Impassioned and Direct Hillary Clinton__ // NYT // Amy Chozick - July 24, 2015\t15</f=12>",
+      "<f=13>__Ranking Hillary Clinton\u2019s e-mail problems__ // WaPo // Amber Phillips - July 24, 2015\t16</f=13>",
+      "<f=14>__Hillary Clinton is playing (home state) favorites on the minimum wage__ // WaPo // Jim Tankersley and Lydia DePillis - July 24, 2015\t18</f=14>",
+      "<f=15>__New York Times says there was \u2018no factual error\u2019 in Hillary Clinton e-mail referral story__ // WaPo // Erik Wemple - July 24, 2015\t20</f=15>",
+      "<f=16>__Justice: Probe sought in Clinton e-mails, but no \u2018criminal\u2019 focus__ // WaPo // Fred Barbash - July 24, 2015\t21</f=16>",
+      "<f=17>__This is Hillary Clinton\u2019s Elizabeth Warren moment__ // WaPo // Max Ehrenfreud - July 24, 2015\t22</f=17>",
+      "<f=18>__Hillary Clinton Sent Classified Information Over Email While at State Department, Review Finds__ // WSJ // Bryon Tau - July 24, 2015\t24</f=18>",
+      "<f=19>__Hillary Clinton Proposes Sharp Rise in Some Capital-Gains Tax Rates__ // WSJ // Laura Meckler - July 24, 2015\t26</f=19>",
+      "<f=20>__Hillary Clinton to Propose Doubling Capital Gains Tax Rate on Short-Term Investments__ // WSJ // Laura Meckler - July 24, 2015\t27</f=20>",
+      "<f=21>__Clinton says nation's companies need to think long-term__ // AP // Ken Thomas - July 24, 2015\t29</f=21>",
+      "<f=22>__In new White House bid, Clinton embraces race as a top issue__ // AP // Bill Barrow - July 24, 2015\t31</f=22>",
+      "<f=23>__Hillary Clinton\u2019s plan for corporate America__ // Politico // Annie Karni - July 24, 2015\t32</f=23>",
+      "<f=24>__GOP says Clinton must turn over server after news of probe__ // Politico // Rachael Bade - July 24, 2015\t34</f=24>",
+      "<f=25>__Hillary Clinton on email scandal: Everybody calm down__ // Politico // Josh Gerstein and Hanna Trudo - July 24, 2015\t37</f=25>",
+      "<f=26>__Hillary Clinton Faults \u2018Hit-and-Run\u2019 Activist Investors__ // Bloomberg // Brandon Kochkodin and Caleb Melby - July 24, 2015\t40</f=26>",
+      "<f=27>__Hillary Clinton's Fix for Short-Termism? They Tried It in 1934__ // Bloomberg // Peter Coy - July 24, 2015\t41</f=27>",
+      "<f=28>__Hillary Clinton Adds Capital Gains Complexity With Tax Rise, 6-Year Wait__ // Bloomberg // Richard Rubin - July 24, 2015\t43</f=28>",
+      "<f=29>__Hillary Clinton Calls for Investors to Escape 'Tyranny' of 'Short Termism'__ // Bloomberg // Jennifer Epstein - July 24, 2015\t45</f=29>",
+      "<f=30>__Clinton emails contained classified material: U.S. inspector__ // Reuters // Jonathan Allen - July 24, 2015\t47</f=30>"
+    ]
+  },
+  {
+    "id": "91abe38694877000683868c2925174a1a9218a0ea99fbdc1c53a9f1ab15cf447",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/91abe38694877000683868c2925174a1a9218a0ea99fbdc1c53a9f1ab15cf447.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [],
+      "weaknesses": [
+        "18/34 body paragraphs are empty \u2014 document may be sparse or use excessive whitespace",
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 34,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 0,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 255,
+      "tagged_lines": 34
+    },
+    "tagged_preview": [
+      "<f=1></f=1>",
+      "<f=2>**Park City Golf ****Women\u2019s ****9 Hole League**</f=2>",
+      "<f=3></f=3>",
+      "<f=4>**Spring Kick Off ****Party ****2024**</f=4>",
+      "<f=5>Come join us to welcome back renewing friends and meet new members. </f=5>",
+      "<f=6></f=6>",
+      "<f=7>**Tuesday ****May ****14****th**** ****from ****6.00 pm to 8.00 pm**** at****:**</f=7>",
+      "<f=8>**Collie\u2019s Sports Bar & Grill**</f=8>",
+      "<f=9>**738 Main Street**</f=9>",
+      "<f=10>**Park City 84060**</f=10>",
+      "<f=11></f=11>",
+      "<f=12>The cost for the social is $30 which will include appetizers and 2 drink tickets. </f=12>",
+      "<f=13></f=13>",
+      "<f=14>**RSVP Deadline is ****May ****9****th**</f=14>",
+      "<f=15>**__P__****__LEASE__****__ RSVP __****__AS SOON AS POSSIBLE__****__ __**</f=15>",
+      "<f=16></f=16>",
+      "<f=17>**Please note that ****you must RSVP and Pay in advance to attend.** NO late RSVP\u2019s can be accepted and payment **WILL NOT** be accepted at the door. </f=17>",
+      "<f=18></f=18>",
+      "<f=19>**__Ways to Pay:__**__ __</f=19>",
+      "<f=20>**Make ****out ****a check** for $30 to PCWGA 9 Hole League and mail to Kathy Roll, 2727 Estates Drive, Park City, UT 84060. Please make sure you write Kick Off Party on the check.</f=20>",
+      "<f=21></f=21>",
+      "<f=22>**Zelle:** Select Zelle on your bank App. Use 435 513 1545 to identify the league account. You should get a message to confirm that you are sending money to **Park City Womens Golf Assoc 9 Accounts.**** **Set up the payment and enter amount ($30 for Kick Off Party) In the Memo section, enter your **first and last names**** and \u201c****Kick Off Party\u201d **</f=22>",
+      "<f=23></f=23>",
+      "<f=24>This year\u2019s opening party will be a social event for everyone to meet and greet and will include an update on our course and a review of some important golf rules. So contact your friends and let\u2019s get our league started! </f=24>",
+      "<f=25></f=25>",
+      "<f=26>For information regarding membership and the Kick Off Party, please contact Kathy Roll: [PCWGA9HoleLeague@gmail.com]</f=26>",
+      "<f=27></f=27>",
+      "<f=28></f=28>",
+      "<f=29></f=29>",
+      "<f=30></f=30>"
+    ]
+  },
+  {
+    "id": "83beef8e7a023c98f1b521386df8db57f1c245212af1a0465f500240628347f5",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/83beef8e7a023c98f1b521386df8db57f1c245212af1a0465f500240628347f5.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "medium",
+      "strengths": [],
+      "weaknesses": [
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 37,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 0,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 3,
+      "body_words_approx": 441,
+      "tagged_lines": 37
+    },
+    "tagged_preview": [
+      "<f=1>**P****arish Pump**</f=1>",
+      "<f=2></f=2>",
+      "<f=3>**Local Causes benefit from parish council grants**</f=3>",
+      "<f=4>At the Parish Council meeting in December, the lucky recipients of the Worthy Causes grants were given the opportunity to be presented with their cheques and certificates by Councillor John Gilbey, Chairman of Great Horwood Parish Council. Those that were unable to attend received theirs by post. The successful organisations were \u2013 Football Club, WI, Combined School, Winslow and District Community Bus, Scouts & Guides, the Silver Band and the Art & Craft Group. Congratulations to all. </f=4>",
+      "<f=5> </f=5>",
+      "<f=6></f=6>",
+      "<f=7></f=7>",
+      "<f=8>**GIGACLEAR WORKS IN GREAT HORWOOD**</f=8>",
+      "<f=9>As many of you are aware, Gigaclear returned to the village in January. </f=9>",
+      "<f=10>If residents would like to get in touch with Gigaclear, please contact their dedicated Customer Operations team on the details below.</f=10>",
+      "<f=11>Email:\u00a0[__networkbuildqueries@gigaclear.com__]</f=11>",
+      "<f=12>Phone: 01865 591131</f=12>",
+      "<f=13>If and when I receive any updates, they will be published in Focus, which is also available on the Great Horwood Parish Council website e-voice.org.uk/ghpc/, the High Street noticeboard and on the Great Horwood village Facebook page.</f=13>",
+      "<f=14></f=14>",
+      "<f=15></f=15>",
+      "<f=16>**NOOK PARK**</f=16>",
+      "<f=17>The Parish Council are aware that there are major ground works going on at Nook Park. We are liaising as closely as possible with representatives of Buckinghamshire Council to try and ensure that the best interests of the current residents are safeguarded. We have also made our local MP Greg Smith aware and we will be following up to ensure that all changes are being made in accordance with the relevant regulations and legislation. </f=17>",
+      "<f=18></f=18>",
+      "<f=19></f=19>",
+      "<f=20></f=20>",
+      "<f=21></f=21>",
+      "<f=22></f=22>",
+      "<f=23>**VILLAGE HALL RE****NOVATIONS **</f=23>",
+      "<f=24>The Village Hall Management Committee are having discussions regarding the renovation of our Village Hall. They would like to see the hall brought up to date so it can be hired out for a wide range of activities and events. If anyone would like to make representations concerning these works, you are welcome to do so during the Public Participation Period of the next Parish Council meeting on Monday 13th February. </f=24>",
+      "<f=25></f=25>",
+      "<f=26></f=26>",
+      "<f=27></f=27>",
+      "<f=28>**FO****CUS ONLINE**</f=28>",
+      "<f=29>Did you know that there is an online edition of Focus with every copy from February 2012? So, if you have mislaid your copy and can\u2019t find the information you need, just log onto </f=29>",
+      "<f=30>[https://e-voice.org.uk/ghpc/focus-magazine/]</f=30>"
+    ]
+  },
+  {
+    "id": "2d5bf5131ae4a8b21e749d38299d0d1b98334cc35d6ae0265ca4c7fd79cc0a84",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/2d5bf5131ae4a8b21e749d38299d0d1b98334cc35d6ae0265ca4c7fd79cc0a84.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "high",
+      "strengths": [],
+      "weaknesses": [],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 49,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 0,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 828,
+      "tagged_lines": 49
+    },
+    "tagged_preview": [
+      "<f=1>Press Release</f=1>",
+      "<f=2>Release Nr:\u00a0 2306-08</f=2>",
+      "<f=3>June 21, 2023</f=3>",
+      "<f=4>Fort Drum Public Affairs</f=4>",
+      "<f=5></f=5>",
+      "<f=6>Fort Drum officials name conference room after first 10th Mountain Division Soldier to report for duty</f=6>",
+      "<f=7></f=7>",
+      "<f=8>FORT DRUM, N.Y. -- Fort Drum officials and invited guests gathered inside Hays Hall on June 21 to dedicate the command group conference room in honor of an original 10th Mountain Division Soldier.</f=8>",
+      "<f=9></f=9>",
+      "<f=10>Charles B. McLane, from Manchester, New Hampshire, was a standout athlete at Dartmouth College where he captained the ski team and was a U.S. Eastern Amateur Ski Association combined winner and Eastern slalom champion.</f=10>",
+      "<f=11></f=11>",
+      "<f=12>He also participated in the Pan-American ski races in Chile and helped the American team to bring home a victory.</f=12>",
+      "<f=13></f=13>",
+      "<f=14>McLane enlisted in the Army on Nov. 12, 1941, and, as one of the nation\u2019s top skiers, he would be a natural fit for the Army\u2019s new division of mountaineers and ski troopers.</f=14>",
+      "<f=15></f=15>",
+      "<f=16>The corporal reported for duty at Fort Lewis, Washington, just after the Japanese attack on Pearl Harbor. Wearing his college ski team sweater and carrying a suitcase, pair of skis and his War Department orders, McLane confounded the military police upon his arrival. They never heard of the mountain troops, and neither did the major at Corps Headquarters who made inquiries into McLane\u2019s orders.</f=16>",
+      "<f=17></f=17>",
+      "<f=18>After several phone calls, the officer said to McLane: \u201cLad, you are the Mountain Infantry. You\u2019re a one-man regiment.\u201d</f=18>",
+      "<f=19></f=19>",
+      "<f=20>But others would soon follow, and in several weeks the Soldiers became infamous on the pages of The New Yorker introducing them to the nation as \u201cMinnie\u2019s Ski Troops.\u201d McLane, assigned to the 87th Regiment, spent weeks translating skiing prowess into military maneuvers. This meant being able to navigate the slopes with heavy rucksack and rifle in tow.</f=20>",
+      "<f=21></f=21>",
+      "<f=22>The 90-pound load the Soldiers suffered on countless maneuvers made its way into a song (\u201cNinety Pounds of Rucksack\u201d) that became the division\u2019s unofficial anthem. As a member of the 87th Mountain Infantry Glee Club, McLane would regale the troops with that and other popular tunes that made light of their hardships.</f=22>",
+      "<f=23></f=23>",
+      "<f=24>McLane attended Officer Candidate School at Fort Benning, Georgia, and returned to the 87th as a second lieutenant. He continued to serve with the 10th Mountain Division at Camp Hale, Colorado, through 1944 and then transferred to the Army\u2019s Psychological Warfare Division. McLane served in Europe as an intelligence officer. In the early 1950s, he served as cultural attach\u00e9 at the U.S. Embassy in Moscow.</f=24>",
+      "<f=25></f=25>",
+      "<f=26>After the war, McLane earned his doctorate in public law and government from Columbia University. He became a professor at Dartmouth College in 1957, where he taught Russian civilization. He and his wife also authored books on the social and economic history of the Maine coast islands. McLane, 88, died in Hanover, New Hampshire, on Feb. 23, 2008.</f=26>",
+      "<f=27></f=27>",
+      "<f=28>Command Sgt. Maj. Nema Mobarakzadeh, 10th Mountain Division (LI) and Fort Drum senior enlisted adviser, addressed the audience at the plaque unveiling for the conference room.</f=28>",
+      "<f=29></f=29>",
+      "<f=30>\u201cLike so many veterans of our great division, (McLane) lived his life worthy of emulation and recognition,\u201d he said. \u201cThere aren\u2019t any units that have a history that rivals ours, and surely there aren\u2019t many that can narrow their roots to a single Soldier. We are fortunate to know our legacy, and we will work every day to honor those who came before us, to include Charles Bancroft McLane.\u201d</f=30>"
+    ]
+  }
+]

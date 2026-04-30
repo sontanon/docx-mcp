@@ -10,6 +10,7 @@ dependencies = [
     "defusedxml>=0.7",
     "python-docx>=1.1",
     "fastmcp>=2.0,<3",
+    "datasets>=4.8.5",
 ]
 
 [project.scripts]

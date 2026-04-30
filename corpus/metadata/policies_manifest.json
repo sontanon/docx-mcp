@@ -1,0 +1,52 @@
+[
+  {
+    "id": "5721cae2c3ed1e83d53ae03a878db5da382efb96b0f6cf5ca1e5612ee1a79bf8",
+    "filename": "638888652786070000",
+    "type": "policies",
+    "topic": "nonprofit",
+    "language": "en",
+    "word_count": 127872,
+    "confidence": 0.9686570763587952,
+    "url": "https://docxcorp.us/documents/5721cae2c3ed1e83d53ae03a878db5da382efb96b0f6cf5ca1e5612ee1a79bf8.docx"
+  },
+  {
+    "id": "86fafe356941c0bd3c383a3fb9c5c7b28200cf3cc66273db23e893d06c5210f6",
+    "filename": "20230812053822_97_AdverseWeatherPolicy2016.docx",
+    "type": "policies",
+    "topic": "education",
+    "language": "en",
+    "word_count": 638,
+    "confidence": 0.9829188585281372,
+    "url": "https://docxcorp.us/documents/86fafe356941c0bd3c383a3fb9c5c7b28200cf3cc66273db23e893d06c5210f6.docx"
+  },
+  {
+    "id": "2b838bb712845f4d01a8dafc3cfc631a5316ac1601d977052804b811e9802b8f",
+    "filename": "academic-action-plan.docx",
+    "type": "policies",
+    "topic": "education",
+    "language": "en",
+    "word_count": 1357,
+    "confidence": 0.980474591255188,
+    "url": "https://docxcorp.us/documents/2b838bb712845f4d01a8dafc3cfc631a5316ac1601d977052804b811e9802b8f.docx"
+  },
+  {
+    "id": "a586b1c9887f1b3f963523b9a8b5b3b6013484e9fe8697876bf0a940daead2c0",
+    "filename": "filedownload.ashx",
+    "type": "policies",
+    "topic": "education",
+    "language": "en",
+    "word_count": 3195,
+    "confidence": 0.9745472073554993,
+    "url": "https://docxcorp.us/documents/a586b1c9887f1b3f963523b9a8b5b3b6013484e9fe8697876bf0a940daead2c0.docx"
+  },
+  {
+    "id": "ae7c9554466c3577211658ba730e2d18a5ebb7e4448337c739bd07013b6e6a40",
+    "filename": "original",
+    "type": "policies",
+    "topic": "healthcare",
+    "language": "en",
+    "word_count": 652,
+    "confidence": 0.8290712237358093,
+    "url": "https://docxcorp.us/documents/ae7c9554466c3577211658ba730e2d18a5ebb7e4448337c739bd07013b6e6a40.docx"
+  }
+]

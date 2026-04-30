@@ -36,5 +36,9 @@ uv.lock
 /*.docx
 /opencode.json
 
+# Corpus fetched from external sources (regenerable)
+/corpus/downloaded/
+/corpus/extracted_text/
+
 # LibreOffice lock files
 .~lock.*

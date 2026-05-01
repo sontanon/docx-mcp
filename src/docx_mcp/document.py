@@ -19,6 +19,27 @@ from lxml import etree
 from docx_mcp.namespaces import qn, xpath
 
 
+def _is_empty_paragraph(element: etree._Element) -> bool:
+    """Check if a <w:p> element has no visible text content.
+
+    A paragraph is considered empty if it contains no <w:t> or <w:delText>
+    children with non-whitespace text anywhere in its descendant runs.
+
+    Args:
+        element: A ``<w:p>`` element.
+
+    Returns:
+        True if the paragraph has no visible text content.
+    """
+    for t in xpath(element, ".//w:t"):
+        if t.text and t.text.strip():
+            return False
+    for dt in xpath(element, ".//w:delText"):
+        if dt.text and dt.text.strip():
+            return False
+    return True
+
+
 class DocxDocument:
     """A parsed .docx file with in-memory XML trees.
 
@@ -181,7 +202,11 @@ class DocxDocument:
         """
         return {i: para for i, para in enumerate(self.paragraphs, start=1)}
 
-    def full_element_map(self) -> dict[str, etree._Element]:
+    def full_element_map(
+        self,
+        *,
+        collapse_empty: bool = False,
+    ) -> dict[str, etree._Element]:
         """Build a unified element map for body, headers, and footers.
 
         Body elements use plain numeric keys (``"1"``, ``"2"``, …).
@@ -192,14 +217,25 @@ class DocxDocument:
         Tables inside headers/footers are omitted and should be reported
         in ``skipped_elements`` by the caller.
 
+        Args:
+            collapse_empty: When True, empty ``<w:p>`` elements (those with
+                no visible text) are omitted from the map. This produces
+                cleaner output for LLM consumption but requires the same
+                setting to be used during redlining.
+
         Returns:
             Dict mapping fragment_id (str) to the lxml element.
         """
         result: dict[str, etree._Element] = {}
 
         # Body elements (paragraphs and tables)
-        for i, el in enumerate(self.body_elements, start=1):
-            result[str(i)] = el
+        idx = 0
+        for el in self.body_elements:
+            tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
+            if tag_local == "p" and collapse_empty and _is_empty_paragraph(el):
+                continue
+            idx += 1
+            result[str(idx)] = el
 
         # Header paragraphs
         for part_idx, (_rel_id, tree) in enumerate(self._header_trees.items(), start=1):
@@ -207,6 +243,8 @@ class DocxDocument:
             for child in tree:
                 tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
                 if tag_local == "p":
+                    if collapse_empty and _is_empty_paragraph(child):
+                        continue
                     para_idx += 1
                     result[f"header_{part_idx}.{para_idx}"] = child
                 elif tag_local == "tbl":
@@ -219,6 +257,8 @@ class DocxDocument:
             for child in tree:
                 tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
                 if tag_local == "p":
+                    if collapse_empty and _is_empty_paragraph(child):
+                        continue
                     para_idx += 1
                     result[f"footer_{part_idx}.{para_idx}"] = child
                 elif tag_local == "tbl":
@@ -226,11 +266,18 @@ class DocxDocument:
 
         return result
 
-    def resolve_fragment_id(self, fragment_id: str) -> tuple[etree._Element, str]:
+    def resolve_fragment_id(
+        self,
+        fragment_id: str,
+        *,
+        collapse_empty: bool = False,
+    ) -> tuple[etree._Element, str]:
         """Resolve a fragment ID to its element and parent tree type.
 
         Args:
             fragment_id: Fragment ID (e.g. ``"5"``, ``"header_1.3"``).
+            collapse_empty: Must match the setting used when the fragment ID
+                was generated.
 
         Returns:
             Tuple of (element, tree_type) where tree_type is one of
@@ -239,7 +286,7 @@ class DocxDocument:
         Raises:
             ValueError: If the fragment_id is unknown or malformed.
         """
-        element_map = self.full_element_map()
+        element_map = self.full_element_map(collapse_empty=collapse_empty)
         element = element_map.get(fragment_id)
         if element is not None:
             if fragment_id.startswith("header_"):

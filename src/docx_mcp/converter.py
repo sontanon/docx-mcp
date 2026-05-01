@@ -176,7 +176,7 @@ def _format_run(run: etree._Element, *, include_del_text: bool = False) -> str:
     ``<w:r>`` element.  Returns an empty string if the run has no text.
     """
     text = _extract_run_text(run, include_del_text=include_del_text)
-    if not text:
+    if not text or not text.strip():
         return ""
 
     rpr_list = xpath(run, "w:rPr")
@@ -435,11 +435,23 @@ class FragmentResult:
         self.skipped_elements: list[dict] = []
 
 
+def _is_para_empty(para: etree._Element) -> bool:
+    """Check if a <w:p> has no visible text (helper for collapse_empty)."""
+    for t in xpath(para, ".//w:t"):
+        if t.text and t.text.strip():
+            return False
+    for dt in xpath(para, ".//w:delText"):
+        if dt.text and dt.text.strip():
+            return False
+    return True
+
+
 def body_to_fragments(
     body_elements: list[etree._Element],
     *,
     markup: bool = False,
     hyperlink_resolver: Callable[[str], str | None] | None = None,
+    collapse_empty: bool = False,
 ) -> FragmentResult:
     """Convert mixed <w:p>/<w:tbl> elements to fragment items.
 
@@ -450,6 +462,7 @@ def body_to_fragments(
             (typically from DocxDocument.body_elements).
         markup: When True, include tracked-change markers in text.
         hyperlink_resolver: Optional callable to resolve hyperlink URLs.
+        collapse_empty: When True, skip empty ``<w:p>`` elements.
 
     Returns:
         :class:`FragmentResult` with ``items`` (FragmentItem list) and
@@ -457,27 +470,32 @@ def body_to_fragments(
     """
     result = FragmentResult()
 
-    for i, el in enumerate(body_elements, start=1):
+    idx = 0
+    for el in body_elements:
         tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
 
         if tag_local == "p":
+            if collapse_empty and _is_para_empty(el):
+                continue
+            idx += 1
             md = paragraph_to_pseudo_markdown(
                 el, markup=markup, hyperlink_resolver=hyperlink_resolver
             )
-            result.items.append((str(i), md))
+            result.items.append((str(idx), md))
             # Check for images in the paragraph (<w:drawing>/<w:pict> are inside <w:r>)
             if xpath(el, ".//w:drawing") or xpath(el, ".//w:pict"):
                 result.skipped_elements.append(
                     {
                         "type": "image",
-                        "location": f"body paragraph {i}",
+                        "location": f"body paragraph {idx}",
                         "description": "inline image",
                     }
                 )
 
         elif tag_local == "tbl":
+            idx += 1
             table_info = _extract_table_info(
-                el, table_id=i, markup=markup, hyperlink_resolver=hyperlink_resolver
+                el, table_id=idx, markup=markup, hyperlink_resolver=hyperlink_resolver
             )
             result.items.append(table_info)
             if isinstance(table_info, SkippedTableInfo):
@@ -509,6 +527,7 @@ def full_to_fragments(
     doc: DocxDocument,
     markup: bool = False,
     hyperlink_resolver: Callable[[str], str | None] | None = None,
+    collapse_empty: bool = False,
 ) -> FragmentResult:
     """Convert all extractable content (body, headers, footers) to fragments.
 
@@ -520,6 +539,7 @@ def full_to_fragments(
         doc: :class:`DocxDocument` instance.
         markup: When True, include tracked-change markers in text.
         hyperlink_resolver: Optional callable to resolve hyperlink URLs.
+        collapse_empty: When True, skip empty ``<w:p>`` elements.
 
     Returns:
         :class:`FragmentResult` with all fragments and skipped elements.
@@ -533,6 +553,7 @@ def full_to_fragments(
         doc.body_elements,
         markup=markup,
         hyperlink_resolver=hyperlink_resolver,
+        collapse_empty=collapse_empty,
     )
 
     # Header paragraphs
@@ -541,6 +562,8 @@ def full_to_fragments(
         for child in tree:
             tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
             if tag_local == "p":
+                if collapse_empty and _is_para_empty(child):
+                    continue
                 para_idx += 1
                 fid = f"header_{part_idx}.{para_idx}"
                 md = paragraph_to_pseudo_markdown(
@@ -571,6 +594,8 @@ def full_to_fragments(
         for child in tree:
             tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
             if tag_local == "p":
+                if collapse_empty and _is_para_empty(child):
+                    continue
                 para_idx += 1
                 fid = f"footer_{part_idx}.{para_idx}"
                 md = paragraph_to_pseudo_markdown(

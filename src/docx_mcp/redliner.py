@@ -73,6 +73,8 @@ def apply_redlines(
     source: Path | str | bytes,
     changes: list[Change],
     config: RedlineConfig | None = None,
+    *,
+    collapse_empty: bool = False,
 ) -> DocxDocument:
     """Apply tracked changes to a .docx document.
 
@@ -84,6 +86,8 @@ def apply_redlines(
         changes: List of changes to apply (mix of ParagraphChange and TableChange).
         config: Redline configuration (author, date). Defaults to
             ``RedlineConfig()`` which uses "AI Review" and current time.
+        collapse_empty: When True, empty ``<w:p>`` elements are omitted from
+            the fragment ID space. Must match the setting used during extraction.
 
     Returns:
         A :class:`DocxDocument` with all changes applied as tracked
@@ -111,7 +115,7 @@ def apply_redlines(
         raise ValueError(msg)
 
     # --- 2. Element map (body, headers, footers) ---
-    element_map = doc.full_element_map()
+    element_map = doc.full_element_map(collapse_empty=collapse_empty)
 
     # --- 3. Split changes by type ---
     paragraph_changes: list[ParagraphChange] = []

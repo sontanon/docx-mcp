@@ -365,6 +365,9 @@ def _extract_table_info(
 ) -> TableInfo | SkippedTableInfo:
     """Extract structured table info from a <w:tbl> element.
 
+    Supports simple tables and tables with clean horizontal/vertical merges.
+    Tables with nested tables or malformed merges are skipped.
+
     Args:
         tbl: A ``<w:tbl>`` element.
         table_id: 1-based table index in document order.
@@ -372,26 +375,59 @@ def _extract_table_info(
         hyperlink_resolver: Optional callable to resolve hyperlink URLs.
 
     Returns:
-        TableInfo if the table is simple, or SkippedTableInfo if not.
+        TableInfo if the table is extractable, or SkippedTableInfo if not.
     """
-    is_simple, reason = is_simple_table(tbl, table_id=table_id)
+    from docx_mcp.table_utils import build_table_grid, table_dimensions
 
-    if not is_simple:
-        return SkippedTableInfo(table_id=table_id, reason=reason)
+    # Check for nested tables first (we can't handle these)
+    for row in xpath(tbl, "./w:tr"):
+        for cell in xpath(row, "./w:tc"):
+            nested = xpath(cell, ".//w:tbl")
+            if nested:
+                return SkippedTableInfo(
+                    table_id=table_id,
+                    reason=f"table {table_id}, cell contains nested table",
+                )
+
+    # Try to build a logical grid (handles merges)
+    grid, error = build_table_grid(tbl, table_id=table_id)
+    if error:
+        return SkippedTableInfo(table_id=table_id, reason=error)
 
     rows_count, cols_count = table_dimensions(tbl)
 
     cells: list[list[CellInfo]] = []
-    rows = list(xpath(tbl, "./w:tr"))
-
-    for row_idx, row in enumerate(rows, start=1):
+    for row_idx, grid_row in enumerate(grid, start=1):
         cell_row: list[CellInfo] = []
-        tcs = list(xpath(row, "./w:tc"))
+        for col_idx, grid_cell in enumerate(grid_row, start=1):
+            if grid_cell is None:
+                # Should not happen in a valid grid, but handle gracefully
+                cell_info = CellInfo(
+                    cell_id=f"{table_id}.{row_idx}.{col_idx}",
+                    row=row_idx,
+                    col=col_idx,
+                    text="",
+                    span=0,
+                    vspan=0,
+                )
+                cell_row.append(cell_info)
+                continue
 
-        for col_idx, tc in enumerate(tcs, start=1):
-            cell_id = f"{table_id}.{row_idx}.{col_idx}"
-            paras = get_cell_paragraphs(tc)
+            if grid_cell.is_spanned_over:
+                # Spanned-over cell: empty text, span=0, vspan=0
+                cell_info = CellInfo(
+                    cell_id=f"{table_id}.{row_idx}.{col_idx}",
+                    row=row_idx,
+                    col=col_idx,
+                    text="",
+                    span=grid_cell.span,
+                    vspan=grid_cell.vspan,
+                )
+                cell_row.append(cell_info)
+                continue
 
+            # Real cell: extract text
+            paras = get_cell_paragraphs(grid_cell.element)
             cell_text_parts: list[str] = []
             for para in paras:
                 para_md = paragraph_to_pseudo_markdown(
@@ -402,10 +438,12 @@ def _extract_table_info(
             cell_text = "\n".join(cell_text_parts)
 
             cell_info = CellInfo(
-                cell_id=cell_id,
+                cell_id=f"{table_id}.{row_idx}.{col_idx}",
                 row=row_idx,
                 col=col_idx,
                 text=cell_text,
+                span=grid_cell.span,
+                vspan=grid_cell.vspan,
             )
             cell_row.append(cell_info)
 
@@ -650,7 +688,14 @@ def fragments_to_tagged_text_interleaved(items: list[FragmentItem]) -> str:
             lines.append(f"<table={item.table_id} rows={item.rows} cols={item.cols}>")
             for row in item.cells:
                 for cell in row:
-                    lines.append(f"<cell={cell.cell_id}>{cell.text}</cell={cell.cell_id}>")
+                    attrs = ""
+                    if cell.span != 1:
+                        attrs += f' span="{cell.span}"'
+                    if cell.vspan != 1:
+                        attrs += f' vspan="{cell.vspan}"'
+                    lines.append(
+                        f"<cell={cell.cell_id}{attrs}>{cell.text}</cell={cell.cell_id}>"
+                    )
             lines.append(f"</table={item.table_id}>")
 
     return "\n".join(lines)
@@ -685,18 +730,23 @@ def fragments_to_json_interleaved(items: list[FragmentItem]) -> list[dict]:
             )
 
         elif isinstance(item, TableInfo):
-            cells_json = [
-                [
-                    {
+            cells_json = []
+            for row in item.cells:
+                row_json = []
+                for cell in row:
+                    cell_dict: dict = {
                         "cell_id": cell.cell_id,
                         "row": cell.row,
                         "col": cell.col,
                         "text": cell.text,
                     }
-                    for cell in row
-                ]
-                for row in item.cells
-            ]
+                    if cell.span != 1:
+                        cell_dict["span"] = cell.span
+                    if cell.vspan != 1:
+                        cell_dict["vspan"] = cell.vspan
+                    row_json.append(cell_dict)
+                cells_json.append(row_json)
+
             result.append(
                 {
                     "type": "table",

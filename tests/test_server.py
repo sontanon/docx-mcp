@@ -823,17 +823,18 @@ class TestExtractTablesInFragments:
         assert fragments[1]["cols"] == 3
         assert "cells" in fragments[1]
 
-    async def test_extract_merged_cell_table_skipped(self, merged_cell_table_path):
-        """Non-simple tables should be skipped with reason."""
+    async def test_extract_merged_cell_table_with_spans(self, merged_cell_table_path):
+        """Merged-cell tables are extracted with span markers."""
         async with Client(mcp) as client:
             result = await client.call_tool(
                 "extract_fragments",
                 {"document_path": str(merged_cell_table_path)},
             )
         text = _text(result)
-        # Should have skipped table tag
-        assert "<table=2 skipped" in text
-        assert "reason=" in text
+        # Should have table with span markers
+        assert "<table=2 rows=2 cols=3>" in text
+        assert '<cell=2.1.1 span="2">' in text
+        assert '<cell=2.1.2 span="0" vspan="0"></cell=2.1.2>' in text
 
     async def test_extract_mixed_content(self, mixed_content_path):
         """Extract document with mixed paragraphs and tables."""

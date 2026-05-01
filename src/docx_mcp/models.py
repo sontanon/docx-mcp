@@ -222,6 +222,8 @@ class CellInfo(BaseModel):
     row: int
     col: int
     text: str
+    span: int = 1
+    vspan: int = 1
 
     model_config = {"frozen": True}
 

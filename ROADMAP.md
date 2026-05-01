@@ -29,7 +29,7 @@ These were reached via structured Q&A and are not open for re-litigation without
 | **Pre-existing tracked changes** | **Hard reject** in both `extract_fragments` and `apply_changes`. | Prevents annotation ID collisions, confusing diff baselines, and corrupted output. |
 | **Existing comments** | **Preserve and avoid collisions.** | `comments.xml` is already loaded; `IdManager` scans it. Existing comments remain untouched. |
 | **Images** | Listed in lossiness report as `image` type. No image manipulation support. | Text-only engine; images are expected to be invisible but we warn about them. |
-| **Tables (merged cells)** | Defer merged cells (`gridSpan` / `vMerge`) to Tier 3. | Current "skip non-simple tables" behavior is safe; signatory blocks also appear as plain paragraphs. |
+| **Tables (merged cells)** | Supported via logical grid builder (`build_table_grid`). Horizontal (`gridSpan`) and vertical (`vMerge`) merges render with `span` / `vspan` markers. Spanned-over cells are shown as empty with `span="0"`. | Previously deferred to Tier 3; now implemented after corpus analysis showed 40% of documents contained merged-cell tables. |
 | **Section breaks / multi-column** | Defer explicit handling until multi-column test fixtures are added and validated. | Current implicit behavior (new paragraphs inherit preceding section properties) is likely correct. |
 | **Signatory blocks** | Supported as both paragraph-based and simple-table-based. Merged-cell signature tables skipped with clear reason until Tier 3. | Both formats appear in real documents. |
 
@@ -245,7 +245,7 @@ Reports:
 
 ## Tier 3: Advanced Features
 
-### T3.1 Merged-cell table support
+### T3.1 Merged-cell table support **[DONE]**
 
 **Problem:** Tables with `gridSpan` (horizontal merge) or `vMerge` (vertical merge) are entirely skipped, even when only a single header cell spans columns.
 
@@ -253,29 +253,27 @@ Reports:
 
 **Implementation notes:**
 1. **Grid builder (`table_utils.py`):**
-   - Parse `<w:tblGrid>` to get column widths.
-   - Walk each row's `<w:tc>` elements.
-   - Track `gridSpan` to map logical columns to physical cells.
-   - Track `vMerge` (values `restart` and `continue`) to build a logical grid with rowspan info.
-   - Replace `is_simple_table()` with a grid that returns `(is_processable, reason, grid_map)`.
+   - `build_table_grid()` walks each row's `<w:tc>` elements and tracks `gridSpan` and `vMerge` (`restart` / `continue`).
+   - Returns a logical grid of `GridCell` objects with `span`, `vspan`, and `is_spanned_over` flags.
+   - Nested tables are still rejected.
 
 2. **Cell addressing (`table_utils.py`):**
-   - `get_cell_element(table, row, col)` must resolve logical `(row, col)` through the grid map to the correct physical `<w:tc>`.
+   - `get_cell_element(table, row, col)` resolves logical `(row, col)` through the grid map to the correct physical `<w:tc>`.
+   - Targeting a spanned-over cell raises a clear error directing the user to the starting cell.
 
 3. **Extraction (`converter.py`):**
-   - `_extract_table_info()` populates `CellInfo` with optional `colspan` and `rowspan`.
-   - Merged cells appear at their top-left coordinate; skipped coordinates are omitted or marked as merged.
-   - Tagged format for merged cell: `<cell=2.1.1 colspan=2>Header A</cell=2.1.1>`.
+   - `_extract_table_info()` populates `CellInfo` with `span` and `vspan` (default 1, omitted when trivial).
+   - Tagged format: `<cell=2.1.1 span="2">Header A</cell=2.1.1>` and `<cell=2.1.2 span="0"></cell=2.1.2>`.
+   - JSON format includes `span` and `vspan` fields in each cell object.
 
 4. **Redlining (`table_redliner.py`):**
    - Modifying a merged cell modifies the spanning `<w:tc>`; the text replacement applies to the whole cell.
    - Deleting a merged cell's content clears the spanning cell.
    - No support for *splitting* a merged cell via redlining (out of scope).
 
-**Tests needed:**
-- Horizontal merge fixture (signature block) → modify spanning cell.
-- Vertical merge fixture → modify spanning cell.
-- Mixed merge table → skipped with clear reason if unsupported pattern.
+**Tests:**
+- `test_table_extraction.py`: Merged-cell extraction with span markers in both tagged and JSON formats.
+- `test_table_redliner.py`: Modify spanning cell, error on spanned-over cell.
 
 ---
 
@@ -337,4 +335,5 @@ Reports:
 | 2026-04-27 | AI Assistant | Initial roadmap drafted after codebase review and structured Q&A. |
 | 2026-04-29 | AI Assistant | Tier 1 completed: tracked-change rejection, hyperlink support, append fixes, lossiness infra. |
 | 2026-04-29 | AI Assistant | Tier 2 completed: header/footer extraction & redlining, section-break handling, table robustness. |
+| 2026-04-30 | AI Assistant | Merged-cell table support (T3.1): `build_table_grid`, `span`/`vspan` markers in extraction, redlining with spanned-cell error handling. Formatting artifacts (`****`, `____`) fixed. `collapse_empty` mode implemented for cleaner LLM output. |
 

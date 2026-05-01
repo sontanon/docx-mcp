@@ -831,10 +831,10 @@ class TestExtractTablesInFragments:
                 {"document_path": str(merged_cell_table_path)},
             )
         text = _text(result)
-        # Should have table with span markers
+        # Should have table with span markers (spanned-over cells omitted)
         assert "<table=2 rows=2 cols=3>" in text
         assert '<cell=2.1.1 span="2">' in text
-        assert '<cell=2.1.2 span="0" vspan="0"></cell=2.1.2>' in text
+        assert '<cell=2.1.2' not in text  # spanned-over cell omitted
 
     async def test_extract_mixed_content(self, mixed_content_path):
         """Extract document with mixed paragraphs and tables."""

@@ -688,6 +688,8 @@ def fragments_to_tagged_text_interleaved(items: list[FragmentItem]) -> str:
             lines.append(f"<table={item.table_id} rows={item.rows} cols={item.cols}>")
             for row in item.cells:
                 for cell in row:
+                    if cell.span == 0 or cell.vspan == 0:
+                        continue
                     attrs = ""
                     if cell.span != 1:
                         attrs += f' span="{cell.span}"'
@@ -734,6 +736,8 @@ def fragments_to_json_interleaved(items: list[FragmentItem]) -> list[dict]:
             for row in item.cells:
                 row_json = []
                 for cell in row:
+                    if cell.span == 0 or cell.vspan == 0:
+                        continue
                     cell_dict: dict = {
                         "cell_id": cell.cell_id,
                         "row": cell.row,

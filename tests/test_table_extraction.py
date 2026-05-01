@@ -183,10 +183,10 @@ class TestFragmentsToTaggedTextInterleaved:
         items = result.items
         tagged = fragments_to_tagged_text_interleaved(items)
 
-        # Should have table with span markers
+        # Should have table with span markers (spanned-over cells omitted)
         assert "<table=2 rows=2 cols=3>" in tagged
         assert '<cell=2.1.1 span="2">A\nB</cell=2.1.1>' in tagged
-        assert '<cell=2.1.2 span="0" vspan="0"></cell=2.1.2>' in tagged
+        assert '<cell=2.1.2' not in tagged  # spanned-over cell omitted
         assert "</table=2>" in tagged
 
     def test_multi_paragraph_cell_preserves_newlines(self, table_multi_para_path: Path) -> None:
@@ -276,11 +276,11 @@ class TestFragmentsToJsonInterleaved:
         assert table_dict["rows"] == 2
         assert table_dict["cols"] == 3
 
-        # Check span fields in cells
+        # Check span fields in cells (spanned-over cells omitted)
         cells = table_dict["cells"]
         assert cells[0][0]["span"] == 2
-        assert cells[0][1]["span"] == 0
-        assert "span" not in cells[0][2]  # span=1 is omitted
+        assert len(cells[0]) == 2  # cell 1.1.2 omitted, only 1.1.1 and 1.1.3 remain
+        assert "span" not in cells[0][1]  # span=1 is omitted
 
     def test_json_is_serializable(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)

@@ -39,6 +39,8 @@ uv.lock
 # Corpus fetched from external sources (regenerable)
 /corpus/downloaded/
 /corpus/extracted_text/
+/corpus/extracted_text_v2/
+/corpus/feedback_v2/
 
 # LibreOffice lock files
 .~lock.*

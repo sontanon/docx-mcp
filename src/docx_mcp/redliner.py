@@ -44,6 +44,7 @@ Usage::
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 
 from lxml import etree
@@ -63,10 +64,49 @@ from docx_mcp.models import (
 )
 from docx_mcp.namespaces import xpath
 from docx_mcp.table_redliner import apply_table_changes
-from docx_mcp.table_utils import is_simple_table
+from docx_mcp.table_utils import build_table_grid, is_simple_table
 
 # Tag names of elements that carry visible text inside a run.
 _TEXT_TAGS = frozenset({"t", "delText"})
+
+
+def _is_header_footer(fragment_id: str) -> bool:
+    """Check if fragment_id refers to a header or footer paragraph."""
+    return fragment_id.startswith("header_") or fragment_id.startswith("footer_")
+
+
+def _add_comment_safe(
+    doc: DocxDocument,
+    paragraph: etree._Element,
+    justification: str,
+    *,
+    id_manager: IdManager,
+    config: RedlineConfig,
+    fragment_id: str,
+    range_elements: list[etree._Element] | None = None,
+) -> None:
+    """Attach a comment to a paragraph, skipping headers/footers with a warning.
+
+    Word and LibreOffice do not support comments in header/footer XML parts.
+    Attaching commentRangeStart/End there causes LibreOffice to reject the file
+    as corrupt. Word silently ignores them.
+    """
+    if _is_header_footer(fragment_id):
+        msg = (
+            f"Comment for fragment {fragment_id} was not attached: "
+            f"comments in headers/footers are not supported by Word/LibreOffice "
+            f"and will be silently dropped."
+        )
+        warnings.warn(msg, stacklevel=2)
+        return
+    add_comment(
+        doc,
+        paragraph,
+        justification,
+        id_manager=id_manager,
+        config=config,
+        range_elements=range_elements,
+    )
 
 
 def apply_redlines(
@@ -151,12 +191,13 @@ def apply_redlines(
             # Comment spans tracked-change elements in the paragraph
             if annotation_ids:
                 range_els = _get_tracked_change_elements(paragraph)
-                add_comment(
+                _add_comment_safe(
                     doc,
                     paragraph,
                     change.justification,
                     id_manager=id_manager,
                     config=config,
+                    fragment_id=change.fragment_id,
                     range_elements=range_els if range_els else None,
                 )
 
@@ -168,12 +209,13 @@ def apply_redlines(
                 preserve_paragraph_mark=False,
             )
             # Comment spans the whole paragraph
-            add_comment(
+            _add_comment_safe(
                 doc,
                 paragraph,
                 change.justification,
                 id_manager=id_manager,
                 config=config,
+                fragment_id=change.fragment_id,
             )
 
             # Also delete trailing blank paragraphs if requested
@@ -198,12 +240,13 @@ def apply_redlines(
                 hyperlink_creator=doc.create_hyperlink_relationship,
             )
             # Comment on the new paragraph
-            add_comment(
+            _add_comment_safe(
                 doc,
                 new_p,
                 change.justification,
                 id_manager=id_manager,
                 config=config,
+                fragment_id=change.fragment_id,
             )
 
     # --- 7. Apply table changes ---
@@ -284,12 +327,12 @@ def _validate_table_changes(
             )
             raise ValueError(msg)
 
-        # Check if table is simple
-        is_simple, reason = is_simple_table(el, table_id=change.table_id)
-        if not is_simple:
+        # Check if table is processable (build_table_grid handles merged cells)
+        _grid, error = build_table_grid(el, table_id=change.table_id)
+        if error:
             msg = (
                 f"Table change for cell_id={change.cell_id} targets "
-                f"a non-simple table: {reason}"
+                f"a non-simple table: {error}"
             )
             raise ValueError(msg)
 

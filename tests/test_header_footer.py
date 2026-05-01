@@ -168,8 +168,14 @@ class TestHeaderFooterRedlining:
 class TestHeaderFooterComments:
     """Tests for comments on header/footer paragraphs."""
 
-    def test_comment_on_header_paragraph(self, header_footer_text_path, tmp_path):
-        """Adding a comment to a header paragraph works."""
+    def test_comment_on_header_paragraph_is_skipped_with_warning(self, header_footer_text_path, tmp_path):
+        """Comments in headers/footers are skipped with a warning.
+
+        Word and LibreOffice do not support commentRangeStart/End in
+        header/footer XML parts. LibreOffice rejects the file as corrupt.
+        """
+        import warnings
+
         changes = [
             ParagraphChange(
                 kind="paragraph",
@@ -179,15 +185,26 @@ class TestHeaderFooterComments:
                 justification="Header comment test.",
             ),
         ]
-        doc = apply_redlines(header_footer_text_path, changes)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            doc = apply_redlines(header_footer_text_path, changes)
+
         out = tmp_path / "output.docx"
         doc.save(out)
 
+        # Warning should be raised
+        assert len(w) == 1
+        assert "header_1.1" in str(w[0].message)
+        assert "silently dropped" in str(w[0].message)
+
+        # No comments.xml should be created for header-only changes
         result = DocxDocument(path=out)
-        assert result.comments_tree is not None
-        comments = xpath(result.comments_tree, "w:comment")
-        comment_texts = [
-            "".join(t.text or "" for t in c.iter("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"))
-            for c in comments
-        ]
-        assert any("Header comment test." in text for text in comment_texts)
+        assert result.comments_tree is None
+
+        # But the tracked change itself should still work
+        header_text = ""
+        for tree in result._header_trees.values():
+            header_text += "".join(
+                t.text or "" for t in tree.iter("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t")
+            )
+        assert "Modified header with comment." in header_text

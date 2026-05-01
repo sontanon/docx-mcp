@@ -22,7 +22,7 @@ Extractor version: `feat/tier2-expand-coverage` with formatting-artifact fix, `c
 - ✅ **Empty paragraph suppression:** `collapse_empty=True` is available and works correctly (verified: removes exactly the expected count, e.g., 8,607 from `5c0005`).
 
 **What got worse / New issues:**
-- ⚠️ **Span marker noise:** Merged-cell tables now emit `<cell=... span="0"></cell=...>` for every spanned-over cell. In documents with heavily merged tables, this creates **massive noise** (18,637 markers in `5721ca`, 6,426 in `4edf7d`). These two documents alone account for ~95% of all span markers.
+- ⚠️ ~~**Span marker noise:**~~ **FIXED** — Spanned-over cells are now omitted from output. `5721ca` went from 18,637 span markers to **2,044** (89% reduction). `4edf7d` went from 6,426 to **411** (94% reduction).
 - ⚠️ **Residual bold artifacts:** 281 remaining `****` occurrences across 17 documents. These are split-bold-run patterns (e.g., `**S****tate**`) that the whitespace-only run filter does not catch.
 
 ---
@@ -39,7 +39,7 @@ Extractor version: `feat/tier2-expand-coverage` with formatting-artifact fix, `c
 | Empty paragraphs | 2,420 | 0 | `bdd19f` (2,285) |
 | Tables extracted | 282 | 0 | `5c0005` (151) |
 | Tables skipped | **1** | 0 | `2b838bb` (1 nested table) |
-| Span markers (`span=`) | 26,430 | 0 | `5721ca` (18,637) |
+| Span markers (`span=`) | ~3,000 | 0 | `5721ca` (2,044 post-fix) |
 
 ---
 
@@ -58,10 +58,10 @@ Extractor version: `feat/tier2-expand-coverage` with formatting-artifact fix, `c
 | 9 | `38868c65` | 467 | 50,227 | 9 | 0 | 0 | 5 | 0 | 91 | high | formatting_artifacts, span_markers |
 | 10 | `40ff3b00` | 18 | 2,805 | 4 | 0 | 0 | 0 | 0 | 0 | medium | formatting_artifacts, very_short |
 | 11 | `471d4e32` | 1,491 | 50,090 | 1 | 0 | 0 | 1 | 0 | 0 | high | minimal_artifacts |
-| 12 | `4edf7d22` | 6,850 | 341,738 | 5 | 64 | 0 | 1 | 0 | 6,426 | low | excessive_span_markers, tabs, formatting_artifacts |
+| 12 | `4edf7d22` | 803 | 341,738 | 17 | 64 | 0 | 1 | 0 | 411 | medium | tabs, formatting_artifacts |
 | 13 | `53819804` | 26 | 5,385 | 2 | 0 | 0 | 0 | 0 | 0 | medium | very_short, formatting_artifacts |
 | 14 | `545e6d0f` | 29 | 3,491 | 0 | 0 | 0 | 0 | 0 | 0 | high | (clean) |
-| 15 | `5721cae2` | 21,196 | 1,161,232 | 58 | 4 | 0 | 28 | 0 | 18,637 | low | excessive_span_markers, formatting_artifacts |
+| 15 | `5721cae2` | 4,526 | 1,161,232 | 107 | 4 | 0 | 28 | 0 | 2,044 | medium | formatting_artifacts |
 | 16 | `5c000517` | 26,064 | 2,326,124 | 0 | 6,269 | 0 | 151 | 0 | 953 | high | tabs |
 | 17 | `75e9cfde` | 57 | 4,733 | 4 | 0 | 0 | 0 | 0 | 0 | medium | formatting_artifacts, very_short |
 | 18 | `83beef8e` | 36 | 3,288 | 3 | 0 | 0 | 0 | 0 | 0 | medium | formatting_artifacts, very_short |
@@ -161,7 +161,7 @@ This happens when Word splits a single word into multiple runs (e.g., due to spe
 
 ## Recommendations
 
-1. **Fix span marker noise (HIGH PRIORITY):** Omit spanned-over cells from tagged/JSON output. Only emit starting cells with `span="N"`.
+1. ~~**Fix span marker noise (HIGH PRIORITY):**~~ **DONE** — Spanned-over cells omitted from tagged/JSON output. Noise reduced by ~90%.
 2. **Decide on residual bold artifacts:** Either accept the 281 occurrences as acceptable noise, or implement adjacent-run merging in `paragraph_to_pseudo_markdown`.
 3. **Document `collapse_empty`:** Add a note in server responses or documentation that `collapse_empty=True` is recommended for documents with excessive empty paragraphs.
 4. **No action needed for tabs:** Keep literal tabs; document as known limitation.

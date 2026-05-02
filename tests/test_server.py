@@ -60,22 +60,16 @@ class TestExtractFragments:
         assert "<f=5>" in text
         assert "</f=1>" in text
 
-    async def test_json_format(self, simple_5para_path):
+    async def test_extracts_body_and_headers(self, header_footer_text_path):
         async with Client(mcp) as client:
             result = await client.call_tool(
                 "extract_fragments",
-                {"document_path": str(simple_5para_path), "format": "json"},
+                {"document_path": str(header_footer_text_path)},
             )
-        data = json.loads(_text(result))
-        assert isinstance(data, dict)
-        assert "fragments" in data
-        assert "skipped_elements" in data
-        fragments = data["fragments"]
-        assert isinstance(fragments, list)
-        assert len(fragments) == 5
-        assert fragments[0]["type"] == "paragraph"
-        assert fragments[0]["fragment_id"] == "1"
-        assert "text" in fragments[0]
+        text = _text(result)
+        assert "<f=header_1.1>" in text
+        assert "<f=footer_1.1>" in text
+        assert "<f=1>" in text
 
     async def test_file_not_found(self):
         async with Client(mcp) as client:
@@ -244,27 +238,6 @@ class TestApplyChanges:
             )
         text = _text(result)
         assert "Validation:" in text
-
-    async def test_validation_disabled(self, simple_5para_path, tmp_path):
-        output = tmp_path / "output.docx"
-        async with Client(mcp) as client:
-            result = await client.call_tool(
-                "apply_changes",
-                {
-                    "document_path": str(simple_5para_path),
-                    "changes": [
-                            {
-                                "fragment_id": "1",
-                                "change_type": "delete",
-                                "justification": "Test no validation.",
-                            },
-                    ],
-                    "output_path": str(output),
-                    "validate": False,
-                },
-            )
-        text = _text(result)
-        assert "Validation:" not in text
 
     async def test_invalid_fragment_id(self, simple_5para_path, tmp_path):
         output = tmp_path / "output.docx"
@@ -481,7 +454,6 @@ class TestValidateDocument:
                         },
                     ],
                     "output_path": str(output),
-                    "validate": False,
                 },
             )
             # Now validate it
@@ -538,7 +510,6 @@ class TestDiffFragments:
                         },
                     ],
                     "output_path": str(output),
-                    "validate": False,
                 },
             )
         # The redlined version has tracked changes XML, so the text
@@ -639,7 +610,6 @@ class TestDiffFragments:
                         },
                     ],
                     "output_path": str(output),
-                    "validate": False,
                 },
             )
             # Now diff the original and modified
@@ -704,50 +674,9 @@ class TestFragmentsResource:
 # ---------------------------------------------------------------------------
 
 
-class TestExtractFragmentsMarkup:
-    async def test_markup_on_clean_doc(self, simple_5para_path):
-        """markup=True on a doc with no tracked changes should match default."""
-        async with Client(mcp) as client:
-            result_default = await client.call_tool(
-                "extract_fragments",
-                {"document_path": str(simple_5para_path)},
-            )
-            result_markup = await client.call_tool(
-                "extract_fragments",
-                {"document_path": str(simple_5para_path), "markup": True},
-            )
-        assert _text(result_default) == _text(result_markup)
-
-    async def test_markup_on_redlined_doc_rejected(self, simple_5para_path, tmp_path):
-        """Extracting from a redlined doc is rejected (pre-existing tracked changes)."""
-        output = tmp_path / "redlined.docx"
-        async with Client(mcp) as client:
-            # Create a redlined doc with a modify change
-            await client.call_tool(
-                "apply_changes",
-                {
-                    "document_path": str(simple_5para_path),
-                    "changes": [
-                        {
-                            "fragment_id": "1",
-                            "change_type": "modify",
-                            "new_text": "The Modified Seller shall transfer the goods.",
-                            "justification": "Test markup extraction.",
-                        },
-                    ],
-                    "output_path": str(output),
-                    "validate": False,
-                },
-            )
-            # Now extract should be rejected
-            with pytest.raises(ToolError, match="pre-existing tracked changes"):
-                await client.call_tool(
-                    "extract_fragments",
-                    {"document_path": str(output), "markup": True},
-                )
-
+class TestExtractRedlinedDocRejected:
     async def test_extract_redlined_doc_rejected(self, simple_5para_path, tmp_path):
-        """Extracting from any redlined doc is rejected regardless of markup flag."""
+        """Extracting from any redlined doc is rejected (pre-existing tracked changes)."""
         output = tmp_path / "redlined.docx"
         async with Client(mcp) as client:
             await client.call_tool(
@@ -759,17 +688,16 @@ class TestExtractFragmentsMarkup:
                             "fragment_id": "1",
                             "change_type": "modify",
                             "new_text": "The Modified Seller shall transfer the goods.",
-                            "justification": "Test markup extraction.",
+                            "justification": "Test extraction from redlined doc.",
                         },
                     ],
                     "output_path": str(output),
-                    "validate": False,
                 },
             )
             with pytest.raises(ToolError, match="pre-existing tracked changes"):
                 await client.call_tool(
                     "extract_fragments",
-                    {"document_path": str(output), "markup": False},
+                    {"document_path": str(output)},
                 )
 
 
@@ -799,29 +727,17 @@ class TestExtractTablesInFragments:
         assert "<cell=2.1.1>" in text
         assert "</cell=2.1.1>" in text
 
-    async def test_extract_simple_table_json_format(self, simple_table_path):
-        """Extract a simple table in JSON format."""
+    async def test_extract_simple_table_tagged(self, simple_table_path):
+        """Extract a simple table in tagged format."""
         async with Client(mcp) as client:
             result = await client.call_tool(
                 "extract_fragments",
-                {"document_path": str(simple_table_path), "format": "json"},
+                {"document_path": str(simple_table_path)},
             )
-        data = json.loads(_text(result))
-        assert isinstance(data, dict)
-        fragments = data["fragments"]
-        assert isinstance(fragments, list)
-        assert len(fragments) == 3  # para, table, para
-
-        # First item is paragraph
-        assert fragments[0]["type"] == "paragraph"
-        assert fragments[0]["fragment_id"] == "1"
-
-        # Second item is table
-        assert fragments[1]["type"] == "table"
-        assert fragments[1]["table_id"] == 2
-        assert fragments[1]["rows"] == 3
-        assert fragments[1]["cols"] == 3
-        assert "cells" in fragments[1]
+        text = _text(result)
+        assert "<table=2 rows=3 cols=3>" in text
+        assert "<cell=2.1.1>" in text
+        assert "</table=2>" in text
 
     async def test_extract_merged_cell_table_with_spans(self, merged_cell_table_path):
         """Merged-cell tables are extracted with span markers."""
@@ -1072,9 +988,9 @@ class TestApplyTableChanges:
                     "output_path": str(output),
                 },
             )
-            # Extract with markup should be rejected (pre-existing tracked changes)
+            # Extraction should be rejected (pre-existing tracked changes)
             with pytest.raises(ToolError, match="pre-existing tracked changes"):
                 await client.call_tool(
                     "extract_fragments",
-                    {"document_path": str(output), "markup": True},
+                    {"document_path": str(output)},
                 )

@@ -1,7 +1,5 @@
 """Tests for the change handlers (delete, append, modify)."""
 
-from __future__ import annotations
-
 from lxml import etree
 
 from docx_mcp.converter import paragraph_to_pseudo_markdown

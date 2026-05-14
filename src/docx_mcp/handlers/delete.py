@@ -12,8 +12,6 @@ The resulting paragraph is still present in the XML — Word just renders it
 with strikethrough and hides it when "Show Markup" is off.
 """
 
-from __future__ import annotations
-
 from lxml import etree
 
 from docx_mcp.id_manager import IdManager

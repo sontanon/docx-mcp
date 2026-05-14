@@ -4,8 +4,6 @@ Reports counts of headers, footers, images, tables, section breaks,
 and unsupported elements. Used by the ``audit_document`` CLI and MCP tool.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 
 from docx_mcp.document import DocxDocument

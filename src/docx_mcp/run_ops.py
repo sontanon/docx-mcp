@@ -15,8 +15,6 @@ Key responsibilities:
 * **Clone** ``w:rPr`` elements (deep copy).
 """
 
-from __future__ import annotations
-
 import copy
 from dataclasses import dataclass
 

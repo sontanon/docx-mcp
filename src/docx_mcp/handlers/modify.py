@@ -25,8 +25,6 @@ Inserted regions are wrapped in ``<w:ins>`` with ``<w:t>``.
    the XML run text, causing cascading alignment failures.
 """
 
-from __future__ import annotations
-
 from lxml import etree
 
 from docx_mcp.converter import pseudo_markdown_to_raw

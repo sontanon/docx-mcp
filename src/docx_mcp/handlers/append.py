@@ -15,8 +15,6 @@ The new text is provided as pseudo-Markdown and must be parsed into
 formatted runs.
 """
 
-from __future__ import annotations
-
 import copy
 import re
 from collections.abc import Callable

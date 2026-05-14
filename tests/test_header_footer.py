@@ -1,7 +1,5 @@
 """Tests for T2.1: header/footer extraction and redlining."""
 
-from __future__ import annotations
-
 from lxml import etree
 
 from docx_mcp.document import DocxDocument
@@ -168,7 +166,11 @@ class TestHeaderFooterRedlining:
 class TestHeaderFooterComments:
     """Tests for comments on header/footer paragraphs."""
 
-    def test_comment_on_header_paragraph_is_skipped_with_warning(self, header_footer_text_path, tmp_path):
+    def test_comment_on_header_paragraph_is_skipped_with_warning(
+        self,
+        header_footer_text_path,
+        tmp_path,
+    ):
         """Comments in headers/footers are skipped with a warning.
 
         Word and LibreOffice do not support commentRangeStart/End in

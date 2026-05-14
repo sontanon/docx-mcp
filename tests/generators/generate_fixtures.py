@@ -6,8 +6,6 @@ Run directly:
 Or invoke via the pytest conftest session fixture (automatic).
 """
 
-from __future__ import annotations
-
 import io
 import zipfile
 from collections.abc import Callable

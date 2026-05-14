@@ -12,8 +12,6 @@ pseudo-Markdown. Non-simple tables are represented as SkippedTableInfo with a
 reason.
 """
 
-from __future__ import annotations
-
 import re
 from collections.abc import Callable
 
@@ -22,7 +20,7 @@ from lxml import etree
 from docx_mcp.document import DocxDocument
 from docx_mcp.models import CellInfo, SkippedTableInfo, TableInfo
 from docx_mcp.namespaces import qn, xpath
-from docx_mcp.table_utils import get_cell_paragraphs, is_simple_table, table_dimensions
+from docx_mcp.table_utils import get_cell_paragraphs, table_dimensions
 
 
 def _has_bool_property(rpr: etree._Element | None, local_name: str) -> bool:
@@ -377,7 +375,7 @@ def _extract_table_info(
     Returns:
         TableInfo if the table is extractable, or SkippedTableInfo if not.
     """
-    from docx_mcp.table_utils import build_table_grid, table_dimensions
+    from docx_mcp.table_utils import build_table_grid
 
     # Check for nested tables first (we can't handle these)
     for row in xpath(tbl, "./w:tr"):
@@ -475,13 +473,10 @@ class FragmentResult:
 
 def _is_para_empty(para: etree._Element) -> bool:
     """Check if a <w:p> has no visible text (helper for collapse_empty)."""
-    for t in xpath(para, ".//w:t"):
-        if t.text and t.text.strip():
-            return False
-    for dt in xpath(para, ".//w:delText"):
-        if dt.text and dt.text.strip():
-            return False
-    return True
+    return all(
+        not (el.text and el.text.strip())
+        for el in xpath(para, ".//w:t") + xpath(para, ".//w:delText")
+    )
 
 
 def body_to_fragments(

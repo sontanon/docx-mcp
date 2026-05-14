@@ -1,7 +1,5 @@
 """End-to-end tests for the redliner orchestrator."""
 
-from __future__ import annotations
-
 import io
 import zipfile
 

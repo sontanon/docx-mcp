@@ -15,8 +15,6 @@ Provides structural checks to catch errors before the file reaches Word:
   must also be present.
 """
 
-from __future__ import annotations
-
 import contextlib
 from dataclasses import dataclass, field
 

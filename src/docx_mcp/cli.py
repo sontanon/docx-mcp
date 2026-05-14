@@ -13,8 +13,6 @@ Usage::
     docx-mcp validate redlined.docx
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import sys

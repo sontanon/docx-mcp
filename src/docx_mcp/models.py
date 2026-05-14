@@ -13,8 +13,6 @@ The explicit `kind` field enables Pydantic's discriminated union validation,
 ensuring type-safe processing throughout the pipeline.
 """
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Annotated, Literal

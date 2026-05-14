@@ -42,9 +42,8 @@ Usage::
     doc.save("output_redlined.docx")
 """
 
-from __future__ import annotations
-
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
 
 from lxml import etree
@@ -64,7 +63,7 @@ from docx_mcp.models import (
 )
 from docx_mcp.namespaces import xpath
 from docx_mcp.table_redliner import apply_table_changes
-from docx_mcp.table_utils import build_table_grid, is_simple_table
+from docx_mcp.table_utils import build_table_grid
 
 # Tag names of elements that carry visible text inside a run.
 _TEXT_TAGS = frozenset({"t", "delText"})
@@ -111,7 +110,7 @@ def _add_comment_safe(
 
 def apply_redlines(
     source: Path | str | bytes,
-    changes: list[Change],
+    changes: Sequence[Change],
     config: RedlineConfig | None = None,
     *,
     collapse_empty: bool = False,
@@ -178,7 +177,8 @@ def apply_redlines(
     sorted_para_changes = _sort_paragraph_changes(paragraph_changes, element_map)
 
     for change in sorted_para_changes:
-        paragraph = element_map[change.fragment_id]
+        fid = str(change.fragment_id)
+        paragraph = element_map[fid]
 
         if change.change_type == ParagraphChangeType.MODIFY:
             assert change.new_text is not None
@@ -197,7 +197,7 @@ def apply_redlines(
                     change.justification,
                     id_manager=id_manager,
                     config=config,
-                    fragment_id=change.fragment_id,
+                    fragment_id=fid,
                     range_elements=range_els if range_els else None,
                 )
 
@@ -215,7 +215,7 @@ def apply_redlines(
                 change.justification,
                 id_manager=id_manager,
                 config=config,
-                fragment_id=change.fragment_id,
+                fragment_id=fid,
             )
 
             # Also delete trailing blank paragraphs if requested
@@ -223,7 +223,7 @@ def apply_redlines(
                 _delete_trailing_blanks(
                     paragraph,
                     count=change.delete_next_blanks,
-                    fragment_id=change.fragment_id,
+                    fragment_id=fid,
                     id_manager=id_manager,
                     config=config,
                 )
@@ -246,7 +246,7 @@ def apply_redlines(
                 change.justification,
                 id_manager=id_manager,
                 config=config,
-                fragment_id=change.fragment_id,
+                fragment_id=fid,
             )
 
     # --- 7. Apply table changes ---
@@ -276,7 +276,8 @@ def _validate_paragraph_changes(
         ValueError: If a change is invalid or targets the wrong element type.
     """
     for change in changes:
-        if change.fragment_id not in element_map:
+        fid = str(change.fragment_id)
+        if fid not in element_map:
             msg = (
                 f"Paragraph change references fragment_id={change.fragment_id}, "
                 f"but no such fragment exists in the document"
@@ -284,7 +285,7 @@ def _validate_paragraph_changes(
             raise ValueError(msg)
 
         # Verify it targets a paragraph, not a table
-        el = element_map[change.fragment_id]
+        el = element_map[fid]
         tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
         if tag_local != "p":
             msg = (
@@ -372,7 +373,7 @@ def _sort_paragraph_changes(
 
     def _group_key(c: ParagraphChange) -> tuple[int, int]:
         order = type_order[c.change_type]
-        pos = position_index.get(c.fragment_id, 0)
+        pos = position_index.get(str(c.fragment_id), 0)
         if c.change_type == ParagraphChangeType.APPEND_AFTER:
             return (order, -pos)
         return (order, pos)

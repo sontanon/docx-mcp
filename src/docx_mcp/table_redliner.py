@@ -9,8 +9,6 @@ handle_delete, handle_append_after) to ensure consistent tracked-change
 formatting.
 """
 
-from __future__ import annotations
-
 from lxml import etree
 
 from docx_mcp.comments import add_comment

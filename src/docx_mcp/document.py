@@ -7,8 +7,6 @@ Provides the DocxDocument class which handles:
 - Repacking to .docx
 """
 
-from __future__ import annotations
-
 import contextlib
 import io
 import zipfile
@@ -31,13 +29,10 @@ def _is_empty_paragraph(element: etree._Element) -> bool:
     Returns:
         True if the paragraph has no visible text content.
     """
-    for t in xpath(element, ".//w:t"):
-        if t.text and t.text.strip():
-            return False
-    for dt in xpath(element, ".//w:delText"):
-        if dt.text and dt.text.strip():
-            return False
-    return True
+    return all(
+        not (el.text and el.text.strip())
+        for el in xpath(element, ".//w:t") + xpath(element, ".//w:delText")
+    )
 
 
 class DocxDocument:

@@ -1,7 +1,5 @@
 """Tests for T1.1: hard-reject pre-existing tracked changes."""
 
-from __future__ import annotations
-
 import pytest
 from fastmcp import Client
 from fastmcp.exceptions import ToolError

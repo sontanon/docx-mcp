@@ -1,7 +1,5 @@
 """Tests for the differ module."""
 
-from __future__ import annotations
-
 from docx_mcp.differ import DmpWordDiffer
 from docx_mcp.models import DiffChunk, DiffOp
 

@@ -1,7 +1,5 @@
 """Tests for T1.2: hyperlink preservation & editing."""
 
-from __future__ import annotations
-
 import pytest
 
 from docx_mcp.document import DocxDocument

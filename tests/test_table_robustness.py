@@ -1,7 +1,5 @@
 """Tests for T2.3: table robustness improvements."""
 
-from __future__ import annotations
-
 from docx_mcp.document import DocxDocument
 from docx_mcp.models import (
     TableChange,

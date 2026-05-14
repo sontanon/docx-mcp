@@ -1,7 +1,5 @@
 """Tests for T1.3: fix append_after bugs."""
 
-from __future__ import annotations
-
 from docx_mcp.document import DocxDocument
 from docx_mcp.handlers.append import handle_append_after
 from docx_mcp.id_manager import IdManager

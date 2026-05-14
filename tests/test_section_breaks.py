@@ -1,7 +1,5 @@
 """Tests for T2.2: section-break handling in append_after."""
 
-from __future__ import annotations
-
 from docx_mcp.document import DocxDocument
 from docx_mcp.models import ParagraphChange, ParagraphChangeType
 from docx_mcp.redliner import apply_redlines

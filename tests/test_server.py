@@ -1,7 +1,5 @@
 """Tests for the MCP server (tools and resource)."""
 
-from __future__ import annotations
-
 import json
 from pathlib import Path
 from urllib.parse import quote

@@ -1,7 +1,5 @@
 """OOXML namespace constants and helpers for working with .docx XML."""
 
-from __future__ import annotations
-
 from lxml import etree
 
 # --- Core OOXML Namespaces ---

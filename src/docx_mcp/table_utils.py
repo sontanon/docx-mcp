@@ -8,8 +8,6 @@ Provides functions to:
 - Parse cell_id strings.
 """
 
-from __future__ import annotations
-
 import contextlib
 from dataclasses import dataclass
 
@@ -140,7 +138,6 @@ def build_table_grid(
         and error is None. If the table is too complex, grid is empty and
         error is a reason string.
     """
-    import contextlib
 
     rows = list(xpath(tbl, "./w:tr"))
     if not rows:
@@ -205,11 +202,13 @@ def build_table_grid(
 
         # Fill remaining columns with spanned-over markers (from above-row vMerge)
         for c in range(total_cols):
-            if grid_row[c] is None:
-                # Check if this position is covered by a vMerge from above
-                if row_idx > 1 and len(grid) >= row_idx - 1:
-                    above = grid[row_idx - 2][c]
-                    if above is not None and above.vspan > 1:
+            if (
+                grid_row[c] is None
+                and row_idx > 1
+                and len(grid) >= row_idx - 1
+            ):
+                above = grid[row_idx - 2][c]
+                if above is not None and above.vspan > 1:
                         # This position is vertically spanned
                         remaining_vspan = above.vspan - (row_idx - above.row)
                         if remaining_vspan > 0:

@@ -1,7 +1,5 @@
 """Smoke-test our pipeline against downloaded real documents."""
 
-from __future__ import annotations
-
 import json
 from pathlib import Path
 

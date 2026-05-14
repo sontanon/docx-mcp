@@ -28,8 +28,6 @@ Usage::
     mcp.run(transport="stdio")
 """
 
-from __future__ import annotations
-
 import json
 from collections import Counter
 from pathlib import Path
@@ -40,7 +38,6 @@ from fastmcp.exceptions import ToolError
 from pydantic import BaseModel, Discriminator, Field, Tag, TypeAdapter, ValidationError
 
 from docx_mcp.converter import (
-    fragments_to_json_interleaved,
     fragments_to_tagged_text_interleaved,
     full_to_fragments,
 )

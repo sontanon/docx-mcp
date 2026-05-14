@@ -8,7 +8,7 @@ justification text, and preserved formatting.
 
 ## Installation
 
-Requires Python 3.13+.
+Requires Python 3.14+.
 
 ```bash
 uv sync
@@ -329,7 +329,7 @@ src/docx_mcp/
   redliner.py        Main orchestrator: apply_redlines()
   table_redliner.py  Table cell change application
   validator.py       Structural validation checks
-  server.py          MCP server (FastMCP 2.x, stdio transport)
+  server.py          MCP server (FastMCP 3.x, stdio transport)
   handlers/
     modify.py        Word-level tracked changes on existing paragraphs
     delete.py        Full paragraph deletion markup

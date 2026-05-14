@@ -1,7 +1,5 @@
 """Tests for table extraction functions in converter.py."""
 
-from __future__ import annotations
-
 import json
 from pathlib import Path
 
@@ -11,7 +9,7 @@ from docx_mcp.converter import (
     fragments_to_tagged_text_interleaved,
 )
 from docx_mcp.document import DocxDocument
-from docx_mcp.models import SkippedTableInfo, TableInfo
+from docx_mcp.models import TableInfo
 
 
 class TestBodyToFragments:

@@ -6,8 +6,6 @@ monotonically increasing IDs starting from one past the document's current
 maximum, ensuring no collisions.
 """
 
-from __future__ import annotations
-
 
 class IdManager:
     """Allocates globally unique annotation IDs.

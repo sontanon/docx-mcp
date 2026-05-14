@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Analyze corpus quality and flag low-quality documents."""
 
-from __future__ import annotations
-
 import json
 import re
 from pathlib import Path
@@ -47,9 +45,15 @@ def analyze_document(doc: dict) -> dict:
     elif empty_body_fragments == body_fragment_count:
         reason = "Effectively empty: all body fragments are empty or whitespace-only"
     elif body_fragment_count <= 5 and body_words <= 100:
-        reason = f"Too small: only {body_fragment_count} fragments, {body_words} words, no substantive content"
+        reason = (
+            f"Too small: only {body_fragment_count} fragments, "
+            f"{body_words} words, no substantive content"
+        )
     elif non_empty_count <= 3 and body_words <= 30:
-        reason = f"Too small: only {non_empty_count} non-empty fragments, {body_words} words, no substantive content"
+        reason = (
+            f"Too small: only {non_empty_count} non-empty fragments, "
+            f"{body_words} words, no substantive content"
+        )
     elif "template" in filename_lower and body_words < 100:
         reason = "Template shell: filename indicates template and content is minimal"
     elif PLACEHOLDER_RE.search(all_body_text) and body_words < 150:

@@ -1,15 +1,14 @@
-from __future__ import annotations
-
 import asyncio
 import json
 from pathlib import Path
+from typing import Any
 
 from fastmcp import Client
 
 from docx_mcp.server import mcp
 
 
-def _text(result) -> str:
+def _text(result: Any) -> str:
     """Extract the text content from a CallToolResult."""
     return result.content[0].text
 

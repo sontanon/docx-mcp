@@ -8,17 +8,15 @@ This script:
 5. Saves everything with clear metadata
 """
 
-from __future__ import annotations
-
 import json
 import zipfile
 from pathlib import Path
 
 import requests
-from datasets import load_dataset
+from datasets import load_dataset  # type: ignore
 
 from docx_mcp.audit import audit_document
-from docx_mcp.converter import full_to_fragments, fragments_to_tagged_text_interleaved
+from docx_mcp.converter import fragments_to_tagged_text_interleaved, full_to_fragments
 from docx_mcp.document import DocxDocument
 
 CORPUS_DIR = Path(__file__).parent
@@ -131,12 +129,17 @@ def generate_manifests() -> dict[str, list[dict]]:
             manifests[doc_type] = existing
             continue
 
-        print(f"  Filtering: type={doc_type}, lang={lang}, conf>={min_conf}, words>={MIN_WORD_COUNT}...")
+        print(
+            f"  Filtering: type={doc_type}, lang={lang}, "
+            f"conf>={min_conf}, words>={MIN_WORD_COUNT}..."
+        )
         filtered = ds.filter(
-            lambda x: x["type"] == doc_type
-            and x["language"] == lang
-            and x["confidence"] >= min_conf
-            and x["word_count"] >= MIN_WORD_COUNT,
+            lambda x, dt=doc_type, ln=lang, mc=min_conf: (
+                x["type"] == dt
+                and x["language"] == ln
+                and x["confidence"] >= mc
+                and x["word_count"] >= MIN_WORD_COUNT
+            ),
         )
         items = []
         for row in filtered:
@@ -176,7 +179,7 @@ def generate_manifests() -> dict[str, list[dict]]:
 def download_manifests(manifests: dict[str, list[dict]]) -> list[dict]:
     """Download all documents from manifests."""
     all_items = []
-    for doc_type, items in manifests.items():
+    for _doc_type, items in manifests.items():
         all_items.extend(items)
 
     print(f"\n\n=== DOWNLOADING {len(all_items)} DOCUMENTS ===")
@@ -203,7 +206,7 @@ def download_manifests(manifests: dict[str, list[dict]]) -> list[dict]:
             print(f"    -> Valid .docx ({size_kb:.1f} KB)")
             downloaded.append({"item": item, "path": path, "valid": True})
         else:
-            print(f"    -> INVALID")
+            print("    -> INVALID")
             if path.exists():
                 path.unlink()
             downloaded.append({"item": item, "path": path, "valid": False})
@@ -309,15 +312,15 @@ def print_summary(results: list[dict]) -> None:
     print(f"Successfully parsed: {successful}")
     print(f"Failed:              {total - successful}")
 
-    print(f"\nBy type:")
+    print("\nBy type:")
     for t, c in sorted(by_type.items(), key=lambda x: -x[1]):
         print(f"  {t:20s}: {c}")
 
-    print(f"\nBy topic:")
+    print("\nBy topic:")
     for t, c in sorted(by_topic.items(), key=lambda x: -x[1]):
         print(f"  {t:20s}: {c}")
 
-    print(f"\nOutput directories:")
+    print("\nOutput directories:")
     print(f"  Documents:  {DOWNLOAD_DIR}")
     print(f"  Tagged text:{TEXT_DIR}")
     print(f"  Metadata:   {META_DIR}")

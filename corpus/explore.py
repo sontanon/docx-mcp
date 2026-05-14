@@ -1,12 +1,10 @@
 """Explore the docx-corpus dataset from HuggingFace."""
 
-from __future__ import annotations
-
 import json
 from collections import Counter
 from pathlib import Path
 
-from datasets import load_dataset
+from datasets import load_dataset  # type: ignore
 
 CORPUS_DIR = Path(__file__).parent
 
@@ -114,7 +112,13 @@ def explore_dataset() -> None:
     print("\n\n=== OTHER RELEVANT TYPES ===")
     relevant_types = ["forms", "policies", "reports", "correspondence"]
     for rtype in relevant_types:
-        subset = ds.filter(lambda x: x["type"] == rtype and x["language"] == "en" and x["confidence"] >= 0.8)
+        subset = ds.filter(
+            lambda x, rtype=rtype: (
+                x["type"] == rtype
+                and x["language"] == "en"
+                and x["confidence"] >= 0.8
+            ),
+        )
         print(f"\n--- {rtype.upper()} (en, conf>=0.8) ---")
         print(f"  Count: {len(subset):,}")
         if len(subset) > 0:

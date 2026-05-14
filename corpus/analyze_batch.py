@@ -6,13 +6,12 @@ Run via:
 Writes feedback to corpus/feedback/batch_<batch_num>.json
 """
 
-from __future__ import annotations
-
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
-from docx_mcp.converter import full_to_fragments, fragments_to_tagged_text_interleaved
+from docx_mcp.converter import fragments_to_tagged_text_interleaved, full_to_fragments
 from docx_mcp.document import DocxDocument
 
 CORPUS_DIR = Path(__file__).parent
@@ -21,10 +20,10 @@ FEEDBACK_DIR = CORPUS_DIR / "feedback"
 FEEDBACK_DIR.mkdir(exist_ok=True)
 
 
-def analyze_document(doc_id: str) -> dict:
+def analyze_document(doc_id: str) -> dict[str, Any]:
     """Extract and analyze one document."""
     path = DOWNLOAD_DIR / f"{doc_id}.docx"
-    result = {
+    result: dict[str, Any] = {
         "id": doc_id,
         "path": str(path),
         "load_ok": False,
@@ -59,11 +58,26 @@ def analyze_document(doc_id: str) -> dict:
         return result
 
     # Stats
-    body_paras = [item for item in frag_result.items if isinstance(item, tuple) and not item[0].startswith(("header_", "footer_"))]
-    header_paras = [item for item in frag_result.items if isinstance(item, tuple) and item[0].startswith("header_")]
-    footer_paras = [item for item in frag_result.items if isinstance(item, tuple) and item[0].startswith("footer_")]
-    tables = [item for item in frag_result.items if hasattr(item, "table_id") and not hasattr(item, "reason")]
-    skipped_tables = [item for item in frag_result.items if hasattr(item, "reason")]
+    body_paras = [
+        item for item in frag_result.items
+        if isinstance(item, tuple) and not item[0].startswith(("header_", "footer_"))
+    ]
+    header_paras = [
+        item for item in frag_result.items
+        if isinstance(item, tuple) and item[0].startswith("header_")
+    ]
+    footer_paras = [
+        item for item in frag_result.items
+        if isinstance(item, tuple) and item[0].startswith("footer_")
+    ]
+    tables: list[Any] = [
+        item for item in frag_result.items
+        if hasattr(item, "table_id") and not hasattr(item, "reason")
+    ]
+    skipped_tables: list[Any] = [
+        item for item in frag_result.items
+        if hasattr(item, "reason")
+    ]
 
     body_text = "\n".join(text for _fid, text in body_paras)
     body_words = len(body_text.split())
@@ -80,44 +94,66 @@ def analyze_document(doc_id: str) -> dict:
     }
 
     # Heuristic usefulness assessment
-    feedback = result["feedback"]
+    feedback: dict[str, Any] = result["feedback"]
 
     # Check for empty/whitespace-only body paragraphs
     empty_paras = sum(1 for _fid, text in body_paras if not text.strip())
     if empty_paras > len(body_paras) * 0.5 and len(body_paras) > 5:
-        feedback["weaknesses"].append(f"{empty_paras}/{len(body_paras)} body paragraphs are empty — document may be sparse or use excessive whitespace")
+        msg = (
+            f"{empty_paras}/{len(body_paras)} body paragraphs are empty — "
+            "document may be sparse or use excessive whitespace"
+        )
+        feedback["weaknesses"].append(msg)
 
     # Check table representation
     if tables:
-        feedback["strengths"].append(f"{len(tables)} table(s) extracted with cell coordinates and content")
+        feedback["strengths"].append(
+            f"{len(tables)} table(s) extracted with cell coordinates and content"
+        )
         for tbl in tables:
             if tbl.rows > 10 or tbl.cols > 5:
-                feedback["strengths"].append(f"Large table {tbl.table_id} ({tbl.rows}x{tbl.cols}) is fully addressable by cell ID")
+                feedback["strengths"].append(
+                    f"Large table {tbl.table_id} ({tbl.rows}x{tbl.cols}) "
+                    "is fully addressable by cell ID"
+                )
     if skipped_tables:
-        reasons = set(t.reason for t in skipped_tables)
-        feedback["weaknesses"].append(f"{len(skipped_tables)} table(s) skipped: {', '.join(reasons)}")
+        reasons: set[str] = set(t.reason for t in skipped_tables)
+        feedback["weaknesses"].append(
+            f"{len(skipped_tables)} table(s) skipped: {', '.join(reasons)}"
+        )
 
     # Check header/footer visibility
     if header_paras:
-        feedback["strengths"].append(f"{len(header_paras)} header paragraph(s) visible with prefixed IDs")
+        feedback["strengths"].append(
+            f"{len(header_paras)} header paragraph(s) visible with prefixed IDs"
+        )
     if footer_paras:
-        feedback["strengths"].append(f"{len(footer_paras)} footer paragraph(s) visible with prefixed IDs")
+        feedback["strengths"].append(
+            f"{len(footer_paras)} footer paragraph(s) visible with prefixed IDs"
+        )
 
     # Check for formatting artifacts
     if "****" in body_text or "**\n**" in body_text:
-        feedback["weaknesses"].append("Empty bold/italic formatting artifacts visible (e.g., '****') — noisy for LLM reading")
+        feedback["weaknesses"].append(
+            "Empty bold/italic formatting artifacts visible (e.g., '****') "
+            "— noisy for LLM reading"
+        )
 
     # Check for hyperlink clarity
     if "](" in body_text:
-        feedback["strengths"].append("Hyperlinks preserved as Markdown [text](url)")
+        feedback["strengths"].append(
+            "Hyperlinks preserved as Markdown [text](url)"
+        )
 
     # Check for tab/whitespace noise
     tabs = body_text.count("\t")
     if tabs > 10:
-        feedback["weaknesses"].append(f"Many literal tabs ({tabs}) in text — may represent tables or alignment but look odd as plain text")
+        feedback["weaknesses"].append(
+            f"Many literal tabs ({tabs}) in text — may represent tables "
+            "or alignment but look odd as plain text"
+        )
 
     # Overall usefulness
-    useful_indicators = len(feedback["strengths"])
     problem_indicators = len(feedback["weaknesses"])
     if problem_indicators == 0 and body_words > 100:
         feedback["overall_usefulness"] = "high"
@@ -128,11 +164,17 @@ def analyze_document(doc_id: str) -> dict:
 
     # Improvement suggestions
     if skipped_tables:
-        feedback["improvements"].append("Consider supporting merged-cell or nested tables to reduce skipped content")
+        feedback["improvements"].append(
+            "Consider supporting merged-cell or nested tables to reduce skipped content"
+        )
     if empty_paras > 5:
-        feedback["improvements"].append("Empty paragraphs could be optionally collapsed to reduce visual noise")
+        feedback["improvements"].append(
+            "Empty paragraphs could be optionally collapsed to reduce visual noise"
+        )
     if "****" in body_text:
-        feedback["improvements"].append("Filter out empty formatting runs to reduce artifact noise")
+        feedback["improvements"].append(
+            "Filter out empty formatting runs to reduce artifact noise"
+        )
 
     # Store first 20 lines of tagged output for inspection
     lines = tagged.splitlines()
@@ -150,7 +192,7 @@ def main() -> None:
     doc_ids = sys.argv[2:]
 
     print(f"Batch {batch_num}: analyzing {len(doc_ids)} documents...")
-    results = []
+    results: list[dict[str, Any]] = []
     for doc_id in doc_ids:
         print(f"  {doc_id[:16]}...", end=" ", flush=True)
         r = analyze_document(doc_id)
@@ -158,7 +200,9 @@ def main() -> None:
         if r["errors"]:
             print(f"ERRORS: {r['errors']}")
         else:
-            print(f"usefulness={r['feedback']['overall_usefulness']} words={r['stats']['body_words_approx']}")
+            usefulness = r["feedback"]["overall_usefulness"]
+            words = r["stats"]["body_words_approx"]
+            print(f"usefulness={usefulness} words={words}")
 
     out_path = FEEDBACK_DIR / f"batch_{batch_num}.json"
     with open(out_path, "w") as f:

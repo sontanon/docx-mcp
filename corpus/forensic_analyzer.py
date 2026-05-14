@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Forensic document analysis script for flagged .docx files."""
 
-from __future__ import annotations
-
 import json
 import re
 import zipfile
@@ -211,23 +209,45 @@ def classify(findings: dict, info: dict) -> tuple[str, str, str, str]:
     direct_words = count_words(findings["total_body_text"])
     table_words = count_words(findings["total_table_text"])
     total_words = direct_words + table_words
-    alt_text_words = findings["headers"] + findings["footers"] + findings["footnotes"] + findings["endnotes"] + findings["comments"]
+    alt_text_words = (
+        findings["headers"]
+        + findings["footers"]
+        + findings["footnotes"]
+        + findings["endnotes"]
+        + findings["comments"]
+    )
 
     # Parsing issue: content in tables that parser missed
-    if findings["table_paragraphs"] > 10 and (table_words > 50 or findings["table_paragraphs"] > 100):
+    if findings["table_paragraphs"] > 10 and (
+        table_words > 50 or findings["table_paragraphs"] > 100
+    ):
         return (
             "parsing_issue",
             "high",
-            f"Document has {findings['table_paragraphs']} paragraphs inside tables ({table_words} words) but only {findings['direct_body_paragraphs']} direct body paragraphs ({direct_words} words). Our parser only counts top-level body paragraphs and misses table content entirely.",
+            (
+                f"Document has {findings['table_paragraphs']} paragraphs inside "
+                f"tables ({table_words} words) but only "
+                f"{findings['direct_body_paragraphs']} direct body paragraphs "
+                f"({direct_words} words). Our parser only counts top-level body "
+                "paragraphs and misses table content entirely."
+            ),
             "fix_parser_table_support",
         )
 
     # Parsing issue: text in DrawingML/VML text boxes
-    if (findings["drawingml_textboxes"] or findings["vml_textboxes"]) and total_words > 0 and total_words < 50:
+    if (
+        (findings["drawingml_textboxes"] or findings["vml_textboxes"])
+        and total_words > 0
+        and total_words < 50
+    ):
         return (
             "parsing_issue",
             "high",
-            f"Document text resides in DrawingML/VML text boxes ({total_words} words) rather than direct body paragraphs. Our parser does not descend into shape text boxes.",
+            (
+                f"Document text resides in DrawingML/VML text boxes ({total_words} "
+                "words) rather than direct body paragraphs. Our parser does not "
+                "descend into shape text boxes."
+            ),
             "fix_parser_textbox_support",
         )
 
@@ -236,7 +256,10 @@ def classify(findings: dict, info: dict) -> tuple[str, str, str, str]:
         return (
             "parsing_issue",
             "high",
-            "Document contains embedded OLE objects which may hold substantial text not present in body paragraphs.",
+            (
+                "Document contains embedded OLE objects which may hold "
+                "substantial text not present in body paragraphs."
+            ),
             "investigate_pipeline",
         )
 
@@ -245,7 +268,10 @@ def classify(findings: dict, info: dict) -> tuple[str, str, str, str]:
         return (
             "parsing_issue",
             "high",
-            "Document contains altChunk elements referencing external content that our parser does not resolve.",
+            (
+                "Document contains altChunk elements referencing external "
+                "content that our parser does not resolve."
+            ),
             "investigate_pipeline",
         )
 
@@ -254,7 +280,11 @@ def classify(findings: dict, info: dict) -> tuple[str, str, str, str]:
         return (
             "parsing_issue",
             "medium",
-            f"Document body is minimal ({total_words} words) but headers/footers/notes/comments contain {alt_text_words} words of text that may not be extracted.",
+            (
+                f"Document body is minimal ({total_words} words) but "
+                f"headers/footers/notes/comments contain {alt_text_words} words "
+                "of text that may not be extracted."
+            ),
             "investigate_pipeline",
         )
 
@@ -263,7 +293,10 @@ def classify(findings: dict, info: dict) -> tuple[str, str, str, str]:
         return (
             "edge_case",
             "high",
-            "File is explicitly a template shell with minimal boilerplate text. Intentionally blank for user fill-in.",
+            (
+                "File is explicitly a template shell with minimal boilerplate "
+                "text. Intentionally blank for user fill-in."
+            ),
             "keep_for_testing",
         )
 
@@ -272,7 +305,10 @@ def classify(findings: dict, info: dict) -> tuple[str, str, str, str]:
         return (
             "edge_case",
             "medium",
-            "Form document with content controls. Minimal visible text is expected; fields are meant to be filled.",
+            (
+                "Form document with content controls. Minimal visible text is "
+                "expected; fields are meant to be filled."
+            ),
             "keep_for_testing",
         )
 
@@ -281,7 +317,12 @@ def classify(findings: dict, info: dict) -> tuple[str, str, str, str]:
         return (
             "truly_bad",
             "high",
-            f"Document has only {total_words} words in {findings['document_xml_paragraphs']} paragraphs, no headers/footers/notes, and no alternative content sources. Truly minimal.",
+            (
+                f"Document has only {total_words} words in "
+                f"{findings['document_xml_paragraphs']} paragraphs, no "
+                "headers/footers/notes, and no alternative content sources. "
+                "Truly minimal."
+            ),
             "remove",
         )
 
@@ -298,7 +339,12 @@ def classify(findings: dict, info: dict) -> tuple[str, str, str, str]:
         return (
             "truly_bad",
             "high",
-            f"Document has only {total_words} words in {findings['document_xml_paragraphs']} paragraphs with negligible header/footer text ({alt_text_words} words). No substantive content.",
+            (
+                f"Document has only {total_words} words in "
+                f"{findings['document_xml_paragraphs']} paragraphs with negligible "
+                f"header/footer text ({alt_text_words} words). No substantive "
+                "content."
+            ),
             "remove",
         )
 
@@ -306,7 +352,11 @@ def classify(findings: dict, info: dict) -> tuple[str, str, str, str]:
     return (
         "investigate_manually",
         "medium",
-        f"Document has {total_words} words, {findings['document_xml_paragraphs']} paragraphs, and unusual elements: {findings['unusual_elements']}. Needs human review.",
+        (
+            f"Document has {total_words} words, "
+            f"{findings['document_xml_paragraphs']} paragraphs, and unusual "
+            f"elements: {findings['unusual_elements']}. Needs human review."
+        ),
         "investigate_manually",
     )
 

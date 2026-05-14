@@ -1,0 +1,323 @@
+[
+  {
+    "id": "8d7c00f3bc4fa14a78edf8934460a1eea9374367dcb3fe203fd3e9ca19ffbd69",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/8d7c00f3bc4fa14a78edf8934460a1eea9374367dcb3fe203fd3e9ca19ffbd69.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "1 header paragraph(s) visible with prefixed IDs",
+        "1 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "1 table(s) skipped: table 3, cell 1.1 has horizontal merge (gridSpan)",
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading"
+      ],
+      "improvements": [
+        "Consider supporting merged-cell or nested tables to reduce skipped content",
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 18,
+      "header_paragraphs": 1,
+      "footer_paragraphs": 1,
+      "tables": 0,
+      "skipped_tables": 1,
+      "skipped_elements": 2,
+      "body_words_approx": 93,
+      "tagged_lines": 21
+    },
+    "tagged_preview": [
+      "<f=1>**Patient ****consent form for SMS and Email **** **</f=1>",
+      "<f=2>**Cross Keys Practice **</f=2>",
+      "<table=3 skipped reason=\"table 3, cell 1.1 has horizontal merge (gridSpan)\"/>",
+      "<f=4></f=4>",
+      "<f=5>**Overview of sharing options**</f=5>",
+      "<f=6></f=6>",
+      "<f=7>**Home Number **</f=7>",
+      "<f=8>We will only use your home number to contact you regarding practice matters. We will also pass this information when referring to third parties who are dealing with your health issues. (Details in reception) </f=8>",
+      "<f=9></f=9>",
+      "<f=10>**Mobile Number **</f=10>",
+      "<f=11>Same as home number, plus, SMS text reminders and appointments matters. </f=11>",
+      "<f=12></f=12>",
+      "<f=13>**Email Address**</f=13>",
+      "<f=14>Same as home number, plus, SMS text reminder that cannot be sent via mobile and practice newsletter. </f=14>",
+      "<f=15></f=15>",
+      "<f=16>**Please complete and email to **[**admin.crosskeyspractice@nhs.net**]</f=16>",
+      "<f=17></f=17>",
+      "<f=18></f=18>",
+      "<f=19></f=19>",
+      "<f=header_1.1>**\t****\t**</f=header_1.1>",
+      "<f=footer_1.1>**This form applies to patients aged 16 and over**</f=footer_1.1>"
+    ]
+  },
+  {
+    "id": "ec94ef4d199061364e30c6158d758042234cecf60f6be9b8c03f0f639433e017",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/ec94ef4d199061364e30c6158d758042234cecf60f6be9b8c03f0f639433e017.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "3 header paragraph(s) visible with prefixed IDs",
+        "3 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "89/166 body paragraphs are empty \u2014 document may be sparse or use excessive whitespace",
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading",
+        "Many literal tabs (35) in text \u2014 may represent tables or alignment but look odd as plain text"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 166,
+      "header_paragraphs": 3,
+      "footer_paragraphs": 3,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 31,
+      "body_words_approx": 1503,
+      "tagged_lines": 173
+    },
+    "tagged_preview": [
+      "<f=1></f=1>",
+      "<f=2></f=2>",
+      "<f=3>MEDICAL CLEARANCE FORM </f=3>",
+      "<f=4></f=4>",
+      "<f=5></f=5>",
+      "<f=6>Read all requirements and instructions carefully. Students must submit the completed form to the student services staff person at the Center they will be attending:</f=6>",
+      "<f=7></f=7>",
+      "<f=8>Costa Rica: [Sarah.Moran@liu.edu] </f=8>",
+      "<f=9>Europe: [Rainer.Braun@liu.edu] </f=9>",
+      "<f=10>Asia-Pacific Australia: [Soenke.Biermann@liu.edu] </f=10>",
+      "<f=11>International Research and Internship semester: [Soenke.Biermann@liu.edu]</f=11>",
+      "<f=12> </f=12>",
+      "<f=13></f=13>",
+      "<f=14>\\*Keep a copy for your records\\*</f=14>",
+      "<f=15></f=15>",
+      "<f=16>Obtaining a health clearance is a mandatory requirement for participation and cannot be waived. We must receive</f=16>",
+      "<f=17>accurate information about your physical and mental ability to participate in the LIU Study Abroad Program. Information that we receive about you is confidential and will be shared only with those who need to know in order to assist you while you are abroad, including, for example, providing emergency or other necessary health care. </f=17>",
+      "<f=18></f=18>",
+      "<f=19>General Program Description\t</f=19>",
+      "<f=20>LIU Global centers are located around the world: Costa Rica, Europe, China, Asia-Pacific Australia, and with international internships in diverse locations, and New York. In addition to classroom instruction, LIU Global students participate in field excursions, community engagement projects, and internships. These field experiences require a certain amount of physical endurance, and the program requires that students possess the physical and mental well-being required to live and study in diverse foreign settings where resources may be different or fewer than those to which they are accustomed. Therefore, students must be able to align their health care needs in these contexts where we cannot guarantee all accommodations. The below is a sample list outlining the types of experiences a student may encounter. </f=20>",
+      "<f=21></f=21>",
+      "<f=22>**Australia****/****Pa****cific****:** Bicycling and walking are the most common modes of transportation in country.\u200bWhen on field excursions, use of public transportation, some local travel over rough roads, some boat rides, some hiking, standing for long periods, changes of location affecting energy levels, sleep cycles, and digestion. During Fall Semester in particular: activities may include camping, moderate walks and hikes in National Parks up to 5 hours at a time), climbing/bouldering, swimming, kayaking/canoeing, and snorkeling.</f=22>",
+      "<f=23></f=23>",
+      "<f=24>**China**: Use of public transportation. Activities include hiking up and down mountains under altitude of 5,000 feet. Students will visit the edge of the Tibetan Plateau where the altitude is around 10,000 feet -- altitude sickness may occur, but usually is not a concern. **Costa Rica**: Use of public transportation, private buses, walking with inconsistent quality of infrastructure, and boat rides. Activities include hiking in the rainforest on narrow, dirt paths; walking on dirt roads in rural areas; tours of farms; assisting with community projects and leading sporting activities. Tropical climate.</f=24>",
+      "<f=25></f=25>",
+      "<f=26>**Europe:** Use of public transportation, private buses, and walking. Bicycling and walking are the most</f=26>",
+      "<f=27>common modes of transportation (uneven pavement \u2013 cobblestone streets). There may be stairs to climb in your dormitories and apartments, as older buildings often do not have elevators. </f=27>",
+      "<f=28></f=28>",
+      "<f=29>**Students ****may be cleared**** for participation as long as, in the opinion of the examining provider(s), any health condition the student may have is under control, has been stable for a reasonable period, and has a treatment plan in place for required ongoing care while abroad.**</f=29>",
+      "<f=30></f=30>"
+    ]
+  },
+  {
+    "id": "5721cae2c3ed1e83d53ae03a878db5da382efb96b0f6cf5ca1e5612ee1a79bf8",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/5721cae2c3ed1e83d53ae03a878db5da382efb96b0f6cf5ca1e5612ee1a79bf8.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "10 table(s) extracted with cell coordinates and content",
+        "Large table 230 (25x4) is fully addressable by cell ID",
+        "Large table 907 (1x6) is fully addressable by cell ID",
+        "Large table 909 (1x6) is fully addressable by cell ID",
+        "Large table 911 (1x6) is fully addressable by cell ID",
+        "Large table 913 (1x6) is fully addressable by cell ID",
+        "Large table 915 (1x6) is fully addressable by cell ID",
+        "Large table 917 (1x6) is fully addressable by cell ID",
+        "Large table 919 (1x6) is fully addressable by cell ID",
+        "2 header paragraph(s) visible with prefixed IDs",
+        "2 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "18 table(s) skipped: table 334, cell 1.2 has horizontal merge (gridSpan), table 344, cell 1.2 has horizontal merge (gridSpan), table 891, cell 1.1 has horizontal merge (gridSpan), table 904, cell 1.1 has horizontal merge (gridSpan), table 877, row 2 has 1 cells, expected 4, table 927, cell 1.1 has horizontal merge (gridSpan), table 887, cell 1.1 has horizontal merge (gridSpan), table 881, cell 1.1 has horizontal merge (gridSpan), table 946, cell 1.1 has horizontal merge (gridSpan), table 893, cell 1.1 has horizontal merge (gridSpan), table 942, cell 1.1 has horizontal merge (gridSpan), table 963, cell 1.1 has horizontal merge (gridSpan), table 172, row 3 has 6 cells, expected 8, table 58, cell 1.1 has horizontal merge (gridSpan), table 959, cell 1.1 has horizontal merge (gridSpan), table 883, cell 1.1 has horizontal merge (gridSpan), table 612, cell 1.1 has horizontal merge (gridSpan), table 933, cell 1.3 has horizontal merge (gridSpan)",
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading"
+      ],
+      "improvements": [
+        "Consider supporting merged-cell or nested tables to reduce skipped content",
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 936,
+      "header_paragraphs": 2,
+      "footer_paragraphs": 2,
+      "tables": 10,
+      "skipped_tables": 18,
+      "skipped_elements": 21,
+      "body_words_approx": 17756,
+      "tagged_lines": 1180
+    },
+    "tagged_preview": [
+      "<f=1></f=1>",
+      "<f=2>",
+      "</f=2>",
+      "<f=3>INTRODUCTION</f=3>",
+      "<f=4>This manual and tool kit was developed to provide individuals with disabilities the information and tools needed to self-direct components of their personal assistance services (PAS). </f=4>",
+      "<f=5>SELF-DIRECTION</f=5>",
+      "<f=6>Self-direction is a management tool that supports an individual with a disability to oversee and be responsible for the personal assistance services (PAS) they receive.</f=6>",
+      "<f=7>**What is Self-Direction?**</f=7>",
+      "<f=8>Self-direction promotes a participant\u2019s personal choice and control of the delivery of their personal assistance services (PAS). A person with a disability can direct their personal assistant services themselves or they can select someone they trust to direct services on their behalf. Self-directed services means that participants and their representatives, if applicable, have certain decision-making authority regarding their services within the guidelines of a program providing personal assistance services (PAS). When a participant self-directs their services, they take responsibility for the management of their services. </f=8>",
+      "<f=9>The law permitting self-direction of personal assistance services was passed by the Kansas legislature in 1989. A copy of the legislation, specifically H.B. 2012 and Kansas statute, K.S.A. 39-7,100, is found in Appendix.</f=9>",
+      "<f=10>**What is a Personal Assistant?**</f=10>",
+      "<f=11>A Personal Assistant (PA) is someone hired to assist people with disabilities with activities they would do themselves if they did not have a disability. The PA\u2019s job duties are different depending on the needs of the person with a disability. The personal assistant\u2019s job is to assist his or her employer with daily living activities. This includes, but is not limited to, personal care, housekeeping, community access, health, and safety.</f=11>",
+      "<f=12>**Service Delivery Models**</f=12>",
+      "<f=13>Kansas has three primary models of service delivery. They are:</f=13>",
+      "<f=14>self-directed service model.</f=14>",
+      "<f=15>self-directed service with support model. </f=15>",
+      "<f=16>agency-directed service model.</f=16>",
+      "<f=17>**Self-directed service model:**</f=17>",
+      "<f=18>With the self-directed services model, the person with a disability is the employer. As the employer there are responsibilities related to managing the services. The individual with a disability is responsible for the following:</f=18>",
+      "<f=19>Complete all paperwork related to fiscal management. The WORK program utilizes a fiscal manager to process payroll. </f=19>",
+      "<f=20>Develop criteria for hiring providers. </f=20>",
+      "<f=21>Advertising, interviewing, checking references, managing, and terminating employment of providers.</f=21>",
+      "<f=22>Develop provider duties and tasks so the provider clearly understands their responsibilities.</f=22>",
+      "<f=23>Create a schedule for when providers work.</f=23>",
+      "<f=24>Have a backup plan in case a provider does not show up for work. The WORK program uses an Emergency Backup Plan to assist with this. </f=24>",
+      "<f=25>**Self-directed service with support model:**</f=25>",
+      "<f=26>Some people with disabilities prefer a different model of supports and services. In this model, the individual with a disability is the employer, but has chosen to appoint someone to assist in the responsibilities that come with self-direction. The WORK program allows participants to choose a trusted person to act on their behalf. </f=26>",
+      "<f=27>**Agency-directed service model:**</f=27>",
+      "<f=28>With the agency-direct service model, the agency is the employer and has the responsibility to provide the supports and services needed including conducting background checks. In Kansas, these agencies can include community developmental disability organizations (CDDOs), community service providers (CSPs), centers for independent living (CILs), and home health agencies.</f=28>",
+      "<f=29>**Kansas Models of Self-Direction: Supports and Services**</f=29>"
+    ]
+  },
+  {
+    "id": "86fafe356941c0bd3c383a3fb9c5c7b28200cf3cc66273db23e893d06c5210f6",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/86fafe356941c0bd3c383a3fb9c5c7b28200cf3cc66273db23e893d06c5210f6.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "medium",
+      "strengths": [
+        "1 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 43,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 1,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 1,
+      "body_words_approx": 635,
+      "tagged_lines": 44
+    },
+    "tagged_preview": [
+      "<f=1>Saint Macartan\u2019s</f=1>",
+      "<f=2>Primary School</f=2>",
+      "<f=3></f=3>",
+      "<f=4></f=4>",
+      "<f=5></f=5>",
+      "<f=6></f=6>",
+      "<f=7></f=7>",
+      "<f=8></f=8>",
+      "<f=9></f=9>",
+      "<f=10></f=10>",
+      "<f=11></f=11>",
+      "<f=12></f=12>",
+      "<f=13></f=13>",
+      "<f=14>**Adverse Weather Conditions Policy**</f=14>",
+      "<f=15>**January 2016**</f=15>",
+      "<f=16>**Saint ****M****acartan\u2019s**** ****Primary School**</f=16>",
+      "<f=17>**Policy for Adverse Weather Conditions**</f=17>",
+      "<f=18></f=18>",
+      "<f=19>It is the policy of the school to make every effort to remain open whenever possible. </f=19>",
+      "<f=20>The decision to close the school either before or during the school day will be made by the Principal. </f=20>",
+      "<f=21>The school will only be closed if one or more of the following conditions apply: </f=21>",
+      "<f=22>1. Insufficient staff are able to come in to keep the school running safely (acceptable PTR). </f=22>",
+      "<f=23>2. Conditions on site are dangerous: </f=23>",
+      "<f=24>\uf0d8\uf020Can pupils and staff access the school building safely? </f=24>",
+      "<f=25>\uf0d8\uf020Can pupils and staff be evacuated in an emergency? </f=25>",
+      "<f=26>\uf0d8\uf020In an emergency, could the Emergency services access the school? </f=26>",
+      "<f=27>\uf0d8\uf020Is the area designated for disembarkation from transport safe for pupils? </f=27>",
+      "<f=28>3. Conditions are considered to be or are anticipated to later become too hazardous for travel. Following a detailed Risk Assessment carried out by the Principal, if the school is to close: </f=28>",
+      "<f=29>1. The closure will be reported to Education Authority (Southern Region) and DENI by the Principal. This information will be displayed to the public via the school\u2019s website:www.stmacartanspsclogher.com </f=29>",
+      "<f=30>The media (BBC NI) will be informed and _may _then broadcast details. </f=30>"
+    ]
+  },
+  {
+    "id": "2b838bb712845f4d01a8dafc3cfc631a5316ac1601d977052804b811e9802b8f",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/2b838bb712845f4d01a8dafc3cfc631a5316ac1601d977052804b811e9802b8f.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "2 table(s) extracted with cell coordinates and content"
+      ],
+      "weaknesses": [
+        "1 table(s) skipped: table 24, cell 1.1 contains nested table",
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading"
+      ],
+      "improvements": [
+        "Consider supporting merged-cell or nested tables to reduce skipped content",
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 34,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 0,
+      "tables": 2,
+      "skipped_tables": 1,
+      "skipped_elements": 2,
+      "body_words_approx": 427,
+      "tagged_lines": 55
+    },
+    "tagged_preview": [
+      "<f=1>**\t****\t****\t****Academic Action Plan**</f=1>",
+      "<f=2>**\t**</f=2>",
+      "<f=3>**A****cademic Warning**</f=3>",
+      "<f=4>Maintaining adequate progress for a degree is defined by meeting a 2.00 cumulative gpa (CGPA). Students who do not maintain a 2.00 CGPA move into a status of Academic Warning. While on Academic Warning you will have a hold placed on the registration of subsequent semesters and must meet with an academic adviser to remove this Academic Warning Hold. All notifications concerning the hold will be sent to your Penn State email address.</f=4>",
+      "<f=5>**Meeting with Your Advis****o****r to Release Your Academic Warning Hold **</f=5>",
+      "<f=6>Academic Warning is not a punishment or the end of your academic career. The hold is a notification to seek help in taking an active approach to improve your academics. During the required discussion with your adviser, you may be asked to:</f=6>",
+      "<f=7></f=7>",
+      "<f=8>Reflect on challenges </f=8>",
+      "<f=9>Discuss campus resources </f=9>",
+      "<f=10>Plan a balanced schedule </f=10>",
+      "<f=11>Understand GPA, grades, policies </f=11>",
+      "<f=12>Develop a plan for success </f=12>",
+      "<f=13>Schedule follow-up meeting(s)</f=13>",
+      "<f=14></f=14>",
+      "<f=15></f=15>",
+      "<f=16>**Academic Suspension and Dismissal**</f=16>",
+      "<f=17>__SUSPENSION__: You will be academically suspended from the University if you earn less than a 2.00 semester gpa while in Academic Warning. Academic Suspension prevents enrollment at PSU for two semesters. A student who returns to the University must complete re-enrollment and return in Academic Warning status with his/her previous gpa and a hold on registration. Policy 58-00</f=17>",
+      "<f=18>__R____ECOVERY POINTS:__ Number of credits needed at a \u201cB\u201d or better to achieve a CGPA of at least a 2.00. _Recovery points= credits attempted x [2 \u2013 cumulative __gpa__] _ For example, a student needing 15 recovery points must earn a \u201cB\u201d or better in at least 15 graded credits for a 2.00 CGPA. _Students with 15 or fewer Recovery Points may petition for a reduction in or stay of the Academic Suspension__._</f=18>",
+      "<f=19>__DISMISSAL__: If you have been placed on Academic Suspension and fail to achieve at least a 2.00 semester gpa, you will be academically dismissed. After a period of four calendar years, academically dismissed students may seek re-enrollment to the University by requesting academic renewal. S_tudents with 18 or fewer Recovery Points may petition to not be dismissed and instead be placed on Academic__ Suspension__. Faculty Senate Policy 51-70 __ _</f=19>",
+      "<f=20></f=20>",
+      "<f=21>**Making the Most of Campus Resources **</f=21>",
+      "<f=22>Please complete the form and discuss it with your advisor. As you list goals, please make them as specific and achievable as possible. The resources listed below may be helpful as you begin to define your goals:</f=22>",
+      "<f=23>\t</f=23>",
+      "<table=24 skipped reason=\"table 24, cell 1.1 contains nested table\"/>",
+      "<f=25></f=25>",
+      "<table=26 rows=4 cols=2>",
+      "<cell=26.1.1>**\\*****Initial ****beside ****each statement**** below**</cell=26.1.1>",
+      "<cell=26.1.2>**Part 4: Review Understanding of Consequences for ****__Academic Warning__**</cell=26.1.2>",
+      "<cell=26.2.1></cell=26.2.1>",
+      "<cell=26.2.2>I understand that I will be placed on academic warning if I do not maintain a 2.00 (or higher) cumulative gpa.</cell=26.2.2>"
+    ]
+  }
+]

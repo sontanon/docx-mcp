@@ -1,0 +1,1154 @@
+[
+  {
+    "id": "5c0005176c8dbbd8c55ff9adcfb3d7e3b40ecf33dadbd779fc43ff8fdd300fb6",
+    "type": "legal",
+    "topic": "legal_judicial",
+    "word_count": 283429,
+    "confidence": 0.9604159593582153,
+    "filename": "getfile.php",
+    "audit": {
+      "header_parts": 3,
+      "header_paragraphs": 3,
+      "footer_parts": 3,
+      "footer_paragraphs": 3,
+      "images": {
+        "body": 18,
+        "header": 0,
+        "footer": 0,
+        "total": 18
+      },
+      "tables": {
+        "simple": 99,
+        "skipped": 52,
+        "skipped_reasons": [
+          "row 2 has 5 cells, expected 6",
+          "row 18 has 1 cells, expected 2",
+          "row 18 has 1 cells, expected 2",
+          "row 2 has 2 cells, expected 3",
+          "row 2 has 1 cells, expected 2",
+          "row 2 has 2 cells, expected 3",
+          "row 2 has 1 cells, expected 2",
+          "row 2 has 1 cells, expected 2",
+          "row 2 has 1 cells, expected 2",
+          "row 2 has 1 cells, expected 2",
+          "row 2 has 1 cells, expected 2",
+          "row 2 has 1 cells, expected 2",
+          "row 2 has 3 cells, expected 4",
+          "row 2 has 2 cells, expected 3",
+          "row 2 has 2 cells, expected 3",
+          "row 2 has 2 cells, expected 3",
+          "row 2 has 2 cells, expected 3",
+          "row 2 has 2 cells, expected 3",
+          "row 6 has 1 cells, expected 2",
+          "row 2 has 1 cells, expected 2",
+          "row 14 has 1 cells, expected 4",
+          "row 2 has 1 cells, expected 2",
+          "row 9 has 1 cells, expected 6",
+          "row 2 has 3 cells, expected 11",
+          "row 23 has 1 cells, expected 4",
+          "row 23 has 1 cells, expected 4",
+          "row 22 has 1 cells, expected 4",
+          "row 22 has 1 cells, expected 4",
+          "row 22 has 1 cells, expected 4",
+          "row 23 has 1 cells, expected 4",
+          "row 2 has 4 cells, expected 5",
+          "row 13 has 1 cells, expected 4",
+          "row 8 has 1 cells, expected 4",
+          "row 23 has 1 cells, expected 4",
+          "row 13 has 1 cells, expected 4",
+          "row 8 has 1 cells, expected 4",
+          "row 22 has 1 cells, expected 4",
+          "row 22 has 1 cells, expected 4",
+          "row 2 has 3 cells, expected 5",
+          "row 2 has 5 cells, expected 6",
+          "row 20 has 1 cells, expected 11",
+          "row 2 has 1 cells, expected 2",
+          "row 20 has 1 cells, expected 11",
+          "row 2 has 5 cells, expected 7",
+          "row 2 has 1 cells, expected 2",
+          "row 3 has 1 cells, expected 2",
+          "row 2 has 1 cells, expected 2",
+          "row 2 has 2 cells, expected 3",
+          "row 2 has 1 cells, expected 2",
+          "row 2 has 1 cells, expected 3",
+          "row 2 has 1 cells, expected 2",
+          "row 2 has 1 cells, expected 3"
+        ]
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 16587,
+    "skipped_count": 70,
+    "tagged_text_path": "extracted_text/5c0005176c8dbbd8c55ff9adcfb3d7e3b40ecf33dadbd779fc43ff8fdd300fb6.txt"
+  },
+  {
+    "id": "75e9cfde740008ef191d8d8fa9acf713c7835f4427ccf673c58d10908e83112e",
+    "type": "legal",
+    "topic": "government",
+    "word_count": 636,
+    "confidence": 0.8752404451370239,
+    "filename": "word",
+    "audit": {
+      "header_parts": 2,
+      "header_paragraphs": 2,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 60,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/75e9cfde740008ef191d8d8fa9acf713c7835f4427ccf673c58d10908e83112e.txt"
+  },
+  {
+    "id": "84553adfd5c9944f7ffe62d7020f9c165f0c38c778b094e2bac4026efa7d0f99",
+    "type": "legal",
+    "topic": "legal_judicial",
+    "word_count": 2118,
+    "confidence": 0.967755913734436,
+    "filename": "source",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 1,
+      "footer_paragraphs": 1,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 90,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/84553adfd5c9944f7ffe62d7020f9c165f0c38c778b094e2bac4026efa7d0f99.txt"
+  },
+  {
+    "id": "38868c65105a768de5969c1d2fc8c42f9f6ca094ec06d8dc48ca7842af39586e",
+    "type": "legal",
+    "topic": "nonprofit",
+    "word_count": 7688,
+    "confidence": 0.8361166715621948,
+    "filename": "1680ad4c46",
+    "audit": {
+      "header_parts": 3,
+      "header_paragraphs": 3,
+      "footer_parts": 2,
+      "footer_paragraphs": 3,
+      "images": {
+        "body": 4,
+        "header": 1,
+        "footer": 0,
+        "total": 5
+      },
+      "tables": {
+        "simple": 1,
+        "skipped": 4,
+        "skipped_reasons": [
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 2.4 has vertical merge (vMerge)",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)"
+        ]
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": [
+        "footnotes"
+      ]
+    },
+    "fragment_count": 212,
+    "skipped_count": 8,
+    "tagged_text_path": "extracted_text/38868c65105a768de5969c1d2fc8c42f9f6ca094ec06d8dc48ca7842af39586e.txt"
+  },
+  {
+    "id": "29a9a0f83dfeac5d61e2ee51352a34e60a00d8863049f2f1d394952473704faa",
+    "type": "legal",
+    "topic": "legal_judicial",
+    "word_count": 15,
+    "confidence": 0.9378633499145508,
+    "filename": "supremecourtcasetemplate.docx",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 23,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/29a9a0f83dfeac5d61e2ee51352a34e60a00d8863049f2f1d394952473704faa.txt"
+  },
+  {
+    "id": "122bbf7940df99193c3e8e5132599a5419c928f36b1b58ad67b70228ddf9b69d",
+    "type": "legal",
+    "topic": "finance",
+    "word_count": 23,
+    "confidence": 0.8786895871162415,
+    "filename": "636275263059000000",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 13,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/122bbf7940df99193c3e8e5132599a5419c928f36b1b58ad67b70228ddf9b69d.txt"
+  },
+  {
+    "id": "a509c7a0252907c43a9b7ad8e9094549f773436e8180059d60defa552ad87bd9",
+    "type": "legal",
+    "topic": "general",
+    "word_count": 28,
+    "confidence": 0.9687966704368591,
+    "filename": "12d41252-5454-4220-8908-de2986fa7659",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 6,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/a509c7a0252907c43a9b7ad8e9094549f773436e8180059d60defa552ad87bd9.txt"
+  },
+  {
+    "id": "32a4ce11e376b172db577631f514751d4f879db29d6dc5c0f80a88f7da5d7da5",
+    "type": "forms",
+    "topic": "general",
+    "word_count": 4,
+    "confidence": 0.9689404964447021,
+    "filename": "EPP-TMP-SWOT-Analysis-A4.docx",
+    "audit": {
+      "header_parts": 1,
+      "header_paragraphs": 3,
+      "footer_parts": 1,
+      "footer_paragraphs": 2,
+      "images": {
+        "body": 1,
+        "header": 1,
+        "footer": 0,
+        "total": 2
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": [
+        "text boxes"
+      ]
+    },
+    "fragment_count": 6,
+    "skipped_count": 2,
+    "tagged_text_path": "extracted_text/32a4ce11e376b172db577631f514751d4f879db29d6dc5c0f80a88f7da5d7da5.txt"
+  },
+  {
+    "id": "4edf7d228148fdc6728b410ab1adcd21b6fcbf3de35f49599cb563573bf93f59",
+    "type": "forms",
+    "topic": "environment",
+    "word_count": 231214,
+    "confidence": 0.946910560131073,
+    "filename": "download",
+    "audit": {
+      "header_parts": 1,
+      "header_paragraphs": 4,
+      "footer_parts": 1,
+      "footer_paragraphs": 2,
+      "images": {
+        "body": 1,
+        "header": 0,
+        "footer": 0,
+        "total": 1
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 1,
+        "skipped_reasons": [
+          "cell 1.2 has horizontal merge (gridSpan)"
+        ]
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 8,
+    "skipped_count": 2,
+    "tagged_text_path": "extracted_text/4edf7d228148fdc6728b410ab1adcd21b6fcbf3de35f49599cb563573bf93f59.txt"
+  },
+  {
+    "id": "f533eb698dea36c2c5b78c7073195df1ea16c3e973c5f27bb8f6ad2f30de3982",
+    "type": "forms",
+    "topic": "finance",
+    "word_count": 238,
+    "confidence": 0.9615932703018188,
+    "filename": "original",
+    "audit": {
+      "header_parts": 1,
+      "header_paragraphs": 1,
+      "footer_parts": 1,
+      "footer_paragraphs": 5,
+      "images": {
+        "body": 4,
+        "header": 1,
+        "footer": 0,
+        "total": 5
+      },
+      "tables": {
+        "simple": 1,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": [
+        "text boxes"
+      ]
+    },
+    "fragment_count": 26,
+    "skipped_count": 5,
+    "tagged_text_path": "extracted_text/f533eb698dea36c2c5b78c7073195df1ea16c3e973c5f27bb8f6ad2f30de3982.txt"
+  },
+  {
+    "id": "8d7c00f3bc4fa14a78edf8934460a1eea9374367dcb3fe203fd3e9ca19ffbd69",
+    "type": "forms",
+    "topic": "healthcare",
+    "word_count": 527,
+    "confidence": 0.9850397109985352,
+    "filename": "getdocument",
+    "audit": {
+      "header_parts": 1,
+      "header_paragraphs": 1,
+      "footer_parts": 1,
+      "footer_paragraphs": 1,
+      "images": {
+        "body": 0,
+        "header": 1,
+        "footer": 0,
+        "total": 1
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 1,
+        "skipped_reasons": [
+          "cell 1.1 has horizontal merge (gridSpan)"
+        ]
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 21,
+    "skipped_count": 2,
+    "tagged_text_path": "extracted_text/8d7c00f3bc4fa14a78edf8934460a1eea9374367dcb3fe203fd3e9ca19ffbd69.txt"
+  },
+  {
+    "id": "ec94ef4d199061364e30c6158d758042234cecf60f6be9b8c03f0f639433e017",
+    "type": "forms",
+    "topic": "education",
+    "word_count": 1358,
+    "confidence": 0.9617584347724915,
+    "filename": "6BE4C3E236D54E5D8680C1B5E95A34DF.ashx",
+    "audit": {
+      "header_parts": 3,
+      "header_paragraphs": 3,
+      "footer_parts": 3,
+      "footer_paragraphs": 3,
+      "images": {
+        "body": 31,
+        "header": 0,
+        "footer": 0,
+        "total": 31
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": true,
+      "has_comments": false,
+      "unsupported_elements": [
+        "footnotes",
+        "text boxes"
+      ]
+    },
+    "fragment_count": 172,
+    "skipped_count": 31,
+    "tagged_text_path": "extracted_text/ec94ef4d199061364e30c6158d758042234cecf60f6be9b8c03f0f639433e017.txt"
+  },
+  {
+    "id": "5721cae2c3ed1e83d53ae03a878db5da382efb96b0f6cf5ca1e5612ee1a79bf8",
+    "type": "policies",
+    "topic": "nonprofit",
+    "word_count": 127872,
+    "confidence": 0.9686570763587952,
+    "filename": "638888652786070000",
+    "audit": {
+      "header_parts": 2,
+      "header_paragraphs": 2,
+      "footer_parts": 2,
+      "footer_paragraphs": 2,
+      "images": {
+        "body": 213,
+        "header": 0,
+        "footer": 0,
+        "total": 213
+      },
+      "tables": {
+        "simple": 10,
+        "skipped": 18,
+        "skipped_reasons": [
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "row 3 has 6 cells, expected 8",
+          "cell 1.2 has horizontal merge (gridSpan)",
+          "cell 1.2 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "row 2 has 1 cells, expected 4",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "cell 1.3 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "cell 1.1 has horizontal merge (gridSpan)"
+        ]
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": true,
+      "has_comments": false,
+      "unsupported_elements": [
+        "text boxes"
+      ]
+    },
+    "fragment_count": 968,
+    "skipped_count": 21,
+    "tagged_text_path": "extracted_text/5721cae2c3ed1e83d53ae03a878db5da382efb96b0f6cf5ca1e5612ee1a79bf8.txt"
+  },
+  {
+    "id": "86fafe356941c0bd3c383a3fb9c5c7b28200cf3cc66273db23e893d06c5210f6",
+    "type": "policies",
+    "topic": "education",
+    "word_count": 638,
+    "confidence": 0.9829188585281372,
+    "filename": "20230812053822_97_AdverseWeatherPolicy2016.docx",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 1,
+      "footer_paragraphs": 1,
+      "images": {
+        "body": 1,
+        "header": 0,
+        "footer": 0,
+        "total": 1
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 44,
+    "skipped_count": 1,
+    "tagged_text_path": "extracted_text/86fafe356941c0bd3c383a3fb9c5c7b28200cf3cc66273db23e893d06c5210f6.txt"
+  },
+  {
+    "id": "2b838bb712845f4d01a8dafc3cfc631a5316ac1601d977052804b811e9802b8f",
+    "type": "policies",
+    "topic": "education",
+    "word_count": 1357,
+    "confidence": 0.980474591255188,
+    "filename": "academic-action-plan.docx",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 1,
+        "header": 0,
+        "footer": 0,
+        "total": 1
+      },
+      "tables": {
+        "simple": 2,
+        "skipped": 1,
+        "skipped_reasons": [
+          "cell 1.1 contains nested table"
+        ]
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 37,
+    "skipped_count": 2,
+    "tagged_text_path": "extracted_text/2b838bb712845f4d01a8dafc3cfc631a5316ac1601d977052804b811e9802b8f.txt"
+  },
+  {
+    "id": "a586b1c9887f1b3f963523b9a8b5b3b6013484e9fe8697876bf0a940daead2c0",
+    "type": "policies",
+    "topic": "education",
+    "word_count": 3195,
+    "confidence": 0.9745472073554993,
+    "filename": "filedownload.ashx",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 102,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/a586b1c9887f1b3f963523b9a8b5b3b6013484e9fe8697876bf0a940daead2c0.txt"
+  },
+  {
+    "id": "2d96086f4fa3079d2d56ec32ef390cbaab56597d479960a61d29b91f625bc07b",
+    "type": "reports",
+    "topic": "government",
+    "word_count": 224965,
+    "confidence": 0.9540722966194153,
+    "filename": "file",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 4,
+      "footer_paragraphs": 12,
+      "images": {
+        "body": 15,
+        "header": 0,
+        "footer": 0,
+        "total": 15
+      },
+      "tables": {
+        "simple": 64,
+        "skipped": 25,
+        "skipped_reasons": [
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 1.2 has horizontal merge (gridSpan)",
+          "cell 2.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "row 7 has 1 cells, expected 3",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "row 4 has 1 cells, expected 5",
+          "cell 1.1 has horizontal merge (gridSpan)",
+          "row 13 has 1 cells, expected 5",
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "cell 2.1 has vertical merge (vMerge)",
+          "cell 1.1 has vertical merge (vMerge)",
+          "row 2 has 2 cells, expected 7",
+          "cell 2.1 has vertical merge (vMerge)",
+          "row 2 has 1 cells, expected 6"
+        ]
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": true,
+      "has_comments": false,
+      "unsupported_elements": [
+        "footnotes",
+        "text boxes"
+      ]
+    },
+    "fragment_count": 6828,
+    "skipped_count": 36,
+    "tagged_text_path": "extracted_text/2d96086f4fa3079d2d56ec32ef390cbaab56597d479960a61d29b91f625bc07b.txt"
+  },
+  {
+    "id": "40ff3b004caabc4fa45cc757650e7c39a17e3a43be05dfacead44a2727ca79e4",
+    "type": "reports",
+    "topic": "government",
+    "word_count": 363,
+    "confidence": 0.9099474549293518,
+    "filename": "e6a45cdaea235d62880f6770a345cad3",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 2,
+        "header": 0,
+        "footer": 0,
+        "total": 2
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 18,
+    "skipped_count": 2,
+    "tagged_text_path": "extracted_text/40ff3b004caabc4fa45cc757650e7c39a17e3a43be05dfacead44a2727ca79e4.txt"
+  },
+  {
+    "id": "ab4f6c2988f8f2ba4cea0277a963eb4b36621efb075b8e21066b6d77c2b9e592",
+    "type": "reports",
+    "topic": "healthcare",
+    "word_count": 983,
+    "confidence": 0.9763908386230469,
+    "filename": "content",
+    "audit": {
+      "header_parts": 1,
+      "header_paragraphs": 3,
+      "footer_parts": 1,
+      "footer_paragraphs": 1,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 1,
+        "skipped_reasons": [
+          "cell 1.5 has horizontal merge (gridSpan)"
+        ]
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": true,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 37,
+    "skipped_count": 1,
+    "tagged_text_path": "extracted_text/ab4f6c2988f8f2ba4cea0277a963eb4b36621efb075b8e21066b6d77c2b9e592.txt"
+  },
+  {
+    "id": "471d4e3201b74974ac528db0c49007b3d0e00137ccbfc5b135dc3740bfd997bd",
+    "type": "reports",
+    "topic": "healthcare",
+    "word_count": 2935,
+    "confidence": 0.9731289744377136,
+    "filename": "pone.0193278.s003.docx",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 1,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 3,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/471d4e3201b74974ac528db0c49007b3d0e00137ccbfc5b135dc3740bfd997bd.txt"
+  },
+  {
+    "id": "17f2564dc24b339ef27daaae5842ac5231d77bae95678384dc0353f79caa9a31",
+    "type": "correspondence",
+    "topic": "general",
+    "word_count": 7,
+    "confidence": 0.8991661667823792,
+    "filename": "tableft.docx",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 1,
+        "header": 0,
+        "footer": 0,
+        "total": 1
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": [
+        "text boxes"
+      ]
+    },
+    "fragment_count": 1,
+    "skipped_count": 1,
+    "tagged_text_path": "extracted_text/17f2564dc24b339ef27daaae5842ac5231d77bae95678384dc0353f79caa9a31.txt"
+  },
+  {
+    "id": "ee619d011433c1d2765a60f42b52952244bdaaea6367b251cef1d9e2e4178d58",
+    "type": "correspondence",
+    "topic": "government",
+    "word_count": 128278,
+    "confidence": 0.8104042410850525,
+    "filename": "138",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 2,
+      "footer_paragraphs": 4,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 6322,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/ee619d011433c1d2765a60f42b52952244bdaaea6367b251cef1d9e2e4178d58.txt"
+  },
+  {
+    "id": "91abe38694877000683868c2925174a1a9218a0ea99fbdc1c53a9f1ab15cf447",
+    "type": "correspondence",
+    "topic": "general",
+    "word_count": 254,
+    "confidence": 0.9434434771537781,
+    "filename": "638481651349770000",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 34,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/91abe38694877000683868c2925174a1a9218a0ea99fbdc1c53a9f1ab15cf447.txt"
+  },
+  {
+    "id": "83beef8e7a023c98f1b521386df8db57f1c245212af1a0465f500240628347f5",
+    "type": "correspondence",
+    "topic": "government",
+    "word_count": 457,
+    "confidence": 0.9725702404975891,
+    "filename": "parish-pump-february-2023",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 3,
+        "header": 0,
+        "footer": 0,
+        "total": 3
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 37,
+    "skipped_count": 3,
+    "tagged_text_path": "extracted_text/83beef8e7a023c98f1b521386df8db57f1c245212af1a0465f500240628347f5.txt"
+  },
+  {
+    "id": "2d5bf5131ae4a8b21e749d38299d0d1b98334cc35d6ae0265ca4c7fd79cc0a84",
+    "type": "correspondence",
+    "topic": "government",
+    "word_count": 828,
+    "confidence": 0.810178279876709,
+    "filename": "2306-08__Fort_Drum_officials_name_conference_room_after_first_10th_Mountain_Division_Soldier_to_report_for_duty.docx",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 49,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/2d5bf5131ae4a8b21e749d38299d0d1b98334cc35d6ae0265ca4c7fd79cc0a84.txt"
+  },
+  {
+    "id": "05fbf2a0d628f10fde61e6f5a67d365920459e6903733543426ad2027ecb594c",
+    "type": "legal",
+    "topic": "legal_judicial",
+    "word_count": 100,
+    "confidence": 0.9761508703231812,
+    "filename": "Order on Motion for New Trial",
+    "audit": {
+      "header_parts": 3,
+      "header_paragraphs": 3,
+      "footer_parts": 3,
+      "footer_paragraphs": 3,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 28,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/05fbf2a0d628f10fde61e6f5a67d365920459e6903733543426ad2027ecb594c.txt"
+  },
+  {
+    "id": "bdd19f6512dd99784ff1153a3268b305354a2d72a75bab854b1aa47311b5c8b4",
+    "type": "legal",
+    "topic": "legal_judicial",
+    "word_count": 274461,
+    "confidence": 0.9798523187637329,
+    "filename": "unknown.docx",
+    "audit": {
+      "header_parts": 3,
+      "header_paragraphs": 5,
+      "footer_parts": 3,
+      "footer_paragraphs": 4,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 1,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 11303,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/bdd19f6512dd99784ff1153a3268b305354a2d72a75bab854b1aa47311b5c8b4.txt"
+  },
+  {
+    "id": "d7468207cb8b1ebdf5b1e59d815b9ce44b0a54b5d2a00a366769ffcf0c709200",
+    "type": "legal",
+    "topic": "healthcare",
+    "word_count": 680,
+    "confidence": 0.9038634300231934,
+    "filename": "HS.256.docx",
+    "audit": {
+      "header_parts": 2,
+      "header_paragraphs": 0,
+      "footer_parts": 2,
+      "footer_paragraphs": 6,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 35,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/d7468207cb8b1ebdf5b1e59d815b9ce44b0a54b5d2a00a366769ffcf0c709200.txt"
+  },
+  {
+    "id": "538198048ce7bb227b96299e61d1c63eab1a0c89bbc2539e84d5488e0f708c60",
+    "type": "forms",
+    "topic": "education",
+    "word_count": 281,
+    "confidence": 0.9851989150047302,
+    "filename": "filedownload.ashx",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 1,
+        "header": 0,
+        "footer": 0,
+        "total": 1
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": [
+        "text boxes"
+      ]
+    },
+    "fragment_count": 27,
+    "skipped_count": 1,
+    "tagged_text_path": "extracted_text/538198048ce7bb227b96299e61d1c63eab1a0c89bbc2539e84d5488e0f708c60.txt"
+  },
+  {
+    "id": "ae7c9554466c3577211658ba730e2d18a5ebb7e4448337c739bd07013b6e6a40",
+    "type": "policies",
+    "topic": "healthcare",
+    "word_count": 652,
+    "confidence": 0.8290712237358093,
+    "filename": "original",
+    "audit": {
+      "header_parts": 2,
+      "header_paragraphs": 8,
+      "footer_parts": 0,
+      "footer_paragraphs": 0,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": false,
+      "unsupported_elements": []
+    },
+    "fragment_count": 106,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/ae7c9554466c3577211658ba730e2d18a5ebb7e4448337c739bd07013b6e6a40.txt"
+  },
+  {
+    "id": "545e6d0fd8c0d20a226cd079bb824e6bb60a4968cd8378ac1cc8dc9495a6ee43",
+    "type": "reports",
+    "topic": "finance",
+    "word_count": 457,
+    "confidence": 0.820393443107605,
+    "filename": "890a07f83fe2f327d30b4083ea793c3f",
+    "audit": {
+      "header_parts": 0,
+      "header_paragraphs": 0,
+      "footer_parts": 1,
+      "footer_paragraphs": 1,
+      "images": {
+        "body": 0,
+        "header": 0,
+        "footer": 0,
+        "total": 0
+      },
+      "tables": {
+        "simple": 0,
+        "skipped": 0,
+        "skipped_reasons": []
+      },
+      "section_breaks": 1,
+      "multi_column": false,
+      "has_tracked_changes": false,
+      "has_comments": true,
+      "unsupported_elements": []
+    },
+    "fragment_count": 26,
+    "skipped_count": 0,
+    "tagged_text_path": "extracted_text/545e6d0fd8c0d20a226cd079bb824e6bb60a4968cd8378ac1cc8dc9495a6ee43.txt"
+  }
+]

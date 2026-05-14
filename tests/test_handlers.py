@@ -1,7 +1,5 @@
 """Tests for the change handlers (delete, append, modify)."""
 
-from __future__ import annotations
-
 from lxml import etree
 
 from docx_mcp.converter import paragraph_to_pseudo_markdown
@@ -141,9 +139,11 @@ class TestHandleDelete:
         mgr = IdManager()
         handle_delete(p, id_manager=mgr, config=_default_config())
 
-        del_el = xpath(p, "w:del")[0]
-        runs = xpath(del_el, "w:r")
-        assert len(runs) == 3
+        # Each run is wrapped in its own <w:del> (required for hyperlink support)
+        del_els = xpath(p, "w:del")
+        assert len(del_els) == 3
+        total_runs = sum(len(xpath(d, "w:r")) for d in del_els)
+        assert total_runs == 3
 
     def test_returns_annotation_id(self):
         p = _make_paragraph(("Hello", None))

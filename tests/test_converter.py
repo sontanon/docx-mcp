@@ -162,6 +162,70 @@ class TestParagraphToPseudoMarkdown:
         md = paragraph_to_pseudo_markdown(p)
         assert md == ""
 
+    def test_whitespace_only_run_no_artifact(self):
+        """Bold/italic whitespace-only runs must not produce formatting artifacts."""
+        nsmap = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        p = etree.Element(f"{{{nsmap['w']}}}p", nsmap=nsmap)
+
+        # Run 1: bold space
+        r1 = etree.SubElement(p, f"{{{nsmap['w']}}}r")
+        rpr1 = etree.SubElement(r1, f"{{{nsmap['w']}}}rPr")
+        etree.SubElement(rpr1, f"{{{nsmap['w']}}}b")
+        t1 = etree.SubElement(r1, f"{{{nsmap['w']}}}t")
+        t1.text = " "
+        t1.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+
+        # Run 2: normal text
+        r2 = etree.SubElement(p, f"{{{nsmap['w']}}}r")
+        t2 = etree.SubElement(r2, f"{{{nsmap['w']}}}t")
+        t2.text = "hello"
+
+        md = paragraph_to_pseudo_markdown(p)
+        assert "****" not in md
+        assert "** **" not in md
+        assert md == "hello"
+
+    def test_tab_only_run_no_artifact(self):
+        """Bold tab-only runs must not produce formatting artifacts."""
+        nsmap = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        p = etree.Element(f"{{{nsmap['w']}}}p", nsmap=nsmap)
+
+        # Run 1: bold tab
+        r1 = etree.SubElement(p, f"{{{nsmap['w']}}}r")
+        rpr1 = etree.SubElement(r1, f"{{{nsmap['w']}}}rPr")
+        etree.SubElement(rpr1, f"{{{nsmap['w']}}}b")
+        etree.SubElement(r1, f"{{{nsmap['w']}}}tab")
+
+        # Run 2: normal text
+        r2 = etree.SubElement(p, f"{{{nsmap['w']}}}r")
+        t2 = etree.SubElement(r2, f"{{{nsmap['w']}}}t")
+        t2.text = "world"
+
+        md = paragraph_to_pseudo_markdown(p)
+        assert "**\t**" not in md
+        assert md == "world"
+
+    def test_multiple_empty_runs_no_artifact(self):
+        """Sequence of empty bold runs must not produce '****'."""
+        nsmap = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        p = etree.Element(f"{{{nsmap['w']}}}p", nsmap=nsmap)
+
+        for _ in range(3):
+            r = etree.SubElement(p, f"{{{nsmap['w']}}}r")
+            rpr = etree.SubElement(r, f"{{{nsmap['w']}}}rPr")
+            etree.SubElement(rpr, f"{{{nsmap['w']}}}b")
+            t = etree.SubElement(r, f"{{{nsmap['w']}}}t")
+            t.text = ""
+
+        # Run with actual text
+        r = etree.SubElement(p, f"{{{nsmap['w']}}}r")
+        t = etree.SubElement(r, f"{{{nsmap['w']}}}t")
+        t.text = "actual"
+
+        md = paragraph_to_pseudo_markdown(p)
+        assert "****" not in md
+        assert md == "actual"
+
 
 class TestDocumentToFragments:
     def test_simple_5para_fragments(self, simple_5para_path: Path):

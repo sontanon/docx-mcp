@@ -1,0 +1,860 @@
+{
+  "flagged_documents": [
+    {
+      "id": "d4a8d973da7d1a53524725c18a75877e10de02c295d75fcfaf17fdffce9bde05",
+      "path": "downloaded/d4a8d973da7d1a53524725c18a75877e10de02c295d75fcfaf17fdffce9bde05.docx",
+      "classification": "truly_bad",
+      "confidence": "high",
+      "findings": {
+        "zip_valid": true,
+        "word_dir_contents": [
+          {
+            "name": "word/_rels/document.xml.rels",
+            "size": 953
+          },
+          {
+            "name": "word/document.xml",
+            "size": 1697
+          },
+          {
+            "name": "word/theme/theme1.xml",
+            "size": 7076
+          },
+          {
+            "name": "word/settings.xml",
+            "size": 2199
+          },
+          {
+            "name": "word/webSettings.xml",
+            "size": 428
+          },
+          {
+            "name": "word/stylesWithEffects.xml",
+            "size": 15696
+          },
+          {
+            "name": "word/styles.xml",
+            "size": 14943
+          },
+          {
+            "name": "word/fontTable.xml",
+            "size": 1186
+          }
+        ],
+        "document_xml_paragraphs": 2,
+        "document_xml_text_runs": 2,
+        "direct_body_paragraphs": 2,
+        "table_paragraphs": 0,
+        "headers": 0,
+        "footers": 0,
+        "footnotes": 0,
+        "endnotes": 0,
+        "comments": 0,
+        "altChunk": false,
+        "embedded_objects": false,
+        "content_controls": false,
+        "images_with_text": false,
+        "drawingml_textboxes": false,
+        "vml_textboxes": false,
+        "core_title": "",
+        "largest_text_block": "Letter of Declaration of conflict of interest",
+        "total_body_text": "Letter of Declaration of conflict of interestThere are no conflicts of interest",
+        "total_table_text": "",
+        "unusual_elements": []
+      },
+      "explanation": "Document has only 12 words in 2 paragraphs, no headers/footers/notes, and no alternative content sources. Truly minimal.",
+      "recommendation": "remove"
+    },
+    {
+      "id": "29a9a0f83dfeac5d61e2ee51352a34e60a00d8863049f2f1d394952473704faa",
+      "path": "downloaded/29a9a0f83dfeac5d61e2ee51352a34e60a00d8863049f2f1d394952473704faa.docx",
+      "classification": "edge_case",
+      "confidence": "high",
+      "findings": {
+        "zip_valid": true,
+        "word_dir_contents": [
+          {
+            "name": "word/_rels/document.xml.rels",
+            "size": 817
+          },
+          {
+            "name": "word/document.xml",
+            "size": 4615
+          },
+          {
+            "name": "word/theme/theme1.xml",
+            "size": 6795
+          },
+          {
+            "name": "word/settings.xml",
+            "size": 2534
+          },
+          {
+            "name": "word/fontTable.xml",
+            "size": 1261
+          },
+          {
+            "name": "word/webSettings.xml",
+            "size": 497
+          },
+          {
+            "name": "word/styles.xml",
+            "size": 28676
+          }
+        ],
+        "document_xml_paragraphs": 23,
+        "document_xml_text_runs": 4,
+        "direct_body_paragraphs": 23,
+        "table_paragraphs": 0,
+        "headers": 0,
+        "footers": 0,
+        "footnotes": 0,
+        "endnotes": 0,
+        "comments": 0,
+        "altChunk": false,
+        "embedded_objects": false,
+        "content_controls": false,
+        "images_with_text": false,
+        "drawingml_textboxes": false,
+        "vml_textboxes": false,
+        "core_title": "",
+        "largest_text_block": "Question that the Court had to Consider:",
+        "total_body_text": "Name of Case and YearBackground: Question that the Court had to Consider: Court\u2019s Ruling:",
+        "total_table_text": "",
+        "unusual_elements": []
+      },
+      "explanation": "File is explicitly a template shell with minimal boilerplate text. Intentionally blank for user fill-in.",
+      "recommendation": "keep_for_testing"
+    },
+    {
+      "id": "4c34c24400d56f83f8bb467db107f4a3826fd422a082d2a2f049e455923870b6",
+      "path": "downloaded/4c34c24400d56f83f8bb467db107f4a3826fd422a082d2a2f049e455923870b6.docx",
+      "classification": "truly_bad",
+      "confidence": "high",
+      "findings": {
+        "zip_valid": true,
+        "word_dir_contents": [
+          {
+            "name": "word/document.xml",
+            "size": 3254
+          },
+          {
+            "name": "word/_rels/document.xml.rels",
+            "size": 817
+          },
+          {
+            "name": "word/theme/theme1.xml",
+            "size": 7076
+          },
+          {
+            "name": "word/settings.xml",
+            "size": 3084
+          },
+          {
+            "name": "word/styles.xml",
+            "size": 29455
+          },
+          {
+            "name": "word/webSettings.xml",
+            "size": 894
+          },
+          {
+            "name": "word/fontTable.xml",
+            "size": 1652
+          }
+        ],
+        "document_xml_paragraphs": 1,
+        "document_xml_text_runs": 7,
+        "direct_body_paragraphs": 1,
+        "table_paragraphs": 0,
+        "headers": 0,
+        "footers": 0,
+        "footnotes": 0,
+        "endnotes": 0,
+        "comments": 0,
+        "altChunk": false,
+        "embedded_objects": false,
+        "content_controls": false,
+        "images_with_text": false,
+        "drawingml_textboxes": false,
+        "vml_textboxes": false,
+        "core_title": "",
+        "largest_text_block": "For all documents relating to the appeal made against Planning Application 22/01488/OUT, please see appeal record 22/00053/NON",
+        "total_body_text": "For all documents relating to the appeal made against Planning Application 22/01488/OUT, please see appeal record 22/00053/NON",
+        "total_table_text": "",
+        "unusual_elements": []
+      },
+      "explanation": "Document has only 17 words in 1 paragraphs, no headers/footers/notes, and no alternative content sources. Truly minimal.",
+      "recommendation": "remove"
+    },
+    {
+      "id": "06c0442540a25399a14a052e4538db678f92b0283b47c55821b94e8fc5a300e1",
+      "path": "downloaded/06c0442540a25399a14a052e4538db678f92b0283b47c55821b94e8fc5a300e1.docx",
+      "classification": "truly_bad",
+      "confidence": "high",
+      "findings": {
+        "zip_valid": true,
+        "word_dir_contents": [
+          {
+            "name": "word/_rels/document.xml.rels",
+            "size": 953
+          },
+          {
+            "name": "word/document.xml",
+            "size": 2082
+          },
+          {
+            "name": "word/theme/theme1.xml",
+            "size": 7076
+          },
+          {
+            "name": "word/settings.xml",
+            "size": 2199
+          },
+          {
+            "name": "word/webSettings.xml",
+            "size": 428
+          },
+          {
+            "name": "word/stylesWithEffects.xml",
+            "size": 15696
+          },
+          {
+            "name": "word/styles.xml",
+            "size": 14943
+          },
+          {
+            "name": "word/fontTable.xml",
+            "size": 1186
+          }
+        ],
+        "document_xml_paragraphs": 3,
+        "document_xml_text_runs": 3,
+        "direct_body_paragraphs": 3,
+        "table_paragraphs": 0,
+        "headers": 0,
+        "footers": 0,
+        "footnotes": 0,
+        "endnotes": 0,
+        "comments": 0,
+        "altChunk": false,
+        "embedded_objects": false,
+        "content_controls": false,
+        "images_with_text": false,
+        "drawingml_textboxes": false,
+        "vml_textboxes": false,
+        "core_title": "",
+        "largest_text_block": "Animals were cared for in accordance with University of Kentucky animal care guidelines.",
+        "total_body_text": "Letter of Declaration of compliance with ethical principlesAnimals were cared for in accordance with University of Kentucky animal care guidelines.",
+        "total_table_text": "",
+        "unusual_elements": []
+      },
+      "explanation": "Document has only 20 words in 3 paragraphs, no headers/footers/notes, and no alternative content sources. Truly minimal.",
+      "recommendation": "remove"
+    },
+    {
+      "id": "32a4ce11e376b172db577631f514751d4f879db29d6dc5c0f80a88f7da5d7da5",
+      "path": "downloaded/32a4ce11e376b172db577631f514751d4f879db29d6dc5c0f80a88f7da5d7da5.docx",
+      "classification": "parsing_issue",
+      "confidence": "high",
+      "findings": {
+        "zip_valid": true,
+        "word_dir_contents": [
+          {
+            "name": "word/document.xml",
+            "size": 30233
+          },
+          {
+            "name": "word/_rels/document.xml.rels",
+            "size": 1900
+          },
+          {
+            "name": "word/footnotes.xml",
+            "size": 3102
+          },
+          {
+            "name": "word/endnotes.xml",
+            "size": 3094
+          },
+          {
+            "name": "word/header1.xml",
+            "size": 5912
+          },
+          {
+            "name": "word/footer1.xml",
+            "size": 3291
+          },
+          {
+            "name": "word/_rels/header1.xml.rels",
+            "size": 290
+          },
+          {
+            "name": "word/media/image1.jpeg",
+            "size": 620843
+          },
+          {
+            "name": "word/theme/theme1.xml",
+            "size": 8393
+          },
+          {
+            "name": "word/settings.xml",
+            "size": 4015
+          },
+          {
+            "name": "word/numbering.xml",
+            "size": 2298
+          },
+          {
+            "name": "word/styles.xml",
+            "size": 30544
+          },
+          {
+            "name": "word/webSettings.xml",
+            "size": 803
+          },
+          {
+            "name": "word/fontTable.xml",
+            "size": 1853
+          }
+        ],
+        "document_xml_paragraphs": 1,
+        "document_xml_text_runs": 8,
+        "direct_body_paragraphs": 1,
+        "table_paragraphs": 0,
+        "headers": 2,
+        "footers": 6,
+        "footnotes": 0,
+        "endnotes": 0,
+        "comments": 0,
+        "altChunk": false,
+        "embedded_objects": false,
+        "content_controls": false,
+        "images_with_text": false,
+        "drawingml_textboxes": false,
+        "vml_textboxes": true,
+        "core_title": "",
+        "largest_text_block": "THREATSTHREATSOPPORTUNITIESOPPORTUNITIESWEAKNESSESWEAKNESSESSTRENGTHSSTRENGTHS",
+        "total_body_text": "THREATSTHREATSOPPORTUNITIESOPPORTUNITIESWEAKNESSESWEAKNESSESSTRENGTHSSTRENGTHS",
+        "total_table_text": "",
+        "unusual_elements": [
+          "mc:AlternateContent",
+          "VML_textbox"
+        ]
+      },
+      "explanation": "Document text resides in DrawingML/VML text boxes (1 words) rather than direct body paragraphs. Our parser does not descend into shape text boxes.",
+      "recommendation": "fix_parser_textbox_support"
+    },
+    {
+      "id": "4edf7d228148fdc6728b410ab1adcd21b6fcbf3de35f49599cb563573bf93f59",
+      "path": "downloaded/4edf7d228148fdc6728b410ab1adcd21b6fcbf3de35f49599cb563573bf93f59.docx",
+      "classification": "parsing_issue",
+      "confidence": "high",
+      "findings": {
+        "zip_valid": true,
+        "word_dir_contents": [
+          {
+            "name": "word/document.xml",
+            "size": 415655
+          },
+          {
+            "name": "word/_rels/document.xml.rels",
+            "size": 2236
+          },
+          {
+            "name": "word/footnotes.xml",
+            "size": 2843
+          },
+          {
+            "name": "word/endnotes.xml",
+            "size": 2837
+          },
+          {
+            "name": "word/header1.xml",
+            "size": 3257
+          },
+          {
+            "name": "word/footer1.xml",
+            "size": 6178
+          },
+          {
+            "name": "word/media/image1.wmf",
+            "size": 542320
+          },
+          {
+            "name": "word/embeddings/oleObject1.bin",
+            "size": 57344
+          },
+          {
+            "name": "word/media/image2.png",
+            "size": 3921
+          },
+          {
+            "name": "word/theme/theme1.xml",
+            "size": 8393
+          },
+          {
+            "name": "word/settings.xml",
+            "size": 8584
+          },
+          {
+            "name": "word/_rels/settings.xml.rels",
+            "size": 390
+          },
+          {
+            "name": "word/numbering.xml",
+            "size": 53864
+          },
+          {
+            "name": "word/styles.xml",
+            "size": 27774
+          },
+          {
+            "name": "word/webSettings.xml",
+            "size": 1298
+          },
+          {
+            "name": "word/fontTable.xml",
+            "size": 3610
+          }
+        ],
+        "document_xml_paragraphs": 801,
+        "document_xml_text_runs": 1136,
+        "direct_body_paragraphs": 1,
+        "table_paragraphs": 800,
+        "headers": 0,
+        "footers": 12,
+        "footnotes": 0,
+        "endnotes": 0,
+        "comments": 0,
+        "altChunk": false,
+        "embedded_objects": true,
+        "content_controls": false,
+        "images_with_text": false,
+        "drawingml_textboxes": false,
+        "vml_textboxes": false,
+        "core_title": "Massachusetts Department of Environmental Protection",
+        "largest_text_block": "I certify under penalty of law that this document and all attachments were prepared under my direction or supervision in accordance with a system designed to assure that qualified personnel properly gather and evaluate the information submitted. Based on my diligent inquiry of the person or persons ",
+        "total_body_text": "Massachusetts Department of Environmental Protection Bureau of Resource Protection \u2013 General Groundwater Discharge PermitsNotice of Intent for General Permit Coverage-New, Renewal or ModificationBRP WP 80 General Permit for Specified DischargesBRP WP 81 General Permit for Small Wastewater Treatment FacilitiesPlease do not mail. Submit through ePlace. See instructions.A. General InformationImportant: When filling out forms on the computer, use only the tab key to move your cursor - do not use the return key.1.Which permit category are you applying for:BRP WP 80General Permit for Specified DischargesBRP WP 81General Permit for Small Wastewater Treatment FacilitiesPlease note: In accordance with 314 CMR 5.09, these permit categories may require that a Hydrogeological Evaluation be submitted prior to the submittal of the permit application. Please see the application form and instructions for BRP WP 83. 2.  Applicant Information:In accordance with 314 CMR 5.09A(2), the owner of the treatment works or the owner of the activity resulting in a discharge of pollutants shall apply for the permit. For a Publicly Owned Treatment Works (POTW), the owner of the treatment works shall apply. For a Private Wastewater Treatment Facility, the applicant shall meet the requirements set forth in 314 CMR 5.15(1) through (3).\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002NameCompany Name (If applicable)\u2002\u2002\u2002\u2002\u2002Title\u2002\u2002\u2002\u2002\u2002Address\u2002\u2002\u2002\u2002\u2002City/Town\u2002\u2002\u2002\u2002\u2002State\u2002\u2002\u2002\u2002\u2002Zip Code\u2002\u2002\u2002\u2002\u2002Telephone\u2002\u2002\u2002\u2002\u2002Email Address3.Applicant Contact Information (if different from above):\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002Contact NameCompany Name (If applicable)\u2002\u2002\u2002\u2002\u2002Title\u2002\u2002\u2002\u2002\u2002Address\u2002\u2002\u2002\u2002\u2002City/Town\u2002\u2002\u2002\u2002\u2002State\u2002\u2002\u2002\u2002\u2002Zip Code\u2002\u2002\u2002\u2002\u2002Telephone\u2002\u2002\u2002\u2002\u2002Email Address4.The legal entity which owns this facility is:Private:   Individual      CorporationTrust        Partnership        Sole Proprietorship                        Other (specify):\u2002\u2002\u2002\u2002\u2002Public:    Municipality  Federal          State/County        Other (specify):\u2002\u2002\u2002\u2002\u2002A. General Information (cont.)5.Facility Information:\u2002\u2002\u2002\u2002\u2002Name of facility\u2002\u2002\u2002\u2002\u2002Address\u2002\u2002\u2002\u2002\u2002City/Town\u2002\u2002\u2002\u2002\u2002State\u2002\u2002\u2002\u2002\u2002Zip Code\u2002\u2002\u2002\u2002\u2002Telephone\u2002\u2002\u2002\u2002\u2002Email6.Facility Operator Information:Give the name, as it is legally referred to, of the person, firm, public organization or other entity which will operate the facility described in this application. If the facility owner is also the operator, write owner and list mailing address only if different from that listed in A.2 above. \u2002\u2002\u2002\u2002\u2002Operator Name\u2002\u2002\u2002\u2002\u2002Operator Company\u2002\u2002\u2002\u2002\u2002Address\u2002\u2002\u2002\u2002\u2002City/Town\u2002\u2002\u2002\u2002\u2002State\u2002\u2002\u2002\u2002\u2002Zip Code\u2002\u2002\u2002\u2002\u2002Telephone\u2002\u2002\u2002\u2002\u2002License Number\u2002\u2002\u2002\u2002\u2002Operator Grade\u2002\u2002\u2002\u2002\u2002Email address7.  Preparer of the Application: (If different from the Applicant noted in Part A.2)\u2002\u2002\u2002\u2002\u2002Preparer\u2019s Name\u2002\u2002\u2002\u2002\u2002Preparer\u2019s Company\u2002\u2002\u2002\u2002\u2002Address\u2002\u2002\u2002\u2002\u2002City/Town\u2002\u2002\u2002\u2002\u2002State\u2002\u2002\u2002\u2002\u2002Zip Code\u2002\u2002\u2002\u2002\u2002Telephone                                                                                    Preparer\u2019s Signature\u2002\u2002\u2002\u2002\u2002Email addressB. Project Information1. Does the project affect a site of historic or archeological significance, as defined in regulations of the Massachusetts Historical Commission, 950 CMR 71.00? Yes No2. Does this project require a filing under 301 CMR 11.00, the Massachusetts Environmental Policy Act? Yes NoIf yes, has a filing been made? (Please indicate the EOEEA File Number) Yes No\u2002\u2002\u2002\u2002\u2002EOEEA File NumberB. Project Information (cont.)3.Is this a RCRA facility as defined in 314 CMR 8.03?  Yes NoIf yes, submit the information on Form HW contained in 314 CMR 8.20 in accordance with the provisions of 314 CMR 8.08.4.Location of Discharge: Is the discharge for this facility within: A Public Water Supply Area?       Zone I      Zone A      Zone II    IWPA A private water supply area? A sole source aquifer?d.100 feet of an Outstanding Resource Water designated in 314 CMR 4.00, a Special Resource Water designated in 314 CMR 4.00, a cold-water fishery as defined in 314 CMR 9.02, a bathing beach as defined in 104 CMR 445.000, or a shellfish growing area as defined in 314 CMR 9.02? Yes Noe.A nitrogen-sensitive area as designated by the Department in accordance with 310 CMR 15.215? Yes Nof.An area where the Department has determined, based on a Total Maximum Daily Load or other technical report, that more stringent effluent limits than those set forth in the General Permit are required to achieve or maintain compliance with the Massachusetts Surface Water Quality Standards, 314 CMR 4.00? Yes NoIf the answer to any of these questions is Yes, STOP. File for either BRP WP 79 - Individual Sewage Treatment Plant, or BRP WP 85 - Other Individual Groundwater Discharge Permits.5. Improvements - Are you required by any Federal, State or local authority to meet any implementation schedule for the construction, upgrading or operation of wastewater treatment equipment or practices, or any other environmental programs which may affect the discharges described in this application? This includes, but is not limited to permit conditions, administrative or enforcement orders, enforcement compliance schedule letters, stipulations, court orders, and grant or loan conditions. Yes NoIf yes, answer the following:a)Description of order or agreement (include enforcement document number, if applicable):\u2002\u2002\u2002\u2002\u2002B. Project Information (cont.)b)Identification No. of Affected Treatment Facility\u2002\u2002\u2002\u2002\u2002c)Description of Project\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002Final Compliance Date6. Has a hydrogeologic study been performed to determine the potential impact of the discharge or activity on the groundwater? Yes :\u2002\u2002\u2002\u2002\u2002Application Transmittal Number\u2002\u2002\u2002\u2002\u2002Date of ApprovalPlease attach a copy of the DEP Hydrogeologic Report Approval letter. NoIf no, STOP.  Please Note: In accordance with 314 CMR 5.09, these permit categories may require that a Hydrogeological Evaluation be submitted to the Department prior to the submittal of the permit application. Please see the application form and instructions for BRP WP 83.7.Are there any groundwater monitoring wells currently in place in the vicinity of the discharge or proposed discharge? Yes If yes, please attach information on the type and location of the wells and available monitoring data.  No8. Have plans and specifications for the treatment works been approved (see instructions) by the Department; or if approved prior to July 1975, by the Department of Public Health?  YesIf yes, please attach copy of plans and specifications and approval letter. No9.Have opportunities for reclaimed water been evaluated?  Yes No10.Is there a local regulation governing the construction of wastewater treatment facilities?  YesIf yes, please include a copy of the local approval. NoC. Facility Information1.Facility Status: Existing        Proposed        Proposed Modification2.When did or when will this discharge begin?\u2002\u2002\u2002\u2002\u2002Date of Startup3.Check type of establishment(s) producing or contributing to discharge:Residential: Condominium     Apartment      Elderly Housing    Nursing Home Other:\u2002\u2002\u2002\u2002\u2002Total number of bedrooms:\u2002\u2002\u2002\u2002\u2002Municipal  School Business\u2002\u2002\u2002\u2002\u2002Describe nature of businessOther (specify): \u2002\u2002\u2002\u2002\u2002Please note: In accordance with 314 CMR 5.15, a permittee responsible for the operation of a Private Wastewater Treatment Facility (PWTF) may be required to establish and maintain Financial Assurance mechanisms.4.Type of Discharge (check one box only): Sewage  Carwash        Coin Operated Laundromat5.Design Flow:a)Daily Maximum flow (gpd):\u2002\u2002\u2002\u2002\u2002STOP. If the facility is either a Publicly Owned Treatment Works (POTW) or a Privately Owned Sewage Treatment Facility (PWTF) solely treating sewage, and design flow is > 50,000 gpd, file BRP WP 79 \u2013 Individual Permit for Sewage Treatment Facility. b) Discharge occurs all year Discharge is seasonal \u2002\u2002\u2002\u2002\u2002List months discharge occurs/Number of days per week6.Basis for design flow: The State Environmental Code \u2013 Title 5 Other:\u2002\u2002\u2002\u2002\u2002SpecifyC. Facility Information (cont.)7.Type of treatment and disposal system for discharge to ground:\u2002\u2002\u2002\u2002\u20028.Location and method of wastewater treatment solids disposal:\u2002\u2002\u2002\u2002\u20029.If a commercial establishment applying for a BRP WP 81 permit:a)Are any types of wastewater other than sanitary sewage produced? YesIf Yes, STOP and instead file for BRP WP 79. No b)Are any hazardous wastes generated? Yes No10.Does or will the treatment/disposal facility receive industrial wastes?  Yes No11.Location of Facility:a)GPS Coordinates: 1)Enter Latitude and Longitude to the nearest whole second:Wastewater Treatment Facility:\u2002\u2002\u2002\u2002\u2002Latitude  \u2002\u2002\u2002\u2002\u2002LongitudeEffluent Disposal Area:\u2002\u2002\u2002\u2002\u2002Latitude      \u2002\u2002\u2002\u2002\u2002Longitude2) Provide a narrative description of the site and the feature to be permitted. As an example: \u201cThe site is on the west side of Main Street, the third building north of High Street. The disposal field lies 100 feet off the southwest corner of the building.\u201d3) Attach a site map based on the MassGIS Coordinate Information Tool that clearly indicates the site. The Coordinate Information Tool is available at https://maps.massgis.digital.mass.gov/images/dep/xyinfo/get_xy.htmlC. Facility Information (cont.)b) Provide a topographic map or maps of the area extending at least to one mile beyond the property boundaries of the facility which clearly show the following:The legal boundaries of the facility;The location and serial number of each of your existing and proposed intake and discharge structures;All hazardous waste management facilities;All springs and surface water bodies in the area, plus all drinking water wells within one mile of the facility which are identified in the public record or otherwise known to you.All Zone II\u2019s or IWPA\u2019s.If an intake or discharge structure, hazardous waste disposal site, or injection well associated with the facility is located more than one mile from the plant, include it on the map, if possible. If not, attach additional sheets describing the location of the structure, disposal site, or well, and identify the U.S. Geological Survey (or other) map corresponding to the location.c)Please list any public or private drinking water supply wells within 2,500 feet of the discharge area:Well LocationType of Well(Public/Private)Status(Active/Inactive)Safe Yield\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u200212.Water Supply Dataa)List sources of water supply and annual water consumption for the past five years.Water Sources      Year 1    Year 2    Year 3    Year 4    Year 5\u2002\u2002\u2002\u2002\u20021.\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u20022.\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u20023.\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002Total:\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002b)Please show the location of your water sources on the map described in question 10.D. Applicant Certification & Signature for General Permits BRP WP 80 & 81I, \u2002\u2002\u2002\u2002\u2002, am eligible to sign this application in accordance with 314 CMR 5.14(1) and by signing certify that:I certify under penalty of law that this document and all attachments were prepared under my direction or supervision in accordance with a system designed to assure that qualified personnel properly gather and evaluate the information submitted. Based on my diligent inquiry of the person or persons who manage the system, or those persons directly responsible for gathering the information, the information submitted is, to the best of my knowledge and belief, true, accurate, and complete. I am aware that there are significant penalties for submitting false information, including the possibility of fine and imprisonment for knowing violations. I am aware that submitting a false and misleading certification could lead to modification, suspension, or revocation of any permit granted pursuant to this application, as set forth in 314 CMR 5.12.I am aware that 314 CMR 2.08(4) provides that by submitting an application for general permit coverage, I waive any right to request an adjudicatory hearing regarding the Department\u2019s issuance or denial of general permit coverage. I understand I have the option to apply for an individual discharge permit; and, by doing so, I would not waive any right to request an adjudicatory hearing relative to the Department\u2019s issuance of the individual permit or permit determination.I shall maintain a copy of all records, regardless of form (e.g., both printed and electronic) upon which I rely in making the certifications in this Section D, until a final decision on this application has been issued by the Department and, if this application is approved, will do so thereafter in accordance with permit conditions.  Such records shall include without limitation all documents described in paragraph 1, above, and any supporting documentation provided to me by, or relied upon by, such qualified professionals as I may consult.I will be responsible for publication of public notice of the applicable permit proceedings as required by 314 CMR 2.06.Signature of Applicant\u2002\u2002\u2002\u2002\u2002Printed Name of Applicant\u2002\u2002\u2002\u2002\u2002Date Signed\u2002\u2002\u2002\u2002\u2002Name of Preparer\u2002\u2002\u2002\u2002\u2002Telephone\u2002\u2002\u2002\u2002\u2002Title of Preparer\u2002\u2002\u2002\u2002\u2002EmailE. Additional Application Certification for Privately Owned Wastewater Treatment Facilities (PWTFs) 1.I hereby acknowledge that it is my responsibility:to ensure that I understand the \u201cRequirements for Privately Owned Wastewater Treatment Facilities\u201d set forth at 314 CMR 5.15 (1), (2), and (3) and in related provisions of the Ground Water Discharge Permit Program regulations, 314 CMR 5.00, before I provide the certification in paragraph 2, below;to ensure that I have compiled, evaluated and/or established all pertinent documents, instruments, records and information necessary to provide the certification in paragraph 2, below;to consult with legal, technical and other qualified professionals, as necessary for me to understand and comply with the above requirements and to make the certification in paragraph 2, below.2.Based on the foregoing (select either a or b):  I hereby certify that I have fully and completely satisfied and complied with each and every applicable requirement set forth in 314 CMR 5.15 (1), (2), and (3) for coverage under a general permit issued for the construction, installation, modification, operation and maintenance of a PWTF; and will continue to do so until a final decision on this application has been issued by the Department and, if this application is approved, will do so thereafter in accordance with the general permit conditions.   I hereby acknowledge that no later than sixty (60) days from the date of this application, unless I request in writing and the Department agrees in writing to a later date, and in any case prior to the issuance of a public notice of my Notice of Intent requesting General Permit coverage pursuant to 314 CMR 2.06, \u201cPublic Notice and Comment,\u201d I am required to submit to the Department a fully signed and dated Supplemental Applicant Certification (Appendix A), which will include the certification in paragraph 2a, above, and the other paragraphs of this Section E.I shall maintain a copy of all records, regardless of form (e.g., both printed and electronic) upon which I rely in making the certifications in this Section E, until a final decision on this application has been issued by the Department and, if this application is approved, will do so thereafter in accordance with permit conditions.  Such records shall include without limitation all documents described in paragraph 1, above, and any supporting documentation provided to me by, or relied upon by, such qualified professionals as I may consult in certifying as to the information set forth in paragraph 2, above.Signature of Applicant\u2002\u2002\u2002\u2002\u2002Printed Name of Applicant\u2002\u2002\u2002\u2002\u2002Date SignedAppendix A: Supplemental Applicant Certification For Privately Owned Wastewater Treatment FacilitiesOn\u2002\u2002\u2002\u2002\u2002(insert date),the undersigned applicant submitted a BRP WP\u2002\u2002\u2002\u2002\u2002(insert permit type number)application for a\u2002\u2002\u2002\u2002\u2002(insert permit type name)for the\u2002\u2002\u2002\u2002\u2002(insert facility name)By its signature hereto, the undersigned applicant hereby incorporates this instrument into and makes this instrument a part of, said application.I certify under penalty of law that this document and all attachments were prepared under my direction or supervision in accordance with a system designed to assure that qualified personnel properly gather and evaluate the information submitted. Based on my diligent inquiry of the person or persons who manage the system, or those persons directly responsible for gathering the information, the information submitted is, to the best of my knowledge and belief, true, accurate, and complete. I am aware that there are significant penalties for submitting false information, including the possibility of fine and imprisonment for knowing violations. I will be responsible for publication of public notice of the applicable permit proceedings, as required by 314 CMR 2.06.I am aware that submitting a false and misleading certification could lead to modification, suspension, or revocation of any permit granted pursuant to this application, as set forth in 314 CMR 5.12.I hereby acknowledge that it is my responsibility:to ensure that I understand the \u201cRequirements for Privately Owned Wastewater Treatment Facilities\u201d set forth at 314 CMR 5.15 (1), (2), and (3) and in related provisions of the Ground Water Discharge Permit Program regulations, 314 CMR 5.00, before I provide the certification in paragraph 4, below;to ensure that I have compiled, evaluated and/or established all pertinent documents, instruments, records and information necessary to provide the certification in paragraph 4, below; and,to consult with legal, technical and other qualified professionals, as necessary for me to understand and comply with the above requirements and to make the certification in paragraph 4, below.4.Based on the foregoing:I hereby certify that I have fully and completely satisfied and complied with each and every applicable requirement set forth in 314 CMR 5.15(1), (2), and (3) for coverage under a general permit issued for the construction, installation, modification, operation and maintenance of a PWTF; and will continue to do so until a final decision on this application has been issued by the Department and, if this application is approved, will do so thereafter in accordance with the general permit conditions.Appendix A: Supplemental Applicant Certification For Privately Owned Wastewater Treatment Facilities5.I shall maintain a copy of all records, regardless of form (e.g., both printed and electronic) upon which I rely in making the certifications in this Supplemental Certification, until a final decision on this application has been issued by the Department and, if this application is approved, will do so thereafter in accordance with permit conditions.  Such records shall include without limitation all documents described in paragraph 1, above, and any supporting documentation provided to me by, or relied upon by, such qualified professionals as I may consult in certifying as to the information set forth in paragraph 4, above.Signature of Applicant\u2002\u2002\u2002\u2002\u2002Printed Name of Applicant\u2002\u2002\u2002\u2002\u2002Date Signed",
+        "total_table_text": "Massachusetts Department of Environmental Protection Bureau of Resource Protection \u2013 General Groundwater Discharge PermitsNotice of Intent for General Permit Coverage-New, Renewal or ModificationBRP WP 80 General Permit for Specified DischargesBRP WP 81 General Permit for Small Wastewater Treatment FacilitiesPlease do not mail. Submit through ePlace. See instructions.A. General InformationImportant: When filling out forms on the computer, use only the tab key to move your cursor - do not use the return key.1.Which permit category are you applying for:BRP WP 80General Permit for Specified DischargesBRP WP 81General Permit for Small Wastewater Treatment FacilitiesPlease note: In accordance with 314 CMR 5.09, these permit categories may require that a Hydrogeological Evaluation be submitted prior to the submittal of the permit application. Please see the application form and instructions for BRP WP 83. 2.  Applicant Information:In accordance with 314 CMR 5.09A(2), the owner of the treatment works or the owner of the activity resulting in a discharge of pollutants shall apply for the permit. For a Publicly Owned Treatment Works (POTW), the owner of the treatment works shall apply. For a Private Wastewater Treatment Facility, the applicant shall meet the requirements set forth in 314 CMR 5.15(1) through (3).\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002NameCompany Name (If applicable)\u2002\u2002\u2002\u2002\u2002Title\u2002\u2002\u2002\u2002\u2002Address\u2002\u2002\u2002\u2002\u2002City/Town\u2002\u2002\u2002\u2002\u2002State\u2002\u2002\u2002\u2002\u2002Zip Code\u2002\u2002\u2002\u2002\u2002Telephone\u2002\u2002\u2002\u2002\u2002Email Address3.Applicant Contact Information (if different from above):\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002Contact NameCompany Name (If applicable)\u2002\u2002\u2002\u2002\u2002Title\u2002\u2002\u2002\u2002\u2002Address\u2002\u2002\u2002\u2002\u2002City/Town\u2002\u2002\u2002\u2002\u2002State\u2002\u2002\u2002\u2002\u2002Zip Code\u2002\u2002\u2002\u2002\u2002Telephone\u2002\u2002\u2002\u2002\u2002Email Address4.The legal entity which owns this facility is:Private:   Individual      CorporationTrust        Partnership        Sole Proprietorship                        Other (specify):\u2002\u2002\u2002\u2002\u2002Public:    Municipality  Federal          State/County        Other (specify):\u2002\u2002\u2002\u2002\u2002A. General Information (cont.)5.Facility Information:\u2002\u2002\u2002\u2002\u2002Name of facility\u2002\u2002\u2002\u2002\u2002Address\u2002\u2002\u2002\u2002\u2002City/Town\u2002\u2002\u2002\u2002\u2002State\u2002\u2002\u2002\u2002\u2002Zip Code\u2002\u2002\u2002\u2002\u2002Telephone\u2002\u2002\u2002\u2002\u2002Email6.Facility Operator Information:Give the name, as it is legally referred to, of the person, firm, public organization or other entity which will operate the facility described in this application. If the facility owner is also the operator, write owner and list mailing address only if different from that listed in A.2 above. \u2002\u2002\u2002\u2002\u2002Operator Name\u2002\u2002\u2002\u2002\u2002Operator Company\u2002\u2002\u2002\u2002\u2002Address\u2002\u2002\u2002\u2002\u2002City/Town\u2002\u2002\u2002\u2002\u2002State\u2002\u2002\u2002\u2002\u2002Zip Code\u2002\u2002\u2002\u2002\u2002Telephone\u2002\u2002\u2002\u2002\u2002License Number\u2002\u2002\u2002\u2002\u2002Operator Grade\u2002\u2002\u2002\u2002\u2002Email address7.  Preparer of the Application: (If different from the Applicant noted in Part A.2)\u2002\u2002\u2002\u2002\u2002Preparer\u2019s Name\u2002\u2002\u2002\u2002\u2002Preparer\u2019s Company\u2002\u2002\u2002\u2002\u2002Address\u2002\u2002\u2002\u2002\u2002City/Town\u2002\u2002\u2002\u2002\u2002State\u2002\u2002\u2002\u2002\u2002Zip Code\u2002\u2002\u2002\u2002\u2002Telephone                                                                                    Preparer\u2019s Signature\u2002\u2002\u2002\u2002\u2002Email addressB. Project Information1. Does the project affect a site of historic or archeological significance, as defined in regulations of the Massachusetts Historical Commission, 950 CMR 71.00? Yes No2. Does this project require a filing under 301 CMR 11.00, the Massachusetts Environmental Policy Act? Yes NoIf yes, has a filing been made? (Please indicate the EOEEA File Number) Yes No\u2002\u2002\u2002\u2002\u2002EOEEA File NumberB. Project Information (cont.)3.Is this a RCRA facility as defined in 314 CMR 8.03?  Yes NoIf yes, submit the information on Form HW contained in 314 CMR 8.20 in accordance with the provisions of 314 CMR 8.08.4.Location of Discharge: Is the discharge for this facility within: A Public Water Supply Area?       Zone I      Zone A      Zone II    IWPA A private water supply area? A sole source aquifer?d.100 feet of an Outstanding Resource Water designated in 314 CMR 4.00, a Special Resource Water designated in 314 CMR 4.00, a cold-water fishery as defined in 314 CMR 9.02, a bathing beach as defined in 104 CMR 445.000, or a shellfish growing area as defined in 314 CMR 9.02? Yes Noe.A nitrogen-sensitive area as designated by the Department in accordance with 310 CMR 15.215? Yes Nof.An area where the Department has determined, based on a Total Maximum Daily Load or other technical report, that more stringent effluent limits than those set forth in the General Permit are required to achieve or maintain compliance with the Massachusetts Surface Water Quality Standards, 314 CMR 4.00? Yes NoIf the answer to any of these questions is Yes, STOP. File for either BRP WP 79 - Individual Sewage Treatment Plant, or BRP WP 85 - Other Individual Groundwater Discharge Permits.5. Improvements - Are you required by any Federal, State or local authority to meet any implementation schedule for the construction, upgrading or operation of wastewater treatment equipment or practices, or any other environmental programs which may affect the discharges described in this application? This includes, but is not limited to permit conditions, administrative or enforcement orders, enforcement compliance schedule letters, stipulations, court orders, and grant or loan conditions. Yes NoIf yes, answer the following:a)Description of order or agreement (include enforcement document number, if applicable):\u2002\u2002\u2002\u2002\u2002B. Project Information (cont.)b)Identification No. of Affected Treatment Facility\u2002\u2002\u2002\u2002\u2002c)Description of Project\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002Final Compliance Date6. Has a hydrogeologic study been performed to determine the potential impact of the discharge or activity on the groundwater? Yes :\u2002\u2002\u2002\u2002\u2002Application Transmittal Number\u2002\u2002\u2002\u2002\u2002Date of ApprovalPlease attach a copy of the DEP Hydrogeologic Report Approval letter. NoIf no, STOP.  Please Note: In accordance with 314 CMR 5.09, these permit categories may require that a Hydrogeological Evaluation be submitted to the Department prior to the submittal of the permit application. Please see the application form and instructions for BRP WP 83.7.Are there any groundwater monitoring wells currently in place in the vicinity of the discharge or proposed discharge? Yes If yes, please attach information on the type and location of the wells and available monitoring data.  No8. Have plans and specifications for the treatment works been approved (see instructions) by the Department; or if approved prior to July 1975, by the Department of Public Health?  YesIf yes, please attach copy of plans and specifications and approval letter. No9.Have opportunities for reclaimed water been evaluated?  Yes No10.Is there a local regulation governing the construction of wastewater treatment facilities?  YesIf yes, please include a copy of the local approval. NoC. Facility Information1.Facility Status: Existing        Proposed        Proposed Modification2.When did or when will this discharge begin?\u2002\u2002\u2002\u2002\u2002Date of Startup3.Check type of establishment(s) producing or contributing to discharge:Residential: Condominium     Apartment      Elderly Housing    Nursing Home Other:\u2002\u2002\u2002\u2002\u2002Total number of bedrooms:\u2002\u2002\u2002\u2002\u2002Municipal  School Business\u2002\u2002\u2002\u2002\u2002Describe nature of businessOther (specify): \u2002\u2002\u2002\u2002\u2002Please note: In accordance with 314 CMR 5.15, a permittee responsible for the operation of a Private Wastewater Treatment Facility (PWTF) may be required to establish and maintain Financial Assurance mechanisms.4.Type of Discharge (check one box only): Sewage  Carwash        Coin Operated Laundromat5.Design Flow:a)Daily Maximum flow (gpd):\u2002\u2002\u2002\u2002\u2002STOP. If the facility is either a Publicly Owned Treatment Works (POTW) or a Privately Owned Sewage Treatment Facility (PWTF) solely treating sewage, and design flow is > 50,000 gpd, file BRP WP 79 \u2013 Individual Permit for Sewage Treatment Facility. b) Discharge occurs all year Discharge is seasonal \u2002\u2002\u2002\u2002\u2002List months discharge occurs/Number of days per week6.Basis for design flow: The State Environmental Code \u2013 Title 5 Other:\u2002\u2002\u2002\u2002\u2002SpecifyC. Facility Information (cont.)7.Type of treatment and disposal system for discharge to ground:\u2002\u2002\u2002\u2002\u20028.Location and method of wastewater treatment solids disposal:\u2002\u2002\u2002\u2002\u20029.If a commercial establishment applying for a BRP WP 81 permit:a)Are any types of wastewater other than sanitary sewage produced? YesIf Yes, STOP and instead file for BRP WP 79. No b)Are any hazardous wastes generated? Yes No10.Does or will the treatment/disposal facility receive industrial wastes?  Yes No11.Location of Facility:a)GPS Coordinates: 1)Enter Latitude and Longitude to the nearest whole second:Wastewater Treatment Facility:\u2002\u2002\u2002\u2002\u2002Latitude  \u2002\u2002\u2002\u2002\u2002LongitudeEffluent Disposal Area:\u2002\u2002\u2002\u2002\u2002Latitude      \u2002\u2002\u2002\u2002\u2002Longitude2) Provide a narrative description of the site and the feature to be permitted. As an example: \u201cThe site is on the west side of Main Street, the third building north of High Street. The disposal field lies 100 feet off the southwest corner of the building.\u201d3) Attach a site map based on the MassGIS Coordinate Information Tool that clearly indicates the site. The Coordinate Information Tool is available at https://maps.massgis.digital.mass.gov/images/dep/xyinfo/get_xy.htmlC. Facility Information (cont.)b) Provide a topographic map or maps of the area extending at least to one mile beyond the property boundaries of the facility which clearly show the following:The legal boundaries of the facility;The location and serial number of each of your existing and proposed intake and discharge structures;All hazardous waste management facilities;All springs and surface water bodies in the area, plus all drinking water wells within one mile of the facility which are identified in the public record or otherwise known to you.All Zone II\u2019s or IWPA\u2019s.If an intake or discharge structure, hazardous waste disposal site, or injection well associated with the facility is located more than one mile from the plant, include it on the map, if possible. If not, attach additional sheets describing the location of the structure, disposal site, or well, and identify the U.S. Geological Survey (or other) map corresponding to the location.c)Please list any public or private drinking water supply wells within 2,500 feet of the discharge area:Well LocationType of Well(Public/Private)Status(Active/Inactive)Safe Yield\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u200212.Water Supply Dataa)List sources of water supply and annual water consumption for the past five years.Water Sources      Year 1    Year 2    Year 3    Year 4    Year 5\u2002\u2002\u2002\u2002\u20021.\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u20022.\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u20023.\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002Total:\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002\u2002b)Please show the location of your water sources on the map described in question 10.D. Applicant Certification & Signature for General Permits BRP WP 80 & 81I, \u2002\u2002\u2002\u2002\u2002, am eligible to sign this application in accordance with 314 CMR 5.14(1) and by signing certify that:I certify under penalty of law that this document and all attachments were prepared under my direction or supervision in accordance with a system designed to assure that qualified personnel properly gather and evaluate the information submitted. Based on my diligent inquiry of the person or persons who manage the system, or those persons directly responsible for gathering the information, the information submitted is, to the best of my knowledge and belief, true, accurate, and complete. I am aware that there are significant penalties for submitting false information, including the possibility of fine and imprisonment for knowing violations. I am aware that submitting a false and misleading certification could lead to modification, suspension, or revocation of any permit granted pursuant to this application, as set forth in 314 CMR 5.12.I am aware that 314 CMR 2.08(4) provides that by submitting an application for general permit coverage, I waive any right to request an adjudicatory hearing regarding the Department\u2019s issuance or denial of general permit coverage. I understand I have the option to apply for an individual discharge permit; and, by doing so, I would not waive any right to request an adjudicatory hearing relative to the Department\u2019s issuance of the individual permit or permit determination.I shall maintain a copy of all records, regardless of form (e.g., both printed and electronic) upon which I rely in making the certifications in this Section D, until a final decision on this application has been issued by the Department and, if this application is approved, will do so thereafter in accordance with permit conditions.  Such records shall include without limitation all documents described in paragraph 1, above, and any supporting documentation provided to me by, or relied upon by, such qualified professionals as I may consult.I will be responsible for publication of public notice of the applicable permit proceedings as required by 314 CMR 2.06.Signature of Applicant\u2002\u2002\u2002\u2002\u2002Printed Name of Applicant\u2002\u2002\u2002\u2002\u2002Date Signed\u2002\u2002\u2002\u2002\u2002Name of Preparer\u2002\u2002\u2002\u2002\u2002Telephone\u2002\u2002\u2002\u2002\u2002Title of Preparer\u2002\u2002\u2002\u2002\u2002EmailE. Additional Application Certification for Privately Owned Wastewater Treatment Facilities (PWTFs) 1.I hereby acknowledge that it is my responsibility:to ensure that I understand the \u201cRequirements for Privately Owned Wastewater Treatment Facilities\u201d set forth at 314 CMR 5.15 (1), (2), and (3) and in related provisions of the Ground Water Discharge Permit Program regulations, 314 CMR 5.00, before I provide the certification in paragraph 2, below;to ensure that I have compiled, evaluated and/or established all pertinent documents, instruments, records and information necessary to provide the certification in paragraph 2, below;to consult with legal, technical and other qualified professionals, as necessary for me to understand and comply with the above requirements and to make the certification in paragraph 2, below.2.Based on the foregoing (select either a or b):  I hereby certify that I have fully and completely satisfied and complied with each and every applicable requirement set forth in 314 CMR 5.15 (1), (2), and (3) for coverage under a general permit issued for the construction, installation, modification, operation and maintenance of a PWTF; and will continue to do so until a final decision on this application has been issued by the Department and, if this application is approved, will do so thereafter in accordance with the general permit conditions.   I hereby acknowledge that no later than sixty (60) days from the date of this application, unless I request in writing and the Department agrees in writing to a later date, and in any case prior to the issuance of a public notice of my Notice of Intent requesting General Permit coverage pursuant to 314 CMR 2.06, \u201cPublic Notice and Comment,\u201d I am required to submit to the Department a fully signed and dated Supplemental Applicant Certification (Appendix A), which will include the certification in paragraph 2a, above, and the other paragraphs of this Section E.I shall maintain a copy of all records, regardless of form (e.g., both printed and electronic) upon which I rely in making the certifications in this Section E, until a final decision on this application has been issued by the Department and, if this application is approved, will do so thereafter in accordance with permit conditions.  Such records shall include without limitation all documents described in paragraph 1, above, and any supporting documentation provided to me by, or relied upon by, such qualified professionals as I may consult in certifying as to the information set forth in paragraph 2, above.Signature of Applicant\u2002\u2002\u2002\u2002\u2002Printed Name of Applicant\u2002\u2002\u2002\u2002\u2002Date SignedAppendix A: Supplemental Applicant Certification For Privately Owned Wastewater Treatment FacilitiesOn\u2002\u2002\u2002\u2002\u2002(insert date),the undersigned applicant submitted a BRP WP\u2002\u2002\u2002\u2002\u2002(insert permit type number)application for a\u2002\u2002\u2002\u2002\u2002(insert permit type name)for the\u2002\u2002\u2002\u2002\u2002(insert facility name)By its signature hereto, the undersigned applicant hereby incorporates this instrument into and makes this instrument a part of, said application.I certify under penalty of law that this document and all attachments were prepared under my direction or supervision in accordance with a system designed to assure that qualified personnel properly gather and evaluate the information submitted. Based on my diligent inquiry of the person or persons who manage the system, or those persons directly responsible for gathering the information, the information submitted is, to the best of my knowledge and belief, true, accurate, and complete. I am aware that there are significant penalties for submitting false information, including the possibility of fine and imprisonment for knowing violations. I will be responsible for publication of public notice of the applicable permit proceedings, as required by 314 CMR 2.06.I am aware that submitting a false and misleading certification could lead to modification, suspension, or revocation of any permit granted pursuant to this application, as set forth in 314 CMR 5.12.I hereby acknowledge that it is my responsibility:to ensure that I understand the \u201cRequirements for Privately Owned Wastewater Treatment Facilities\u201d set forth at 314 CMR 5.15 (1), (2), and (3) and in related provisions of the Ground Water Discharge Permit Program regulations, 314 CMR 5.00, before I provide the certification in paragraph 4, below;to ensure that I have compiled, evaluated and/or established all pertinent documents, instruments, records and information necessary to provide the certification in paragraph 4, below; and,to consult with legal, technical and other qualified professionals, as necessary for me to understand and comply with the above requirements and to make the certification in paragraph 4, below.4.Based on the foregoing:I hereby certify that I have fully and completely satisfied and complied with each and every applicable requirement set forth in 314 CMR 5.15(1), (2), and (3) for coverage under a general permit issued for the construction, installation, modification, operation and maintenance of a PWTF; and will continue to do so until a final decision on this application has been issued by the Department and, if this application is approved, will do so thereafter in accordance with the general permit conditions.Appendix A: Supplemental Applicant Certification For Privately Owned Wastewater Treatment Facilities5.I shall maintain a copy of all records, regardless of form (e.g., both printed and electronic) upon which I rely in making the certifications in this Supplemental Certification, until a final decision on this application has been issued by the Department and, if this application is approved, will do so thereafter in accordance with permit conditions.  Such records shall include without limitation all documents described in paragraph 1, above, and any supporting documentation provided to me by, or relied upon by, such qualified professionals as I may consult in certifying as to the information set forth in paragraph 4, above.Signature of Applicant\u2002\u2002\u2002\u2002\u2002Printed Name of Applicant\u2002\u2002\u2002\u2002\u2002Date Signed",
+        "unusual_elements": [
+          "embedded_objects",
+          "embedded_objects",
+          "document_protection"
+        ]
+      },
+      "explanation": "Document has 800 paragraphs inside tables (2722 words) but only 1 direct body paragraphs (2722 words). Our parser only counts top-level body paragraphs and misses table content entirely.",
+      "recommendation": "fix_parser_table_support"
+    },
+    {
+      "id": "107c77a5f401606457375e34fd95e17729cd248d4129ad8d97b1157f66d76e8c",
+      "path": "downloaded/107c77a5f401606457375e34fd95e17729cd248d4129ad8d97b1157f66d76e8c.docx",
+      "classification": "truly_bad",
+      "confidence": "high",
+      "findings": {
+        "zip_valid": true,
+        "word_dir_contents": [
+          {
+            "name": "word/document.xml",
+            "size": 4300
+          },
+          {
+            "name": "word/_rels/document.xml.rels",
+            "size": 1376
+          },
+          {
+            "name": "word/theme/theme1.xml",
+            "size": 7076
+          },
+          {
+            "name": "word/settings.xml",
+            "size": 2957
+          },
+          {
+            "name": "word/numbering.xml",
+            "size": 5757
+          },
+          {
+            "name": "word/styles.xml",
+            "size": 47871
+          },
+          {
+            "name": "word/webSettings.xml",
+            "size": 894
+          },
+          {
+            "name": "word/fontTable.xml",
+            "size": 1652
+          }
+        ],
+        "document_xml_paragraphs": 2,
+        "document_xml_text_runs": 2,
+        "direct_body_paragraphs": 2,
+        "table_paragraphs": 0,
+        "headers": 0,
+        "footers": 0,
+        "footnotes": 0,
+        "endnotes": 0,
+        "comments": 0,
+        "altChunk": false,
+        "embedded_objects": false,
+        "content_controls": false,
+        "images_with_text": false,
+        "drawingml_textboxes": false,
+        "vml_textboxes": false,
+        "core_title": "",
+        "largest_text_block": "CD3Relevant Planning Application Consultation Reponses",
+        "total_body_text": "CD3Relevant Planning Application Consultation Reponses",
+        "total_table_text": "",
+        "unusual_elements": []
+      },
+      "explanation": "Document has only 5 words in 2 paragraphs, no headers/footers/notes, and no alternative content sources. Truly minimal.",
+      "recommendation": "remove"
+    },
+    {
+      "id": "6972ad8638a077857e6a5f6e0d12746640bba17ca0eaaf5680f2408acbbc62d6",
+      "path": "downloaded/6972ad8638a077857e6a5f6e0d12746640bba17ca0eaaf5680f2408acbbc62d6.docx",
+      "classification": "truly_bad",
+      "confidence": "high",
+      "findings": {
+        "zip_valid": true,
+        "word_dir_contents": [
+          {
+            "name": "word/document.xml",
+            "size": 5582
+          },
+          {
+            "name": "word/diagrams/data1.xml",
+            "size": 35782
+          },
+          {
+            "name": "word/_rels/document.xml.rels",
+            "size": 2332
+          },
+          {
+            "name": "word/footnotes.xml",
+            "size": 2722
+          },
+          {
+            "name": "word/endnotes.xml",
+            "size": 2716
+          },
+          {
+            "name": "word/header1.xml",
+            "size": 5326
+          },
+          {
+            "name": "word/footer1.xml",
+            "size": 7878
+          },
+          {
+            "name": "word/_rels/header1.xml.rels",
+            "size": 290
+          },
+          {
+            "name": "word/_rels/footer1.xml.rels",
+            "size": 489
+          },
+          {
+            "name": "word/diagrams/layout1.xml",
+            "size": 9463
+          },
+          {
+            "name": "word/diagrams/quickStyle1.xml",
+            "size": 20749
+          },
+          {
+            "name": "word/diagrams/colors1.xml",
+            "size": 18219
+          },
+          {
+            "name": "word/diagrams/drawing1.xml",
+            "size": 18143
+          },
+          {
+            "name": "word/media/image1.jpeg",
+            "size": 1255203
+          },
+          {
+            "name": "word/theme/theme1.xml",
+            "size": 7076
+          },
+          {
+            "name": "word/settings.xml",
+            "size": 5430
+          },
+          {
+            "name": "word/numbering.xml",
+            "size": 10051
+          },
+          {
+            "name": "word/styles.xml",
+            "size": 32325
+          },
+          {
+            "name": "word/webSettings.xml",
+            "size": 655
+          },
+          {
+            "name": "word/fontTable.xml",
+            "size": 2742
+          }
+        ],
+        "document_xml_paragraphs": 8,
+        "document_xml_text_runs": 3,
+        "direct_body_paragraphs": 8,
+        "table_paragraphs": 0,
+        "headers": 0,
+        "footers": 17,
+        "footnotes": 0,
+        "endnotes": 0,
+        "comments": 0,
+        "altChunk": false,
+        "embedded_objects": false,
+        "content_controls": false,
+        "images_with_text": false,
+        "drawingml_textboxes": false,
+        "vml_textboxes": false,
+        "core_title": "",
+        "largest_text_block": "National Asthma and COPD Audit Programme (NACAP)",
+        "total_body_text": "National Asthma and COPD Audit Programme (NACAP)SMART aims",
+        "total_table_text": "",
+        "unusual_elements": []
+      },
+      "explanation": "Document has only 8 words in 8 paragraphs with negligible header/footer text (17 words). No substantive content.",
+      "recommendation": "remove"
+    },
+    {
+      "id": "b8d821cc114572babfdce1449a87015cf069b06ce230d03957e260186834bdf0",
+      "path": "downloaded/b8d821cc114572babfdce1449a87015cf069b06ce230d03957e260186834bdf0.docx",
+      "classification": "truly_bad",
+      "confidence": "high",
+      "findings": {
+        "zip_valid": true,
+        "word_dir_contents": [
+          {
+            "name": "word/_rels/document.xml.rels",
+            "size": 1743
+          },
+          {
+            "name": "word/document.xml",
+            "size": 3535
+          },
+          {
+            "name": "word/footer2.xml",
+            "size": 3683
+          },
+          {
+            "name": "word/_rels/header1.xml.rels",
+            "size": 289
+          },
+          {
+            "name": "word/footer1.xml",
+            "size": 3455
+          },
+          {
+            "name": "word/footnotes.xml",
+            "size": 2881
+          },
+          {
+            "name": "word/endnotes.xml",
+            "size": 2875
+          },
+          {
+            "name": "word/header1.xml",
+            "size": 7370
+          },
+          {
+            "name": "word/theme/theme1.xml",
+            "size": 8393
+          },
+          {
+            "name": "word/media/image1.png",
+            "size": 3809
+          },
+          {
+            "name": "word/settings.xml",
+            "size": 4218
+          },
+          {
+            "name": "word/fontTable.xml",
+            "size": 2733
+          },
+          {
+            "name": "word/webSettings.xml",
+            "size": 13891
+          },
+          {
+            "name": "word/numbering.xml",
+            "size": 44863
+          },
+          {
+            "name": "word/styles.xml",
+            "size": 42029
+          }
+        ],
+        "document_xml_paragraphs": 1,
+        "document_xml_text_runs": 4,
+        "direct_body_paragraphs": 1,
+        "table_paragraphs": 0,
+        "headers": 3,
+        "footers": 3,
+        "footnotes": 0,
+        "endnotes": 0,
+        "comments": 0,
+        "altChunk": false,
+        "embedded_objects": false,
+        "content_controls": false,
+        "images_with_text": false,
+        "drawingml_textboxes": false,
+        "vml_textboxes": false,
+        "core_title": "",
+        "largest_text_block": "[DOCJURIS_EXCEPTION_TABLE]",
+        "total_body_text": "[DOCJURIS_EXCEPTION_TABLE]",
+        "total_table_text": "",
+        "unusual_elements": []
+      },
+      "explanation": "Document has only 1 words in 1 paragraphs with negligible header/footer text (6 words). No substantive content.",
+      "recommendation": "remove"
+    },
+    {
+      "id": "471d4e3201b74974ac528db0c49007b3d0e00137ccbfc5b135dc3740bfd997bd",
+      "path": "downloaded/471d4e3201b74974ac528db0c49007b3d0e00137ccbfc5b135dc3740bfd997bd.docx",
+      "classification": "parsing_issue",
+      "confidence": "high",
+      "findings": {
+        "zip_valid": true,
+        "word_dir_contents": [
+          {
+            "name": "word/_rels/document.xml.rels",
+            "size": 1095
+          },
+          {
+            "name": "word/document.xml",
+            "size": 1443221
+          },
+          {
+            "name": "word/theme/theme1.xml",
+            "size": 7077
+          },
+          {
+            "name": "word/settings.xml",
+            "size": 2439
+          },
+          {
+            "name": "word/stylesWithEffects.xml",
+            "size": 57813
+          },
+          {
+            "name": "word/styles.xml",
+            "size": 57060
+          },
+          {
+            "name": "word/fontTable.xml",
+            "size": 1186
+          },
+          {
+            "name": "word/webSettings.xml",
+            "size": 1245
+          }
+        ],
+        "document_xml_paragraphs": 1490,
+        "document_xml_text_runs": 1498,
+        "direct_body_paragraphs": 2,
+        "table_paragraphs": 1488,
+        "headers": 0,
+        "footers": 0,
+        "footnotes": 0,
+        "endnotes": 0,
+        "comments": 0,
+        "altChunk": false,
+        "embedded_objects": false,
+        "content_controls": false,
+        "images_with_text": false,
+        "drawingml_textboxes": false,
+        "vml_textboxes": false,
+        "core_title": "",
+        "largest_text_block": "Supplementary Table 2. The 92 inflammation proteins results, Mann\u2013Whitney U test, ratios, sensitivity and specificity. All results are shown as normalised protein expression (NPX).",
+        "total_body_text": "Supplementary Table 2. The 92 inflammation proteins results, Mann\u2013Whitney U test, ratios, sensitivity and specificity. All results are shown as normalised protein expression (NPX).ProteinPat 1 CT+Pat 2 CT+Pat 3 CT+Pat 4 CT+Pat 5 CT+Pat 6 CT-Pat 7 CT-Pat 8 CT-Pat 9 CT-Median CT+Median CT-Median ratio: Mann USE %SP %CCL4267.67239.88229.34160.95123.7869.6980.1091.38118.47229.3485.742.670.016100100MCP-17183.654011.444699.055984.254099.022270.032478.482669.323137.874699.052573.901.830.016100100SLAMF113.1012.4718.1012.9114.159.4410.7210.9810.1813.1010.451.250.016100100IL-1073.6443.4519.2438.4222.1910.0914.3311.069.4338.4210.573.630.016100100MIP-1 alpha21.178.3934.6612.249.054.225.026.844.9912.245.002.450.016100100CXCL101229.76358.113020.34775.611152.46179.78555.61328.75165.191152.46254.264.530.03210075SIRT292.05408.76159.93117.04149.4549.55107.8575.8277.73149.4576.781.950.03210075IL-6211.0122.8027.4115.5361.455.2014.8010.5326.5727.4112.662.160.06310075IL-12B58.3829.5162.1244.0617.6616.6733.8518.1611.8544.0617.412.530.11110050CCL25225.34232.64418.35269.71101.98109.0385.68184.95133.23232.64121.131.920.11110025IL-10RB229.18193.49218.03248.61136.46133.15192.38141.22174.49218.03157.861.380.11110025MCP-22775.113198.931683.341543.021527.171277.062141.701011.231225.601683.341251.331.350.11110075NT-313.249.509.6912.428.558.516.2511.307.859.698.181.180.11110075CD401533.384830.562876.501681.401119.641057.922163.591057.341034.601681.401057.631.590.11110075FGF-191288.53797.351422.86664.2880.54414.57172.27228.00496.26797.35321.292.480.1901000CCL193105.41771.742249.961326.162410.38821.391020.281788.90509.952249.96920.842.440.19010025VEGF-A4460.423349.436995.066263.483924.373980.993217.933775.553658.514460.423717.031.200.19010025MCP-314.517.7948.1331.7224.1011.7210.1414.4012.5324.1012.121.990.1901000Flt3L1794.26756.561753.521159.04743.50570.81306.931149.93893.331159.04732.071.580.19010050CSF-1503.97452.05605.96508.64357.77317.36458.57436.03412.86503.97424.441.190.19010025AXIN18.9245.7723.4121.6213.349.3218.116.7311.8821.6210.602.040.19010025uPA2954.882670.874104.812850.931542.182220.861792.212547.812377.162850.932299.011.240.1901000IL-15RA5.593.838.265.343.043.143.823.163.865.343.491.530.2861000MMP-18.253.2610.163.613.943.473.553.952.923.943.511.120.28610025IL-10RA3.323.243.245.203.244.106.645.093.243.244.590.710.2861000TRAIL734.41630.981182.19824.01557.78517.26640.38704.50572.32734.41606.351.210.28610025STAMPB50.72207.3182.2757.3082.0236.7662.5057.0458.1282.0257.581.420.28610025IL-1 alpha1.601.602.401.602.611.941.604.282.821.602.380.670.2861000CASP-832.71145.4276.7428.4869.6221.4032.2851.7757.8869.6242.031.660.28610025CXCL9724.04184.341754.21220.75149.8378.66219.62421.14102.36220.75160.991.370.28610050CXCL11195.701372.26877.21474.10618.20417.47849.80542.70858.16877.21696.251.260.28610025CX3CL1224.94173.00172.19122.7358.9192.01104.26152.84106.96172.19105.611.630.2861000HGF181.86198.56302.39222.14145.01141.98164.85139.38247.72198.56153.421.290.286100504E-BP1161.72377.81198.55183.91263.30117.27183.88361.42153.74198.55168.811.180.28610050CCL11780.04797.371013.57765.94572.46897.47775.27971.81995.48780.04934.640.830.4131000hGDNF4.685.958.437.216.068.247.676.747.146.067.410.820.4131000TNFRSF9319.83135.70355.58210.29109.12121.29236.36102.69139.90210.29130.601.610.41310025CDCP152.1810.6841.5517.4917.5514.0712.7128.2212.0017.5513.391.310.4131000TRANCE28.9116.6535.0654.1522.6530.2913.8625.5117.6228.9121.561.340.41310025IFN-gamma2.992.9913.195.622.992.992.992.992.992.992.991.000.4131000CCL232073.331484.973283.261209.731106.471668.131533.21989.591078.251484.971305.731.140.41310050CD244163.36361.08330.38214.94140.89127.49252.19152.43206.80214.94179.611.200.41310025IL-8492.98384.40354.57210.68211.64164.96188.58236.66412.80354.57212.621.670.41310050IL-132.072.072.072.212.072.072.0730.963.042.072.550.810.4131000LAP TGF-beta-1366.301078.02820.70673.68281.95309.98669.03327.77579.94673.68453.851.480.4131000IL-17A2.172.181.473.351.472.061.891.641.472.171.761.230.4131000TGFA7.1451.9224.747.768.676.349.606.9722.828.678.281.050.41310050CST5534.00172.63337.25231.65198.48167.98158.11373.19208.01231.65188.001.230.41310050CXCL115386.832930.207942.924951.693152.721889.817210.793483.672338.684951.692911.171.700.41310050CCL284.704.713.823.384.603.392.578.923.084.603.241.420.41310050IL-242.382.382.382.924.532.382.386.507.202.384.440.540.5561000FGF-2310.105.3119.357.383.294.696.267.544.947.385.601.320.5561000IL-2RB2.303.892.083.432.032.032.872.402.032.302.221.040.5561000IL-334.164.164.164.164.164.164.167.004.164.164.161.000.5561000DNER254.76468.54291.84431.05273.73386.97378.36445.25324.70291.84382.660.760.5561000IL-18R1194.30225.40243.81211.67143.87132.25267.61161.58161.38211.67161.481.310.55610025TWEAK1557.622917.661913.091756.73881.021436.662514.321168.271517.561756.731477.111.190.5561000LIF-R24.2119.5020.5418.4217.8318.6816.4227.4417.1319.5017.911.090.55610050ADA62.92218.43229.71109.7886.9178.53114.1994.33108.09109.78101.211.080.7301000EN-RAGE30.60548.04121.0044.95125.1933.6161.1638.42127.08121.0049.792.430.7301000IL-76.188.4210.539.876.337.7716.317.688.738.428.251.020.7301000ARTN1.183.091.181.181.181.181.181.181.181.181.181.000.7301000TNF1.941.941.942.341.941.941.941.941.941.941.941.000.7301000IL-20RA2.242.242.242.502.242.242.242.242.242.242.241.000.7301000IL-42.702.702.7014.622.702.702.743.412.702.702.720.990.7301000ST1A15.9337.2521.167.586.316.2215.326.2812.627.589.450.800.7301000IL-17C6.734.887.4823.003.799.644.476.013.976.735.241.280.7301000SCF530.15466.31312.33547.51217.72356.13382.62364.10359.65466.31361.871.290.7301000CD538.1196.2943.8665.7732.8852.9442.4227.7157.4843.8647.680.920.73010025OPG3717.601970.613310.141761.091296.271319.792020.802904.941703.781970.611862.291.060.7301000PD-L17.438.4713.898.507.605.928.7212.096.348.477.531.120.73010050Beta-NGF4.623.495.095.982.813.464.335.173.284.623.901.190.7301000CD625.66244.6945.5881.0136.9968.0580.8340.2296.6545.5874.440.610.7301000CXCL510824.176883.164120.607988.031730.853857.835975.007157.205812.686883.165893.841.170.7301000MMP-10132.38271.22719.16233.3272.53172.92154.93317.31356.92233.32245.120.950.7301000TNFSF1411.16101.2948.9818.9516.2528.3637.0518.7960.5618.9532.710.580.7301000OSM19.9174.3092.3447.2964.0645.0226.2236.50135.1164.0640.761.570.7301000NRTN3.133.133.134.765.343.133.538.353.133.133.330.940.9051000TNFB20.8318.6421.7243.3415.4724.9919.0418.5822.8020.8320.921.000.9051000FGF-55.903.936.126.675.165.158.366.503.945.905.821.010.9051000CXCL61095.793757.211441.391541.77839.111017.612989.081395.802316.581441.391856.190.780.9051000BDNF2.422430.47893.42169.022.423442.19143.4354.6210.46169.0299.031.710.9051000TSLP3.082.862.863.412.862.862.862.893.632.862.881.000.9051000FGF-21825.165220.6332.2396.05114.909.912222.441488.99817.53114.901153.260.100.90510025MCP-464.2987.4058.99125.1562.8279.0372.8847.3773.0564.2972.970.881.00010025CCL20935.67144.33182.24254.1165.64161.70144.39368.27137.51182.24153.041.191.0001000IL-18364.77507.34659.67512.11321.92284.02356.26520.96574.07507.34438.611.161.00010025IL-202.262.262.263.297.562.262.2610.902.262.262.261.001.0001000LIF2.072.072.074.372.072.073.142.072.072.072.071.001.0001000IL-53.183.183.583.183.183.183.183.183.423.183.181.001.0001000IL-23.273.273.273.273.273.273.273.273.273.273.271.001.0001000IL-22 RA14.704.704.704.704.704.704.704.704.704.704.701.001.0001000",
+        "total_table_text": "ProteinPat 1 CT+Pat 2 CT+Pat 3 CT+Pat 4 CT+Pat 5 CT+Pat 6 CT-Pat 7 CT-Pat 8 CT-Pat 9 CT-Median CT+Median CT-Median ratio: Mann USE %SP %CCL4267.67239.88229.34160.95123.7869.6980.1091.38118.47229.3485.742.670.016100100MCP-17183.654011.444699.055984.254099.022270.032478.482669.323137.874699.052573.901.830.016100100SLAMF113.1012.4718.1012.9114.159.4410.7210.9810.1813.1010.451.250.016100100IL-1073.6443.4519.2438.4222.1910.0914.3311.069.4338.4210.573.630.016100100MIP-1 alpha21.178.3934.6612.249.054.225.026.844.9912.245.002.450.016100100CXCL101229.76358.113020.34775.611152.46179.78555.61328.75165.191152.46254.264.530.03210075SIRT292.05408.76159.93117.04149.4549.55107.8575.8277.73149.4576.781.950.03210075IL-6211.0122.8027.4115.5361.455.2014.8010.5326.5727.4112.662.160.06310075IL-12B58.3829.5162.1244.0617.6616.6733.8518.1611.8544.0617.412.530.11110050CCL25225.34232.64418.35269.71101.98109.0385.68184.95133.23232.64121.131.920.11110025IL-10RB229.18193.49218.03248.61136.46133.15192.38141.22174.49218.03157.861.380.11110025MCP-22775.113198.931683.341543.021527.171277.062141.701011.231225.601683.341251.331.350.11110075NT-313.249.509.6912.428.558.516.2511.307.859.698.181.180.11110075CD401533.384830.562876.501681.401119.641057.922163.591057.341034.601681.401057.631.590.11110075FGF-191288.53797.351422.86664.2880.54414.57172.27228.00496.26797.35321.292.480.1901000CCL193105.41771.742249.961326.162410.38821.391020.281788.90509.952249.96920.842.440.19010025VEGF-A4460.423349.436995.066263.483924.373980.993217.933775.553658.514460.423717.031.200.19010025MCP-314.517.7948.1331.7224.1011.7210.1414.4012.5324.1012.121.990.1901000Flt3L1794.26756.561753.521159.04743.50570.81306.931149.93893.331159.04732.071.580.19010050CSF-1503.97452.05605.96508.64357.77317.36458.57436.03412.86503.97424.441.190.19010025AXIN18.9245.7723.4121.6213.349.3218.116.7311.8821.6210.602.040.19010025uPA2954.882670.874104.812850.931542.182220.861792.212547.812377.162850.932299.011.240.1901000IL-15RA5.593.838.265.343.043.143.823.163.865.343.491.530.2861000MMP-18.253.2610.163.613.943.473.553.952.923.943.511.120.28610025IL-10RA3.323.243.245.203.244.106.645.093.243.244.590.710.2861000TRAIL734.41630.981182.19824.01557.78517.26640.38704.50572.32734.41606.351.210.28610025STAMPB50.72207.3182.2757.3082.0236.7662.5057.0458.1282.0257.581.420.28610025IL-1 alpha1.601.602.401.602.611.941.604.282.821.602.380.670.2861000CASP-832.71145.4276.7428.4869.6221.4032.2851.7757.8869.6242.031.660.28610025CXCL9724.04184.341754.21220.75149.8378.66219.62421.14102.36220.75160.991.370.28610050CXCL11195.701372.26877.21474.10618.20417.47849.80542.70858.16877.21696.251.260.28610025CX3CL1224.94173.00172.19122.7358.9192.01104.26152.84106.96172.19105.611.630.2861000HGF181.86198.56302.39222.14145.01141.98164.85139.38247.72198.56153.421.290.286100504E-BP1161.72377.81198.55183.91263.30117.27183.88361.42153.74198.55168.811.180.28610050CCL11780.04797.371013.57765.94572.46897.47775.27971.81995.48780.04934.640.830.4131000hGDNF4.685.958.437.216.068.247.676.747.146.067.410.820.4131000TNFRSF9319.83135.70355.58210.29109.12121.29236.36102.69139.90210.29130.601.610.41310025CDCP152.1810.6841.5517.4917.5514.0712.7128.2212.0017.5513.391.310.4131000TRANCE28.9116.6535.0654.1522.6530.2913.8625.5117.6228.9121.561.340.41310025IFN-gamma2.992.9913.195.622.992.992.992.992.992.992.991.000.4131000CCL232073.331484.973283.261209.731106.471668.131533.21989.591078.251484.971305.731.140.41310050CD244163.36361.08330.38214.94140.89127.49252.19152.43206.80214.94179.611.200.41310025IL-8492.98384.40354.57210.68211.64164.96188.58236.66412.80354.57212.621.670.41310050IL-132.072.072.072.212.072.072.0730.963.042.072.550.810.4131000LAP TGF-beta-1366.301078.02820.70673.68281.95309.98669.03327.77579.94673.68453.851.480.4131000IL-17A2.172.181.473.351.472.061.891.641.472.171.761.230.4131000TGFA7.1451.9224.747.768.676.349.606.9722.828.678.281.050.41310050CST5534.00172.63337.25231.65198.48167.98158.11373.19208.01231.65188.001.230.41310050CXCL115386.832930.207942.924951.693152.721889.817210.793483.672338.684951.692911.171.700.41310050CCL284.704.713.823.384.603.392.578.923.084.603.241.420.41310050IL-242.382.382.382.924.532.382.386.507.202.384.440.540.5561000FGF-2310.105.3119.357.383.294.696.267.544.947.385.601.320.5561000IL-2RB2.303.892.083.432.032.032.872.402.032.302.221.040.5561000IL-334.164.164.164.164.164.164.167.004.164.164.161.000.5561000DNER254.76468.54291.84431.05273.73386.97378.36445.25324.70291.84382.660.760.5561000IL-18R1194.30225.40243.81211.67143.87132.25267.61161.58161.38211.67161.481.310.55610025TWEAK1557.622917.661913.091756.73881.021436.662514.321168.271517.561756.731477.111.190.5561000LIF-R24.2119.5020.5418.4217.8318.6816.4227.4417.1319.5017.911.090.55610050ADA62.92218.43229.71109.7886.9178.53114.1994.33108.09109.78101.211.080.7301000EN-RAGE30.60548.04121.0044.95125.1933.6161.1638.42127.08121.0049.792.430.7301000IL-76.188.4210.539.876.337.7716.317.688.738.428.251.020.7301000ARTN1.183.091.181.181.181.181.181.181.181.181.181.000.7301000TNF1.941.941.942.341.941.941.941.941.941.941.941.000.7301000IL-20RA2.242.242.242.502.242.242.242.242.242.242.241.000.7301000IL-42.702.702.7014.622.702.702.743.412.702.702.720.990.7301000ST1A15.9337.2521.167.586.316.2215.326.2812.627.589.450.800.7301000IL-17C6.734.887.4823.003.799.644.476.013.976.735.241.280.7301000SCF530.15466.31312.33547.51217.72356.13382.62364.10359.65466.31361.871.290.7301000CD538.1196.2943.8665.7732.8852.9442.4227.7157.4843.8647.680.920.73010025OPG3717.601970.613310.141761.091296.271319.792020.802904.941703.781970.611862.291.060.7301000PD-L17.438.4713.898.507.605.928.7212.096.348.477.531.120.73010050Beta-NGF4.623.495.095.982.813.464.335.173.284.623.901.190.7301000CD625.66244.6945.5881.0136.9968.0580.8340.2296.6545.5874.440.610.7301000CXCL510824.176883.164120.607988.031730.853857.835975.007157.205812.686883.165893.841.170.7301000MMP-10132.38271.22719.16233.3272.53172.92154.93317.31356.92233.32245.120.950.7301000TNFSF1411.16101.2948.9818.9516.2528.3637.0518.7960.5618.9532.710.580.7301000OSM19.9174.3092.3447.2964.0645.0226.2236.50135.1164.0640.761.570.7301000NRTN3.133.133.134.765.343.133.538.353.133.133.330.940.9051000TNFB20.8318.6421.7243.3415.4724.9919.0418.5822.8020.8320.921.000.9051000FGF-55.903.936.126.675.165.158.366.503.945.905.821.010.9051000CXCL61095.793757.211441.391541.77839.111017.612989.081395.802316.581441.391856.190.780.9051000BDNF2.422430.47893.42169.022.423442.19143.4354.6210.46169.0299.031.710.9051000TSLP3.082.862.863.412.862.862.862.893.632.862.881.000.9051000FGF-21825.165220.6332.2396.05114.909.912222.441488.99817.53114.901153.260.100.90510025MCP-464.2987.4058.99125.1562.8279.0372.8847.3773.0564.2972.970.881.00010025CCL20935.67144.33182.24254.1165.64161.70144.39368.27137.51182.24153.041.191.0001000IL-18364.77507.34659.67512.11321.92284.02356.26520.96574.07507.34438.611.161.00010025IL-202.262.262.263.297.562.262.2610.902.262.262.261.001.0001000LIF2.072.072.074.372.072.073.142.072.072.072.071.001.0001000IL-53.183.183.583.183.183.183.183.183.423.183.181.001.0001000IL-23.273.273.273.273.273.273.273.273.273.273.271.001.0001000IL-22 RA14.704.704.704.704.704.704.704.704.704.704.701.001.0001000",
+        "unusual_elements": []
+      },
+      "explanation": "Document has 1488 paragraphs inside tables (30 words) but only 2 direct body paragraphs (53 words). Our parser only counts top-level body paragraphs and misses table content entirely.",
+      "recommendation": "fix_parser_table_support"
+    },
+    {
+      "id": "17f2564dc24b339ef27daaae5842ac5231d77bae95678384dc0353f79caa9a31",
+      "path": "downloaded/17f2564dc24b339ef27daaae5842ac5231d77bae95678384dc0353f79caa9a31.docx",
+      "classification": "parsing_issue",
+      "confidence": "high",
+      "findings": {
+        "zip_valid": true,
+        "word_dir_contents": [
+          {
+            "name": "word/_rels/document.xml.rels",
+            "size": 950
+          },
+          {
+            "name": "word/document.xml",
+            "size": 19664
+          },
+          {
+            "name": "word/media/image1.jpeg",
+            "size": 881950
+          },
+          {
+            "name": "word/theme/theme1.xml",
+            "size": 6799
+          },
+          {
+            "name": "word/settings.xml",
+            "size": 2690
+          },
+          {
+            "name": "word/webSettings.xml",
+            "size": 576
+          },
+          {
+            "name": "word/styles.xml",
+            "size": 29093
+          },
+          {
+            "name": "word/fontTable.xml",
+            "size": 1340
+          }
+        ],
+        "document_xml_paragraphs": 1,
+        "document_xml_text_runs": 8,
+        "direct_body_paragraphs": 1,
+        "table_paragraphs": 0,
+        "headers": 0,
+        "footers": 0,
+        "footnotes": 0,
+        "endnotes": 0,
+        "comments": 0,
+        "altChunk": false,
+        "embedded_objects": false,
+        "content_controls": false,
+        "images_with_text": true,
+        "drawingml_textboxes": false,
+        "vml_textboxes": true,
+        "core_title": "",
+        "largest_text_block": "Registrationat the pavilionRegistrationat the pavilion",
+        "total_body_text": "Registrationat the pavilionRegistrationat the pavilion",
+        "total_table_text": "",
+        "unusual_elements": [
+          "mc:AlternateContent",
+          "VML_textbox",
+          "image_description"
+        ]
+      },
+      "explanation": "Document text resides in DrawingML/VML text boxes (5 words) rather than direct body paragraphs. Our parser does not descend into shape text boxes.",
+      "recommendation": "fix_parser_textbox_support"
+    }
+  ],
+  "summary": {
+    "truly_bad": 6,
+    "parsing_issue": 4,
+    "edge_case": 1,
+    "investigate_manually": 0
+  }
+}

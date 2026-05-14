@@ -1,0 +1,215 @@
+[
+  {
+    "id": "122bbf7940df99193c3e8e5132599a5419c928f36b1b58ad67b70228ddf9b69d",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/122bbf7940df99193c3e8e5132599a5419c928f36b1b58ad67b70228ddf9b69d.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [],
+      "weaknesses": [
+        "7/13 body paragraphs are empty \u2014 document may be sparse or use excessive whitespace"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 13,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 0,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 23,
+      "tagged_lines": 13
+    },
+    "tagged_preview": [
+      "<f=1>RFQ #275-11844</f=1>",
+      "<f=2></f=2>",
+      "<f=3>GROUND LEASE AND DEVELOPMENT OF PARCEL C (PROPERTY ID #494209010170)</f=3>",
+      "<f=4></f=4>",
+      "<f=5>**__PROPOSALS RECEIVED__**</f=5>",
+      "<f=6></f=6>",
+      "<f=7></f=7>",
+      "<f=8>DRIVE SHACK INC.</f=8>",
+      "<f=9></f=9>",
+      "<f=10>EASTGROUP PROPERTIES LP</f=10>",
+      "<f=11></f=11>",
+      "<f=12>MIDGARD GROUP, INC.</f=12>",
+      "<f=13></f=13>"
+    ]
+  },
+  {
+    "id": "a509c7a0252907c43a9b7ad8e9094549f773436e8180059d60defa552ad87bd9",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/a509c7a0252907c43a9b7ad8e9094549f773436e8180059d60defa552ad87bd9.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [],
+      "weaknesses": [],
+      "improvements": []
+    },
+    "stats": {
+      "body_paragraphs": 6,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 0,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 28,
+      "tagged_lines": 6
+    },
+    "tagged_preview": [
+      "<f=1>Addendum #1</f=1>",
+      "<f=2>Cancelation of Solicitation</f=2>",
+      "<f=3>March 4, 2019</f=3>",
+      "<f=4></f=4>",
+      "<f=5>Addendum one is to cancel the solicitation for Tractors, 2019-52. Specifications will be revised and a rebid will be issued.</f=5>",
+      "<f=6></f=6>"
+    ]
+  },
+  {
+    "id": "32a4ce11e376b172db577631f514751d4f879db29d6dc5c0f80a88f7da5d7da5",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/32a4ce11e376b172db577631f514751d4f879db29d6dc5c0f80a88f7da5d7da5.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "3 header paragraph(s) visible with prefixed IDs",
+        "2 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [],
+      "improvements": []
+    },
+    "stats": {
+      "body_paragraphs": 1,
+      "header_paragraphs": 3,
+      "footer_paragraphs": 2,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 2,
+      "body_words_approx": 0,
+      "tagged_lines": 6
+    },
+    "tagged_preview": [
+      "<f=1></f=1>",
+      "<f=header_1.1>SWOT Analysis\t\t\t</f=header_1.1>",
+      "<f=header_1.2></f=header_1.2>",
+      "<f=header_1.3></f=header_1.3>",
+      "<f=footer_1.1></f=footer_1.1>",
+      "<f=footer_1.2>\u00a9 Focus HR Pty Ltd (V1)</f=footer_1.2>"
+    ]
+  },
+  {
+    "id": "4edf7d228148fdc6728b410ab1adcd21b6fcbf3de35f49599cb563573bf93f59",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/4edf7d228148fdc6728b410ab1adcd21b6fcbf3de35f49599cb563573bf93f59.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "4 header paragraph(s) visible with prefixed IDs",
+        "2 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "1 table(s) skipped: table 1, cell 1.2 has horizontal merge (gridSpan)"
+      ],
+      "improvements": [
+        "Consider supporting merged-cell or nested tables to reduce skipped content"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 1,
+      "header_paragraphs": 4,
+      "footer_paragraphs": 2,
+      "tables": 0,
+      "skipped_tables": 1,
+      "skipped_elements": 2,
+      "body_words_approx": 0,
+      "tagged_lines": 8
+    },
+    "tagged_preview": [
+      "<table=1 skipped reason=\"table 1, cell 1.2 has horizontal merge (gridSpan)\"/>",
+      "<f=2></f=2>",
+      "<f=header_1.1>\t</f=header_1.1>",
+      "<f=header_1.2></f=header_1.2>",
+      "<f=header_1.3> \t\t\t\t\t\t\t</f=header_1.3>",
+      "<f=header_1.4></f=header_1.4>",
+      "<f=footer_1.1></f=footer_1.1>",
+      "<f=footer_1.2></f=footer_1.2>"
+    ]
+  },
+  {
+    "id": "f533eb698dea36c2c5b78c7073195df1ea16c3e973c5f27bb8f6ad2f30de3982",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/f533eb698dea36c2c5b78c7073195df1ea16c3e973c5f27bb8f6ad2f30de3982.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "1 table(s) extracted with cell coordinates and content",
+        "1 header paragraph(s) visible with prefixed IDs",
+        "5 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "11/19 body paragraphs are empty \u2014 document may be sparse or use excessive whitespace",
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading",
+        "Many literal tabs (16) in text \u2014 may represent tables or alignment but look odd as plain text"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 19,
+      "header_paragraphs": 1,
+      "footer_paragraphs": 5,
+      "tables": 1,
+      "skipped_tables": 0,
+      "skipped_elements": 5,
+      "body_words_approx": 92,
+      "tagged_lines": 47
+    },
+    "tagged_preview": [
+      "<f=1></f=1>",
+      "<f=2></f=2>",
+      "<f=3></f=3>",
+      "<f=4></f=4>",
+      "<f=5></f=5>",
+      "<f=6>**Maximum Seller Contribution Chart **</f=6>",
+      "<f=7></f=7>",
+      "<f=8>It is hard to always remember which agency allows what. We have created an easy chart to help you know what the seller contributions can be by agency. Seller contributions are defined as the amount a seller designates to help pay for closing costs and prepaid costs for the buyer\u2019s loan. </f=8>",
+      "<f=9></f=9>",
+      "<table=10 rows=5 cols=3>",
+      "<cell=10.1.1></cell=10.1.1>",
+      "<cell=10.1.2>Owner Occupied</cell=10.1.2>",
+      "<cell=10.1.3>Investment Property</cell=10.1.3>",
+      "<cell=10.2.1>FNMA & FHLMC</cell=10.2.1>",
+      "<cell=10.2.2>__LTV/CLTV__",
+      "90.01 or greater 3% max",
+      "75.01 to 90.00 6% max",
+      "75.00 or less 9% max</cell=10.2.2>",
+      "<cell=10.2.3>2% max</cell=10.2.3>",
+      "<cell=10.3.1>FHA</cell=10.3.1>",
+      "<cell=10.3.2>6% max for all loan types</cell=10.3.2>",
+      "<cell=10.3.3>N/A</cell=10.3.3>",
+      "<cell=10.4.1>VA</cell=10.4.1>",
+      "<cell=10.4.2>4% towards Closing Costs & PrePaids",
+      "2% towards discount Points</cell=10.4.2>",
+      "<cell=10.4.3>N/A</cell=10.4.3>",
+      "<cell=10.5.1>USDA</cell=10.5.1>",
+      "<cell=10.5.2>6%",
+      "Closing costs and Prepaids can be financed up to 100% of appraised value using the difference between contract price and appraised value</cell=10.5.2>",
+      "<cell=10.5.3>N/A</cell=10.5.3>"
+    ]
+  }
+]

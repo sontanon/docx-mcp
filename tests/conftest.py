@@ -1,7 +1,5 @@
 """Shared pytest fixtures and configuration."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import pytest
@@ -94,3 +92,58 @@ def merged_cell_table_path(fixtures_dir: Path) -> Path:
 @pytest.fixture
 def mixed_content_path(fixtures_dir: Path) -> Path:
     return fixtures_dir / "mixed_content.docx"
+
+
+@pytest.fixture
+def body_tracked_changes_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "body_tracked_changes.docx"
+
+
+@pytest.fixture
+def header_tracked_changes_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "header_tracked_changes.docx"
+
+
+@pytest.fixture
+def footer_tracked_changes_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "footer_tracked_changes.docx"
+
+
+@pytest.fixture
+def comments_tracked_changes_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "comments_tracked_changes.docx"
+
+
+@pytest.fixture
+def hyperlink_paragraph_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "hyperlink_paragraph.docx"
+
+
+@pytest.fixture
+def hyperlink_formatted_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "hyperlink_formatted.docx"
+
+
+@pytest.fixture
+def multiple_hyperlinks_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "multiple_hyperlinks.docx"
+
+
+@pytest.fixture
+def header_footer_text_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "header_footer_text.docx"
+
+
+@pytest.fixture
+def two_section_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "two_section.docx"
+
+
+@pytest.fixture
+def table_empty_cell_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "table_empty_cell.docx"
+
+
+@pytest.fixture
+def wide_table_path(fixtures_dir: Path) -> Path:
+    return fixtures_dir / "wide_table.docx"

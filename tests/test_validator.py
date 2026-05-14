@@ -1,7 +1,5 @@
 """Tests for the validator module."""
 
-from __future__ import annotations
-
 from lxml import etree
 
 from docx_mcp.document import DocxDocument

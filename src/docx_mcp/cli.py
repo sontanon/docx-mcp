@@ -13,13 +13,12 @@ Usage::
     docx-mcp validate redlined.docx
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import sys
 from pathlib import Path
 
+from docx_mcp.audit import audit_document
 from docx_mcp.converter import document_to_fragments, fragments_to_tagged_text
 from docx_mcp.document import DocxDocument
 from docx_mcp.models import (
@@ -95,6 +94,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     validate_parser.add_argument("input", type=Path, help="Redlined .docx file to validate")
 
+    # --- audit ---
+    audit_parser = subparsers.add_parser(
+        "audit",
+        help="Audit a .docx for structural issues and skipped content",
+    )
+    audit_parser.add_argument("input", type=Path, help=".docx file to audit")
+    audit_parser.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "apply":
@@ -103,6 +115,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_convert(args)
     if args.command == "validate":
         return _cmd_validate(args)
+    if args.command == "audit":
+        return _cmd_audit(args)
 
     parser.print_help()
     return 1
@@ -212,6 +226,25 @@ def _cmd_validate(args: argparse.Namespace) -> int:
 
     print("Validation FAILED.")
     return 1
+
+
+def _cmd_audit(args: argparse.Namespace) -> int:
+    """Execute the ``audit`` subcommand."""
+    input_path: Path = args.input
+
+    if not input_path.exists():
+        print(f"Error: input file not found: {input_path}", file=sys.stderr)
+        return 1
+
+    doc = DocxDocument(path=input_path)
+    report = audit_document(doc)
+
+    if args.format == "json":
+        print(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+    else:
+        print(report.to_text())
+
+    return 0
 
 
 def _parse_changes(raw: list[dict] | dict) -> list[Change]:

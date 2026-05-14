@@ -1,7 +1,5 @@
 """Tests for table extraction functions in converter.py."""
 
-from __future__ import annotations
-
 import json
 from pathlib import Path
 
@@ -11,7 +9,7 @@ from docx_mcp.converter import (
     fragments_to_tagged_text_interleaved,
 )
 from docx_mcp.document import DocxDocument
-from docx_mcp.models import SkippedTableInfo, TableInfo
+from docx_mcp.models import TableInfo
 
 
 class TestBodyToFragments:
@@ -19,7 +17,8 @@ class TestBodyToFragments:
 
     def test_simple_table_extraction(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Simple table doc has: para, table, para
         assert len(items) == 3
@@ -34,7 +33,8 @@ class TestBodyToFragments:
 
     def test_formatted_table_extraction(self, formatted_table_path: Path) -> None:
         doc = DocxDocument(path=formatted_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Formatted table doc has: para, table
         assert len(items) == 2
@@ -50,7 +50,8 @@ class TestBodyToFragments:
 
     def test_multi_paragraph_cell_extraction(self, table_multi_para_path: Path) -> None:
         doc = DocxDocument(path=table_multi_para_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Multi-para doc has: para, table
         assert len(items) == 2
@@ -68,27 +69,38 @@ class TestBodyToFragments:
         para_count = cell_2_2.text.count("\n") + 1
         assert para_count == 3
 
-    def test_merged_cell_table_skipped(self, merged_cell_table_path: Path) -> None:
+    def test_merged_cell_table_extracted(self, merged_cell_table_path: Path) -> None:
         doc = DocxDocument(path=merged_cell_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Merged cell doc has: para, table
         assert len(items) == 2
         item = items[1]
-        assert isinstance(item, SkippedTableInfo)
+        assert isinstance(item, TableInfo)
         assert item.table_id == 2
-        assert "gridSpan" in item.reason or "merge" in item.reason.lower()
+        assert item.rows == 2
+        assert item.cols == 3
+
+        # Row 1: cell 1 spans 2 columns, cell 2 is spanned over, cell 3 is normal
+        assert item.cells[0][0].span == 2
+        assert item.cells[0][0].text == "A\nB"
+        assert item.cells[0][1].span == 0
+        assert item.cells[0][1].text == ""
+        assert item.cells[0][2].span == 1
+        assert item.cells[0][2].text == "C"
 
     def test_mixed_content_interleaved(self, mixed_content_path: Path) -> None:
         doc = DocxDocument(path=mixed_content_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Mixed content has: para, table(2x2), para, table(1x3), para
         assert len(items) == 5
 
         # First item: paragraph
         assert isinstance(items[0], tuple)
-        assert items[0][0] == 1
+        assert items[0][0] == "1"
 
         # Second item: table
         assert isinstance(items[1], TableInfo)
@@ -98,7 +110,7 @@ class TestBodyToFragments:
 
         # Third item: paragraph
         assert isinstance(items[2], tuple)
-        assert items[2][0] == 3
+        assert items[2][0] == "3"
 
         # Fourth item: table
         assert isinstance(items[3], TableInfo)
@@ -108,11 +120,12 @@ class TestBodyToFragments:
 
         # Fifth item: paragraph
         assert isinstance(items[4], tuple)
-        assert items[4][0] == 5
+        assert items[4][0] == "5"
 
     def test_cell_ids_are_correct(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
 
         # Table is second element
         item = items[1]
@@ -130,7 +143,8 @@ class TestFragmentsToTaggedTextInterleaved:
 
     def test_simple_table_tagged_output(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         tagged = fragments_to_tagged_text_interleaved(items)
 
         # Should have table tags (table is ID 2)
@@ -145,7 +159,8 @@ class TestFragmentsToTaggedTextInterleaved:
 
     def test_mixed_content_tagged_output(self, mixed_content_path: Path) -> None:
         doc = DocxDocument(path=mixed_content_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         tagged = fragments_to_tagged_text_interleaved(items)
 
         # Should have paragraph tags
@@ -160,18 +175,22 @@ class TestFragmentsToTaggedTextInterleaved:
         assert "<table=4 rows=1 cols=3>" in tagged
         assert "</table=4>" in tagged
 
-    def test_skipped_table_tagged_output(self, merged_cell_table_path: Path) -> None:
+    def test_merged_cell_table_tagged_output(self, merged_cell_table_path: Path) -> None:
         doc = DocxDocument(path=merged_cell_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         tagged = fragments_to_tagged_text_interleaved(items)
 
-        # Should have skipped table tag (table is ID 2)
-        assert "<table=2 skipped" in tagged
-        assert "reason=" in tagged
+        # Should have table with span markers (spanned-over cells omitted)
+        assert "<table=2 rows=2 cols=3>" in tagged
+        assert '<cell=2.1.1 span="2">A\nB</cell=2.1.1>' in tagged
+        assert '<cell=2.1.2' not in tagged  # spanned-over cell omitted
+        assert "</table=2>" in tagged
 
     def test_multi_paragraph_cell_preserves_newlines(self, table_multi_para_path: Path) -> None:
         doc = DocxDocument(path=table_multi_para_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         _tagged = fragments_to_tagged_text_interleaved(items)
 
         # Multi-paragraph cells should have newlines in their text
@@ -186,7 +205,8 @@ class TestFragmentsToJsonInterleaved:
 
     def test_simple_table_json_output(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         json_list = fragments_to_json_interleaved(items)
 
         # Should have 3 items: para, table, para
@@ -210,14 +230,15 @@ class TestFragmentsToJsonInterleaved:
 
     def test_mixed_content_json_output(self, mixed_content_path: Path) -> None:
         doc = DocxDocument(path=mixed_content_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         json_list = fragments_to_json_interleaved(items)
 
         assert len(json_list) == 5
 
         # First item: paragraph
         assert json_list[0]["type"] == "paragraph"
-        assert json_list[0]["fragment_id"] == 1
+        assert json_list[0]["fragment_id"] == "1"
         assert "text" in json_list[0]
 
         # Second item: table
@@ -228,7 +249,7 @@ class TestFragmentsToJsonInterleaved:
 
         # Third item: paragraph
         assert json_list[2]["type"] == "paragraph"
-        assert json_list[2]["fragment_id"] == 3
+        assert json_list[2]["fragment_id"] == "3"
 
         # Fourth item: table
         assert json_list[3]["type"] == "table"
@@ -236,11 +257,12 @@ class TestFragmentsToJsonInterleaved:
 
         # Fifth item: paragraph
         assert json_list[4]["type"] == "paragraph"
-        assert json_list[4]["fragment_id"] == 5
+        assert json_list[4]["fragment_id"] == "5"
 
-    def test_skipped_table_json_output(self, merged_cell_table_path: Path) -> None:
+    def test_merged_cell_table_json_output(self, merged_cell_table_path: Path) -> None:
         doc = DocxDocument(path=merged_cell_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         json_list = fragments_to_json_interleaved(items)
 
         # Should have 2 items: para, table
@@ -249,13 +271,19 @@ class TestFragmentsToJsonInterleaved:
 
         assert table_dict["type"] == "table"
         assert table_dict["table_id"] == 2
-        assert table_dict["skipped"] is True
-        assert "reason" in table_dict
-        assert len(table_dict["reason"]) > 0
+        assert table_dict["rows"] == 2
+        assert table_dict["cols"] == 3
+
+        # Check span fields in cells (spanned-over cells omitted)
+        cells = table_dict["cells"]
+        assert cells[0][0]["span"] == 2
+        assert len(cells[0]) == 2  # cell 1.1.2 omitted, only 1.1.1 and 1.1.3 remain
+        assert "span" not in cells[0][1]  # span=1 is omitted
 
     def test_json_is_serializable(self, simple_table_path: Path) -> None:
         doc = DocxDocument(path=simple_table_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         json_list = fragments_to_json_interleaved(items)
 
         # Should be JSON-serializable
@@ -268,7 +296,8 @@ class TestFragmentsToJsonInterleaved:
 
     def test_multi_paragraph_cell_json(self, table_multi_para_path: Path) -> None:
         doc = DocxDocument(path=table_multi_para_path)
-        items = body_to_fragments(doc.body_elements)
+        result = body_to_fragments(doc.body_elements)
+        items = result.items
         json_list = fragments_to_json_interleaved(items)
 
         # Table is second item

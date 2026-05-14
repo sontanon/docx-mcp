@@ -1,7 +1,5 @@
 """Tests for the CLI module."""
 
-from __future__ import annotations
-
 import json
 
 from docx_mcp.cli import main

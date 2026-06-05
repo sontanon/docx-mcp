@@ -67,8 +67,11 @@ mcp = FastMCP(
     instructions=(
         "Legal document redlining server. Use extract_fragments to read a "
         ".docx file, then apply_changes to add tracked changes with comments. "
-        "Fragment IDs are 1-based paragraph indices. Text uses pseudo-Markdown: "
-        "**bold**, _italic_, __underline__."
+        "Fragment IDs are strings: body paragraphs use '1', '2', ...; "
+        "headers use 'header_1.1'; footers use 'footer_2.1'; "
+        "table cells use 'table_id.row.col'. "
+        "Text uses pseudo-Markdown: **bold**, _italic_, __underline__, "
+        "[text](url) for hyperlinks."
     ),
 )
 
@@ -152,7 +155,9 @@ class ParagraphChangeParam(BaseModel):
     Attributes
     ----------
 
-        fragment_id: 1-based paragraph index from ``extract_fragments``.
+        fragment_id: Fragment ID string from ``extract_fragments``. Body paragraphs
+            use plain numbers (``"5"``). Headers and footers use prefixed IDs
+            (``"header_1.3"``, ``"footer_2.1"``).
         change_type: ``"modify"``, ``"delete"``, or ``"append_after"``.
         new_text: Replacement text in pseudo-Markdown (``**bold**``, ``_italic_``,
             ``__underline__``). Required for modify and append_after; must be None for delete.
@@ -861,11 +866,12 @@ def diff_fragments(
     For tables, each modified cell is shown with its cell ID (table_id.row.col)
     followed by the word-level diff of the cell content.
 
-    Difference from extract_fragments with markup=True
-    --------------------------------------------------
+    Difference from extract_fragments
+    --------------------------------
 
-    - ``extract_fragments`` with ``markup=True`` shows **tracked changes already
-      present in a single document** (existing ``<w:ins>`` / ``<w:del>`` markup)
+    - ``extract_fragments`` shows the **plain text** of a single document
+      (paragraphs, headers, footers, tables). Pre-existing tracked changes
+      cause a hard rejection.
 
     - ``diff_fragments`` **compares two separate documents** and computes the
       differences between their plain text (ignoring any tracked changes)

@@ -1,0 +1,52 @@
+[
+  {
+    "id": "2d96086f4fa3079d2d56ec32ef390cbaab56597d479960a61d29b91f625bc07b",
+    "filename": "file",
+    "type": "reports",
+    "topic": "government",
+    "language": "en",
+    "word_count": 224965,
+    "confidence": 0.9540722966194153,
+    "url": "https://docxcorp.us/documents/2d96086f4fa3079d2d56ec32ef390cbaab56597d479960a61d29b91f625bc07b.docx"
+  },
+  {
+    "id": "40ff3b004caabc4fa45cc757650e7c39a17e3a43be05dfacead44a2727ca79e4",
+    "filename": "e6a45cdaea235d62880f6770a345cad3",
+    "type": "reports",
+    "topic": "government",
+    "language": "en",
+    "word_count": 363,
+    "confidence": 0.9099474549293518,
+    "url": "https://docxcorp.us/documents/40ff3b004caabc4fa45cc757650e7c39a17e3a43be05dfacead44a2727ca79e4.docx"
+  },
+  {
+    "id": "ab4f6c2988f8f2ba4cea0277a963eb4b36621efb075b8e21066b6d77c2b9e592",
+    "filename": "content",
+    "type": "reports",
+    "topic": "healthcare",
+    "language": "en",
+    "word_count": 983,
+    "confidence": 0.9763908386230469,
+    "url": "https://docxcorp.us/documents/ab4f6c2988f8f2ba4cea0277a963eb4b36621efb075b8e21066b6d77c2b9e592.docx"
+  },
+  {
+    "id": "471d4e3201b74974ac528db0c49007b3d0e00137ccbfc5b135dc3740bfd997bd",
+    "filename": "pone.0193278.s003.docx",
+    "type": "reports",
+    "topic": "healthcare",
+    "language": "en",
+    "word_count": 2935,
+    "confidence": 0.9731289744377136,
+    "url": "https://docxcorp.us/documents/471d4e3201b74974ac528db0c49007b3d0e00137ccbfc5b135dc3740bfd997bd.docx"
+  },
+  {
+    "id": "545e6d0fd8c0d20a226cd079bb824e6bb60a4968cd8378ac1cc8dc9495a6ee43",
+    "filename": "890a07f83fe2f327d30b4083ea793c3f",
+    "type": "reports",
+    "topic": "finance",
+    "language": "en",
+    "word_count": 457,
+    "confidence": 0.820393443107605,
+    "url": "https://docxcorp.us/documents/545e6d0fd8c0d20a226cd079bb824e6bb60a4968cd8378ac1cc8dc9495a6ee43.docx"
+  }
+]

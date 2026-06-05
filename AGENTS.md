@@ -48,13 +48,10 @@ runtime. Do not try to fix these.
 
 ### Imports
 
-Every file starts with `from __future__ import annotations`. Imports are ordered:
-future, stdlib, third-party, local -- each group separated by a blank line,
-alphabetical within each group. Enforced by ruff rule `I` (isort).
+Imports are ordered: stdlib, third-party, local -- each group separated by a
+blank line, alphabetical within each group. Enforced by ruff rule `I` (isort).
 
 ```python
-from __future__ import annotations
-
 import contextlib
 from pathlib import Path
 
@@ -67,7 +64,7 @@ from docx_mcp.models import Change, ChangeType, RedlineConfig
 ### Formatting
 
 - Line length: **100** characters.
-- Target: **Python 3.13+** (`py313`).
+- Target: **Python 3.14+** (`py314`).
 - Ruff rules enforced: `F`, `E`, `W`, `I`, `UP`, `B`, `SIM`, `ANN`, `RUF`.
 - `ANN` (type annotations) is disabled for test files.
 
@@ -162,7 +159,7 @@ src/docx_mcp/
 
 ### MCP Server
 
-The server (`server.py`) wraps the core engine as MCP tools via FastMCP 2.x:
+The server (`server.py`) wraps the core engine as MCP tools via FastMCP 3.x:
 
 - **5 tools**: `extract_fragments`, `apply_changes`, `apply_changes_from_file`,
   `validate_document_tool`, `diff_fragments`.

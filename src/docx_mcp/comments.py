@@ -17,8 +17,6 @@ Comment placement strategy:
 * **Append**: Comment range spans the entire new paragraph.
 """
 
-from __future__ import annotations
-
 from lxml import etree
 
 from docx_mcp.document import DocxDocument

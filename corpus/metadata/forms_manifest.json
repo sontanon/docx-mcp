@@ -1,0 +1,62 @@
+[
+  {
+    "id": "32a4ce11e376b172db577631f514751d4f879db29d6dc5c0f80a88f7da5d7da5",
+    "filename": "EPP-TMP-SWOT-Analysis-A4.docx",
+    "type": "forms",
+    "topic": "general",
+    "language": "en",
+    "word_count": 4,
+    "confidence": 0.9689404964447021,
+    "url": "https://docxcorp.us/documents/32a4ce11e376b172db577631f514751d4f879db29d6dc5c0f80a88f7da5d7da5.docx"
+  },
+  {
+    "id": "4edf7d228148fdc6728b410ab1adcd21b6fcbf3de35f49599cb563573bf93f59",
+    "filename": "download",
+    "type": "forms",
+    "topic": "environment",
+    "language": "en",
+    "word_count": 231214,
+    "confidence": 0.946910560131073,
+    "url": "https://docxcorp.us/documents/4edf7d228148fdc6728b410ab1adcd21b6fcbf3de35f49599cb563573bf93f59.docx"
+  },
+  {
+    "id": "f533eb698dea36c2c5b78c7073195df1ea16c3e973c5f27bb8f6ad2f30de3982",
+    "filename": "original",
+    "type": "forms",
+    "topic": "finance",
+    "language": "en",
+    "word_count": 238,
+    "confidence": 0.9615932703018188,
+    "url": "https://docxcorp.us/documents/f533eb698dea36c2c5b78c7073195df1ea16c3e973c5f27bb8f6ad2f30de3982.docx"
+  },
+  {
+    "id": "8d7c00f3bc4fa14a78edf8934460a1eea9374367dcb3fe203fd3e9ca19ffbd69",
+    "filename": "getdocument",
+    "type": "forms",
+    "topic": "healthcare",
+    "language": "en",
+    "word_count": 527,
+    "confidence": 0.9850397109985352,
+    "url": "https://docxcorp.us/documents/8d7c00f3bc4fa14a78edf8934460a1eea9374367dcb3fe203fd3e9ca19ffbd69.docx"
+  },
+  {
+    "id": "ec94ef4d199061364e30c6158d758042234cecf60f6be9b8c03f0f639433e017",
+    "filename": "6BE4C3E236D54E5D8680C1B5E95A34DF.ashx",
+    "type": "forms",
+    "topic": "education",
+    "language": "en",
+    "word_count": 1358,
+    "confidence": 0.9617584347724915,
+    "url": "https://docxcorp.us/documents/ec94ef4d199061364e30c6158d758042234cecf60f6be9b8c03f0f639433e017.docx"
+  },
+  {
+    "id": "538198048ce7bb227b96299e61d1c63eab1a0c89bbc2539e84d5488e0f708c60",
+    "filename": "filedownload.ashx",
+    "type": "forms",
+    "topic": "education",
+    "language": "en",
+    "word_count": 281,
+    "confidence": 0.9851989150047302,
+    "url": "https://docxcorp.us/documents/538198048ce7bb227b96299e61d1c63eab1a0c89bbc2539e84d5488e0f708c60.docx"
+  }
+]

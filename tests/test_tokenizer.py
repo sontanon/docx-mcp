@@ -1,7 +1,5 @@
 """Tests for the tokenizer module."""
 
-from __future__ import annotations
-
 from docx_mcp.tokenizer import detokenize, tokenize
 
 

@@ -1,7 +1,5 @@
 """Tests for the comments module."""
 
-from __future__ import annotations
-
 from docx_mcp.comments import _initials, add_comment, ensure_comments_part
 from docx_mcp.document import DocxDocument
 from docx_mcp.id_manager import IdManager

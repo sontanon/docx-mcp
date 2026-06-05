@@ -1,0 +1,346 @@
+[
+  {
+    "id": "5c0005176c8dbbd8c55ff9adcfb3d7e3b40ecf33dadbd779fc43ff8fdd300fb6",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/5c0005176c8dbbd8c55ff9adcfb3d7e3b40ecf33dadbd779fc43ff8fdd300fb6.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "99 table(s) extracted with cell coordinates and content",
+        "Large table 1142 (32x2) is fully addressable by cell ID",
+        "Large table 1146 (62x2) is fully addressable by cell ID",
+        "Large table 1150 (82x2) is fully addressable by cell ID",
+        "Large table 1154 (93x2) is fully addressable by cell ID",
+        "Large table 1158 (95x2) is fully addressable by cell ID",
+        "Large table 1162 (97x2) is fully addressable by cell ID",
+        "Large table 1166 (97x2) is fully addressable by cell ID",
+        "Large table 1170 (97x2) is fully addressable by cell ID",
+        "Large table 1174 (97x2) is fully addressable by cell ID",
+        "Large table 1178 (98x2) is fully addressable by cell ID",
+        "Large table 1182 (98x2) is fully addressable by cell ID",
+        "Large table 1186 (98x2) is fully addressable by cell ID",
+        "Large table 2538 (22x2) is fully addressable by cell ID",
+        "Large table 5696 (33x8) is fully addressable by cell ID",
+        "Large table 5704 (33x8) is fully addressable by cell ID",
+        "Large table 5712 (33x8) is fully addressable by cell ID",
+        "Large table 5720 (33x8) is fully addressable by cell ID",
+        "Large table 8294 (5x6) is fully addressable by cell ID",
+        "Large table 8568 (40x2) is fully addressable by cell ID",
+        "Large table 9890 (11x4) is fully addressable by cell ID",
+        "Large table 9918 (12x4) is fully addressable by cell ID",
+        "Large table 9946 (12x4) is fully addressable by cell ID",
+        "Large table 9982 (12x4) is fully addressable by cell ID",
+        "Large table 10020 (12x4) is fully addressable by cell ID",
+        "Large table 10058 (11x4) is fully addressable by cell ID",
+        "Large table 10154 (11x4) is fully addressable by cell ID",
+        "Large table 10188 (11x4) is fully addressable by cell ID",
+        "Large table 11342 (23x7) is fully addressable by cell ID",
+        "Large table 14864 (11x2) is fully addressable by cell ID",
+        "Large table 14866 (14x3) is fully addressable by cell ID",
+        "Large table 14876 (11x2) is fully addressable by cell ID",
+        "Large table 14878 (14x3) is fully addressable by cell ID",
+        "Large table 14892 (14x3) is fully addressable by cell ID",
+        "3 header paragraph(s) visible with prefixed IDs",
+        "3 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "8607/16430 body paragraphs are empty \u2014 document may be sparse or use excessive whitespace",
+        "52 table(s) skipped: table 14902, row 2 has 1 cells, expected 3, table 8694, row 2 has 1 cells, expected 2, table 13510, row 2 has 1 cells, expected 2, table 4590, row 2 has 3 cells, expected 4, table 10116, row 23 has 1 cells, expected 4, table 8496, row 14 has 1 cells, expected 4, table 10104, row 8 has 1 cells, expected 4, table 10604, row 20 has 1 cells, expected 11, table 14896, row 2 has 1 cells, expected 2, table 8420, row 2 has 2 cells, expected 3, table 9936, row 22 has 1 cells, expected 4, table 7956, row 2 has 2 cells, expected 3, table 8432, row 6 has 1 cells, expected 2, table 10144, row 22 has 1 cells, expected 4, table 14868, row 3 has 1 cells, expected 2, table 2868, row 2 has 1 cells, expected 2, table 10126, row 13 has 1 cells, expected 4, table 2718, row 2 has 2 cells, expected 3, table 10178, row 22 has 1 cells, expected 4, table 9908, row 23 has 1 cells, expected 4, table 10046, row 23 has 1 cells, expected 4, table 2268, row 18 has 1 cells, expected 2, table 15232, row 2 has 1 cells, expected 2, table 10560, row 2 has 5 cells, expected 6, table 10096, row 13 has 1 cells, expected 4, table 9820, row 9 has 1 cells, expected 6, table 11724, row 2 has 5 cells, expected 7, table 2316, row 18 has 1 cells, expected 2, table 14894, row 2 has 2 cells, expected 3, table 10008, row 22 has 1 cells, expected 4, table 2622, row 2 has 1 cells, expected 2, table 9870, row 2 has 3 cells, expected 11, table 8402, row 2 has 2 cells, expected 3, table 2742, row 2 has 1 cells, expected 2, table 10134, row 8 has 1 cells, expected 4, table 9972, row 22 has 1 cells, expected 4, table 10600, row 20 has 1 cells, expected 11, table 10602, row 2 has 1 cells, expected 2, table 15844, row 2 has 1 cells, expected 3, table 2740, row 2 has 1 cells, expected 2, table 2840, row 2 has 1 cells, expected 2, table 8464, row 2 has 1 cells, expected 2, table 2838, row 2 has 1 cells, expected 2, table 10086, row 2 has 4 cells, expected 5, table 2720, row 2 has 1 cells, expected 2, table 14882, row 2 has 1 cells, expected 2, table 10554, row 2 has 3 cells, expected 5, table 7962, row 2 has 2 cells, expected 3, table 1224, row 2 has 5 cells, expected 6, table 9880, row 23 has 1 cells, expected 4, table 8408, row 2 has 2 cells, expected 3, table 2620, row 2 has 2 cells, expected 3",
+        "Many literal tabs (13744) in text \u2014 may represent tables or alignment but look odd as plain text"
+      ],
+      "improvements": [
+        "Consider supporting merged-cell or nested tables to reduce skipped content",
+        "Empty paragraphs could be optionally collapsed to reduce visual noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 16430,
+      "header_paragraphs": 3,
+      "footer_paragraphs": 3,
+      "tables": 99,
+      "skipped_tables": 52,
+      "skipped_elements": 70,
+      "body_words_approx": 251062,
+      "tagged_lines": 21945
+    },
+    "tagged_preview": [
+      "<f=1>CHAPTER 69</f=1>",
+      "<f=2></f=2>",
+      "<f=3>Department of Insurance</f=3>",
+      "<f=4></f=4>",
+      "<f=5></f=5>",
+      "<f=6></f=6>",
+      "<f=7>(Statutory Authority: 1976 Code Sections 1-23-10 et seq., 1-23-110 et seq., 34-29-10 et seq., 34-31-10 et seq., 37-4-101 et seq., 38-1-20(34), 38-3-60, 38-3-110 et seq., 38-5-80, 38-9-180, 38-9-200, 38-23-10 et seq., 38-33-10 et seq., 38-33-200, 38-38-550, 38-39-10 et seq., 38-43-10 to 38-43-80, 38-43-100, 38-43-106, 38-43-110, 38-45-50, 38-47-10 et seq., 38-47-40, 38-49-10 et seq., 38-50-90, 38-55-50, 38-57-20 et seq., 38-63-10, 38-65-10, 38-69-10, 38-69-330, 38-71-730, 38-73-330, 38-73-730, 38-73-735, 38-73-760, 38-77-530, 38-78-110 1975 Act No. 306)</f=7>",
+      "<f=8></f=8>",
+      "<f=9>69-1. Adjustment of Claims Under Unusual Circumstances.</f=9>",
+      "<f=10></f=10>",
+      "<f=11></f=11>",
+      "<f=12></f=12>",
+      "<f=13>(Statutory Authority: 1976 Code Sections 1-23-110 et seq., 38-3-110 et seq., and 38-49-20 et seq.)</f=13>",
+      "<f=14></f=14>",
+      "<f=15>\t1. Licensed Adjusters or motor vehicle physical damage appraisers in South Carolina are authorized to adjust claims or appraise automobiles under the physical damage insurance coverage for unlicensed companies under the following circumstances:</f=15>",
+      "<f=16></f=16>",
+      "<f=17>\t\t(a) Where the insured has an accident in South Carolina but is not a resident, being in a status of a transient.</f=17>",
+      "<f=18></f=18>",
+      "<f=19>\t\t(b) Where the insured is a new resident in the State and has an unexpired policy of an unlicensed company purchased before he moved into the State.</f=19>",
+      "<f=20></f=20>",
+      "<f=21>\t2. The law provides the conditions under which a Non-Resident Adjuster or motor vehicle physical damage appraiser may be licensed. In the event of a catastrophe where there are insufficient Licensed Adjusters or motor vehicle physical damage appraisers in South Carolina to handle claims expeditiously, Non-Resident Adjusters or motor vehicle physical damage appraisers will be permitted to enter the State to handle the adjustments arising out of the catastrophe without being required to be licensed in South Carolina, provided that the Adjuster or motor vehicle physical damage appraiser exhibits evidence of an Adjuster\u2019s or motor vehicle physical damage appraiser\u2019s License in his home state and remains in the State only for the period that is necessary to assist in the adjustments or appraisals.</f=21>",
+      "<f=22></f=22>",
+      "<f=23>\t3. An unusual circumstance or catastrophe exists when, due to a specific, infrequent, and sudden natural or manmade disaster or phenomenon, there have arisen losses to property in South Carolina that are covered by insurance, and the losses are so numerous and severe that resolution of claims related to such covered property losses will not occur expeditiously without the authorization of emergency adjusters or motor vehicle physical damage appraisers by the Department due to the magnitude of the catastrophic damage.</f=23>",
+      "<f=24></f=24>",
+      "<f=25>\t4. The Department will determine and announce when an emergency or catastrophe exists and also will determine and announce the expiration of the period of emergency or catastrophe.</f=25>",
+      "<f=26></f=26>",
+      "<f=27></f=27>",
+      "<f=28></f=28>",
+      "<f=29>HISTORY: Amended by State Register Volume 25, Issue No. 6, eff June 22, 2001; SCSR 42-5 Doc. No. 4803, eff May 25, 2018.</f=29>",
+      "<f=30></f=30>"
+    ]
+  },
+  {
+    "id": "75e9cfde740008ef191d8d8fa9acf713c7835f4427ccf673c58d10908e83112e",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/75e9cfde740008ef191d8d8fa9acf713c7835f4427ccf673c58d10908e83112e.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "2 header paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading",
+        "Many literal tabs (14) in text \u2014 may represent tables or alignment but look odd as plain text"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 58,
+      "header_paragraphs": 2,
+      "footer_paragraphs": 0,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 595,
+      "tagged_lines": 62
+    },
+    "tagged_preview": [
+      "<f=1></f=1>",
+      "<f=2></f=2>",
+      "<f=3>COMMERCE (TRADE DESCRIPTIONS).</f=3>",
+      "<f=4></f=4>",
+      "<f=5></f=5>",
+      "<f=6>**No. 15 of 1930.**</f=6>",
+      "<f=7>An Act to amend the _Commerce _(_Trade Descriptions_)_ Act _1905-1926.</f=7>",
+      "<f=8>[Assented to 18th July, 1930.]</f=8>",
+      "<f=9>BE it enacted by the King\u2019s Most Excellent Majesty, the Senate, and the House of Representatives of the Commonwealth of Australia, as follows:\u2014</f=9>",
+      "<f=10>**Short title and citation.**</f=10>",
+      "<f=11>**1.**\u2014(1.)\tThis Act may be cited as the _Commerce _(_Trade Descrip__tions_)_ Act _1930.</f=11>",
+      "<f=12>",
+      "</f=12>",
+      "<f=13>(2.)\tThe _Commerce _(_Trade Descriptions_)_ Act _1905\u20131926 is in this Act referred to as the Principal Act.</f=13>",
+      "<f=14>(3.)\tThe Principal Act, as amended by this Act, may be cited as the _Commerce _(_Trade Descriptions_)_ Act _1905\u20131930.</f=14>",
+      "<f=15>**Definitions.**</f=15>",
+      "<f=16>**2.****\t**Section three of the Principal Act is amended\u2014</f=16>",
+      "<f=17>(_a_) by omitting the definition of \u201cOfficer\u201d and inserting in its stead the following definition:\u2014</f=17>",
+      "<f=18>\u201c\u2018Officer\u2019 means an officer of Customs and, in relation to exports, includes an officer of the Department of Markets.\u201d; and</f=18>",
+      "<f=19>(_b_) by inserting, after the definition of \u201cOfficer\u201d, the following definition:\u2014</f=19>",
+      "<f=20>\u201c\u2018The Secretary\u2019 means the Secretary of the Department of Markets.\u201d.</f=20>",
+      "<f=21>**Application of trade**** ****description.**</f=21>",
+      "<f=22>**3.****\t**Section four of the Principal Act is amended\u2014</f=22>",
+      "<f=23>(_a_) by inserting in sub-section (1.), after the word \u201cA\u201d, the word \u201cfalse\u201d; and</f=23>",
+      "<f=24>(_b_)_ _by inserting, after sub-section (l.),the following sub-section:\u2014</f=24>",
+      "<f=25>\u201c(1A.) A trade description which is required by the regulations to be applied to any goods shall be deemed to be applied to the goods if\u2014</f=25>",
+      "<f=26>(_a_) it is applied to the goods themselves; or</f=26>",
+      "<f=27>(_b_) it is used in relation to the goods in the manner prescribed.\u201d.</f=27>",
+      "<f=28>**Inspection of imports and exports.**</f=28>",
+      "<f=29>**4.****\t**Section five of the Principal Act is amended by adding at the end of sub-section (l.) the words \u201cor are in course of manufacture or preparation for export\u201d.</f=29>"
+    ]
+  },
+  {
+    "id": "84553adfd5c9944f7ffe62d7020f9c165f0c38c778b094e2bac4026efa7d0f99",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/84553adfd5c9944f7ffe62d7020f9c165f0c38c778b094e2bac4026efa7d0f99.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "1 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading",
+        "Many literal tabs (21) in text \u2014 may represent tables or alignment but look odd as plain text"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 89,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 1,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 2097,
+      "tagged_lines": 90
+    },
+    "tagged_preview": [
+      "<f=1>**CONSTITUTIONAL**** COURT OF SEYCHELLES**</f=1>",
+      "<f=2></f=2>",
+      "<f=3>**__Reportable__**</f=3>",
+      "<f=4>[2021] SCSC 6</f=4>",
+      "<f=5>CP 12/2020</f=5>",
+      "<f=6></f=6>",
+      "<f=7></f=7>",
+      "<f=8>In the matter between:</f=8>",
+      "<f=9>ANDRE LESLIE BENOITON\t1st Plaintiff</f=9>",
+      "<f=10>_(rep. by __Basil Hoareau__)_</f=10>",
+      "<f=11>JENETTE SHIRLEY OTAR\t2nd Plaintiff</f=11>",
+      "<f=12>_(rep. by Basil Hoareau)_</f=12>",
+      "<f=13>CHRISTINE NICHOLE FRICHOT\t3rd Plaintiff</f=13>",
+      "<f=14>_(rep. by Basil Hoareau)_</f=14>",
+      "<f=15>BRIGITTE ALICE HERMITTE\t4th Plaintiff</f=15>",
+      "<f=16>_(rep. by Basil Hoareau)_</f=16>",
+      "<f=17>NATHALIE RACHEL ARISSOL\t5th Plaintiff</f=17>",
+      "<f=18>_(rep. by Basil Hoareau)_</f=18>",
+      "<f=19></f=19>",
+      "<f=20>and</f=20>",
+      "<f=21></f=21>",
+      "<f=22>SARAH ZARQUANI RENE\t1st Defendant</f=22>",
+      "<f=23>_(__rep. by __Joel Camille__)_</f=23>",
+      "<f=24>LOUISA CARMELLE RENE\t2nd Defendant</f=24>",
+      "<f=25>_(__rep. by Joel Camille__)_</f=25>",
+      "<f=26>ELLA SETAREH RENE\t3rd Defendant </f=26>",
+      "<f=27>_(__rep. by Joel Camille__)_</f=27>",
+      "<f=28>DAWN ELSA RENE\t4th Defendant</f=28>",
+      "<f=29>_(__rep. by Joel Camille__)_</f=29>",
+      "<f=30>PANDORA RENE\t5th Defendant</f=30>"
+    ]
+  },
+  {
+    "id": "38868c65105a768de5969c1d2fc8c42f9f6ca094ec06d8dc48ca7842af39586e",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/38868c65105a768de5969c1d2fc8c42f9f6ca094ec06d8dc48ca7842af39586e.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "1 table(s) extracted with cell coordinates and content",
+        "3 header paragraph(s) visible with prefixed IDs",
+        "3 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "4 table(s) skipped: table 36, cell 2.4 has vertical merge (vMerge), table 54, cell 1.1 has horizontal merge (gridSpan), table 20, cell 1.1 has vertical merge (vMerge), table 52, cell 1.1 has horizontal merge (gridSpan)",
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading",
+        "Many literal tabs (23) in text \u2014 may represent tables or alignment but look odd as plain text"
+      ],
+      "improvements": [
+        "Consider supporting merged-cell or nested tables to reduce skipped content",
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 201,
+      "header_paragraphs": 3,
+      "footer_paragraphs": 3,
+      "tables": 1,
+      "skipped_tables": 4,
+      "skipped_elements": 8,
+      "body_words_approx": 5552,
+      "tagged_lines": 237
+    },
+    "tagged_preview": [
+      "<table=1 rows=3 cols=2>",
+      "<cell=1.1.1>Contract No. \u25ba</cell=1.1.1>",
+      "<cell=1.1.2>BH8810/2023/3</cell=1.1.2>",
+      "<cell=1.2.1>Project ID / Sector \u25ba</cell=1.2.1>",
+      "<cell=1.2.2>BH8810 \u2013 PREVENTING AND PROTECTING CHILDREN FROM VIOLENCE INCLUDING IN THE DIGITAL ENVIRONMENT IN THE REPUBLIC OF MOLDOVA</cell=1.2.2>",
+      "<cell=1.3.1>Council of Europe contact point \u25ba</cell=1.3.1>",
+      "<cell=1.3.2>Angelica Russu",
+      "[Angelica.russu@coe.int]</cell=1.3.2>",
+      "</table=1>",
+      "<f=2></f=2>",
+      "<f=3></f=3>",
+      "<f=4></f=4>",
+      "<f=5></f=5>",
+      "<f=6></f=6>",
+      "<f=7></f=7>",
+      "<f=8>**ACT Of ENGAGEMENT**</f=8>",
+      "<f=9>**(****Competitive bidding procedure ****/ ****__One-off contract__****)**</f=9>",
+      "<f=10></f=10>",
+      "<f=11>**This Act of Engagement lays down the terms and conditions of the contract between the Provider, ****as described below,**** and the Council of Europe**** for the provision of ****development and ****implementation of a national awareness raising campaign in the framework of the project \u201cPreventing and protecting children from violence including in the digital environment in the Republic of Moldova****\u201d**</f=11>",
+      "<f=12></f=12>",
+      "<f=13>The signature of this Act of Engagement by the Provider alone shall not constitute or imply any sort of contractual commitment on the part of the Council of Europe. This Act shall become contractually binding only upon signature by a Council of Europe authorised staff member (see Section B).</f=13>",
+      "<f=14></f=14>",
+      "<f=15>Providers shall:</f=15>",
+      "<f=16>1. Fill in the below sections **Contact details **and **Bank details**. Ensure that the \u201cName\u201d of the Provider and the \u201cAccount holder\u201d are the same.</f=16>",
+      "<f=17>2. Fill in the column \u201cFees\u201d of the table of fees (see Section A);</f=17>",
+      "<f=18>3. Sign the Act of Engagement (see Section B) and send a scanned copy to the Council, accompanied by all other supporting documents (see Section F of the Tender File). </f=18>",
+      "<f=19></f=19>",
+      "<table=20 skipped reason=\"table 20, cell 1.1 has vertical merge (vMerge)\"/>",
+      "<f=21></f=21>",
+      "<f=22></f=22>"
+    ]
+  },
+  {
+    "id": "29a9a0f83dfeac5d61e2ee51352a34e60a00d8863049f2f1d394952473704faa",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/29a9a0f83dfeac5d61e2ee51352a34e60a00d8863049f2f1d394952473704faa.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [],
+      "weaknesses": [
+        "19/23 body paragraphs are empty \u2014 document may be sparse or use excessive whitespace"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 23,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 0,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 15,
+      "tagged_lines": 23
+    },
+    "tagged_preview": [
+      "<f=1>**Name of Case and Year**</f=1>",
+      "<f=2></f=2>",
+      "<f=3>Background: </f=3>",
+      "<f=4></f=4>",
+      "<f=5></f=5>",
+      "<f=6></f=6>",
+      "<f=7></f=7>",
+      "<f=8></f=8>",
+      "<f=9></f=9>",
+      "<f=10></f=10>",
+      "<f=11></f=11>",
+      "<f=12></f=12>",
+      "<f=13>Question that the Court had to Consider: </f=13>",
+      "<f=14></f=14>",
+      "<f=15></f=15>",
+      "<f=16></f=16>",
+      "<f=17></f=17>",
+      "<f=18></f=18>",
+      "<f=19></f=19>",
+      "<f=20></f=20>",
+      "<f=21></f=21>",
+      "<f=22></f=22>",
+      "<f=23>Court\u2019s Ruling: </f=23>"
+    ]
+  }
+]

@@ -28,8 +28,6 @@ Usage::
     mcp.run(transport="stdio")
 """
 
-from __future__ import annotations
-
 import json
 from collections import Counter
 from pathlib import Path
@@ -40,9 +38,8 @@ from fastmcp.exceptions import ToolError
 from pydantic import BaseModel, Discriminator, Field, Tag, TypeAdapter, ValidationError
 
 from docx_mcp.converter import (
-    body_to_fragments,
-    fragments_to_json_interleaved,
     fragments_to_tagged_text_interleaved,
+    full_to_fragments,
 )
 from docx_mcp.differ import DmpWordDiffer
 from docx_mcp.document import DocxDocument
@@ -70,8 +67,11 @@ mcp = FastMCP(
     instructions=(
         "Legal document redlining server. Use extract_fragments to read a "
         ".docx file, then apply_changes to add tracked changes with comments. "
-        "Fragment IDs are 1-based paragraph indices. Text uses pseudo-Markdown: "
-        "**bold**, _italic_, __underline__."
+        "Fragment IDs are strings: body paragraphs use '1', '2', ...; "
+        "headers use 'header_1.1'; footers use 'footer_2.1'; "
+        "table cells use 'table_id.row.col'. "
+        "Text uses pseudo-Markdown: **bold**, _italic_, __underline__, "
+        "[text](url) for hyperlinks."
     ),
 )
 
@@ -155,7 +155,9 @@ class ParagraphChangeParam(BaseModel):
     Attributes
     ----------
 
-        fragment_id: 1-based paragraph index from ``extract_fragments``.
+        fragment_id: Fragment ID string from ``extract_fragments``. Body paragraphs
+            use plain numbers (``"5"``). Headers and footers use prefixed IDs
+            (``"header_1.3"``, ``"footer_2.1"``).
         change_type: ``"modify"``, ``"delete"``, or ``"append_after"``.
         new_text: Replacement text in pseudo-Markdown (``**bold**``, ``_italic_``,
             ``__underline__``). Required for modify and append_after; must be None for delete.
@@ -168,7 +170,10 @@ class ParagraphChangeParam(BaseModel):
             (delete only, default 0).
     """
 
-    fragment_id: int = Field(description="1-based paragraph index")
+    fragment_id: str = Field(
+        description="Fragment ID. Body paragraphs use plain integers (e.g. '5'). "
+        "Headers and footers use prefixed IDs (e.g. 'header_1.3', 'footer_2.1')."
+    )
     change_type: Literal["modify", "delete", "append_after"] = Field(
         description='Type of change: "modify", "delete", or "append_after"',
     )
@@ -439,7 +444,6 @@ def _apply_and_save(
     change_params: list[ChangeParam],
     output_path: str | None,
     author: str,
-    validate: bool,
 ) -> str:
     """Shared implementation for both apply tools."""
     # Convert MCP params to internal domain models
@@ -467,17 +471,13 @@ def _apply_and_save(
             summary_parts.append(f"{counts[ct]} {ct}")
     change_summary = ", ".join(summary_parts)
 
+    result = _validate_document(doc)
+
     lines = [
         f"Applied {len(change_params)} change(s) ({change_summary}) to {Path(document_path).name}.",
+        f"Output saved to {out}.",
+        _format_validation(result.errors, result.warnings),
     ]
-
-    # Validate if requested
-    if validate:
-        result = _validate_document(doc)
-        lines.append(f"Output saved to {out}.")
-        lines.append(_format_validation(result.errors, result.warnings))
-    else:
-        lines.append(f"Output saved to {out}.")
 
     doc.save(out)
     return "\n".join(lines)
@@ -498,131 +498,56 @@ def _apply_and_save(
 )
 def extract_fragments(
     document_path: str,
-    format: Literal["tagged", "json"] = "tagged",
-    markup: bool = False,
 ) -> str:
-    """Read a .docx file and return its paragraphs and tables as text.
+    """Extract text from a .docx file as tagged fragments.
 
-    This is typically the **first step** in a redlining workflow. Each paragraph
-    and table is identified by a 1-based fragment ID that you will use to target
-    changes in ``apply_changes``.
+    Call this first to get fragment IDs, then use those IDs in ``apply_changes``.
 
-    Fragment IDs are position-based, corresponding to top-level ``<w:p>`` and
-    ``<w:tbl>`` elements in ``<w:body>`` in document order. Fragment 1 is the
-    first element, fragment 2 is the second, and so on.
+    Output format::
 
-    Within tables, cells are identified using the format: ``"table_id.row.col"``
-    (e.g., ``"2.1.3"`` for table 2, row 1, column 3). Row and column numbers are
-    1-based.
-
-    Output Formats
-    --------------
-
-    The **tagged** format (default) wraps each element with XML-like tags:
-
-    Paragraphs::
-
-        <f=1>**CONFIDENTIALITY AGREEMENT**</f=1>
-        <f=2>This Agreement is entered into as of January 1, 2025.</f=2>
-
-    Tables::
-
+        <f=1>**Title**</f=1>
+        <f=2>Body paragraph.</f=2>
         <table=3 rows=2 cols=3>
-        <cell=3.1.1>Header A</cell=3.1.1>
-        <cell=3.1.2>Header B</cell=3.1.2>
-        <cell=3.1.3>Header C</cell=3.1.3>
-        <cell=3.2.1>Data 1</cell=3.2.1>
-        <cell=3.2.2>Data 2</cell=3.2.2>
-        <cell=3.2.3>Data 3</cell=3.2.3>
+        <cell=3.1.1>Header</cell=3.1.1>
+        <cell=3.1.2 span="2">Merged cell</cell=3.1.2>
         </table=3>
 
-    Skipped tables (non-simple)::
+    Fragment IDs:
+      - Body: ``"1"``, ``"2"``, ...
+      - Headers: ``"header_1.1"``, ``"header_1.2"``, ...
+      - Footers: ``"footer_1.1"``, ``"footer_2.1"``, ...
+      - Table cells: ``"table_id.row.col"`` (e.g., ``"3.1.2"``)
 
-        <table=4 skipped reason="contains merged cells"/>
+    Formatting: ``**bold**``, ``_italic_``, ``__underline__``. ``\n`` for paragraph
+    breaks.
 
-    The **json** format returns a JSON array of objects::
-
-        [
-          {"type": "paragraph", "fragment_id": 1, "text": "**CONFIDENTIALITY AGREEMENT**"},
-          {"type": "paragraph", "fragment_id": 2, "text": "This Agreement..."},
-          {
-            "type": "table",
-            "table_id": 3,
-            "rows": 2,
-            "cols": 3,
-            "cells": [
-              [
-                {"cell_id": "3.1.1", "row": 1, "col": 1, "text": "Header A"},
-                {"cell_id": "3.1.2", "row": 1, "col": 2, "text": "Header B"},
-                {"cell_id": "3.1.3", "row": 1, "col": 3, "text": "Header C"}
-              ],
-              [
-                {"cell_id": "3.2.1", "row": 2, "col": 1, "text": "Data 1"},
-                {"cell_id": "3.2.2", "row": 2, "col": 2, "text": "Data 2"},
-                {"cell_id": "3.2.3", "row": 2, "col": 3, "text": "Data 3"}
-              ]
-            ]
-          },
-          {"type": "table", "table_id": 4, "skipped": true, "reason": "contains merged cells"}
-        ]
-
-    Text Formatting
-    ---------------
-
-    Text uses pseudo-Markdown for inline formatting:
-
-    - ``**bold**``
-    - ``_italic_``
-    - ``__underline__``
-
-    Unicode characters (smart quotes, em dashes, section symbols, non-breaking
-    spaces) are preserved as-is.
-
-    Table cells with multiple paragraphs show paragraph breaks as ``\n``.
-
-    Table Support
-    -------------
-
-    Only "simple" tables are extracted (rectangular grid, no merged cells, no
-    nested tables). Non-simple tables are represented as skipped placeholders
-    with a reason.
-
-    Tracked Changes (markup=True)
-    ------------------------------
-
-    When ``markup=True``, existing tracked changes in the document are shown inline:
-
-    - Inserted text is wrapped with ``++…++``
-    - Deleted text is wrapped with ``~~…~~``
-
-    This is useful for inspecting or validating redlined documents that already
-    contain tracked changes. For clean documents, leave ``markup=False`` (default).
-
-    Typical Workflow
-    ----------------
-
-    1. Call ``extract_fragments`` to see document structure and get fragment IDs
-    2. Identify which elements need changes (by reading the text)
-    3. Construct a list of ``ChangeParam`` objects with appropriate IDs
-    4. Call ``apply_changes`` with the change list
-    5. Open the output file in Microsoft Word to review tracked changes
+    Limitations:
+      - Images, nested tables, VML text boxes are skipped.
+      - Pre-existing tracked changes are hard-rejected.
 
     Args:
         document_path: Absolute path to the .docx file.
-        format: Output format -- ``"tagged"`` (default) or ``"json"``.
-        markup: Show existing tracked changes inline (default False).
 
     Returns:
-        Fragment text in the requested format (string).
+        Tagged text string with fragment and table markup.
     """
     doc = _load_document(document_path)
-    items = body_to_fragments(doc.body_elements, markup=markup)
 
-    if format == "json":
-        data = fragments_to_json_interleaved(items)
-        return json.dumps(data, ensure_ascii=False, indent=2)
+    dirty_parts = doc.has_tracked_changes()
+    if dirty_parts:
+        locations = ", ".join(dirty_parts)
+        msg = (
+            f"Document contains pre-existing tracked changes in {locations}. "
+            "Please accept or reject all changes before redlining."
+        )
+        raise ToolError(msg)
 
-    return fragments_to_tagged_text_interleaved(items)
+    result = full_to_fragments(
+        doc,
+        hyperlink_resolver=doc.resolve_hyperlink_url,
+    )
+
+    return fragments_to_tagged_text_interleaved(result.items)
 
 
 @mcp.tool(
@@ -638,150 +563,59 @@ def apply_changes(
     changes: list[ChangeParam],
     output_path: str | None = None,
     author: str = "AI Review",
-    validate: bool = True,
 ) -> str:
-    """Apply tracked changes to a .docx file and save the result.
+    """Apply tracked changes to a .docx file and save a new redlined document.
 
-    Produces a Word document with professional tracked changes (``w:ins`` / ``w:del``)
-    and comments, indistinguishable from a lawyer's redline. Opens cleanly in
-    Microsoft Word with the Review tab showing all changes and comments.
+    Produces Word-compatible tracked changes (``w:ins`` / ``w:del``) with comments.
+    Always call ``extract_fragments`` first to get fragment IDs.
 
-    Typical Workflow
-    ----------------
+    Paragraph changes (use ``fragment_id``):
+      - ``modify``: Word-level diff. ``new_text`` required.
+      - ``delete``: Marks paragraph deleted. Omit ``new_text``.
+      - ``append_after``: Insert after target. ``new_text`` required.
 
-    1. Call ``extract_fragments`` to see document structure and get fragment IDs
-    2. Identify which elements need changes (by reading the text)
-    3. Construct a list of ``ChangeParam`` objects with appropriate fragment_ids or cell_ids
-    4. Call this tool (``apply_changes``) with the changes list
-    5. Open the output file in Microsoft Word to review tracked changes
+    Table changes (use ``cell_id`` like ``"2.1.3"``):
+      - ``modify_cell``: Replace cell text. ``new_text`` required. Use ``\n`` for
+        multi-paragraph cells.
+      - ``clear_cell``: Delete cell content. Omit ``new_text``.
 
-    Paragraph Change Types
-    ----------------------
+    Rules:
+      - ``delete_next_blanks`` only with ``delete``.
+      - ``blank_lines_before`` / ``blank_lines_after`` only with ``append_after``.
+      - Header/footer changes work but comments are silently dropped.
+      - Documents with pre-existing tracked changes are hard-rejected.
 
-    - **modify**: Word-level diff produces fine-grained tracked insertions and
-      deletions. For example, changing "shall deliver" to "must deliver immediately"
-      will show "shall" as deleted and "must" as inserted, preserving "deliver".
+    ``new_text`` uses pseudo-Markdown: ``**bold**``, ``_italic_``, ``__underline__``.
 
-    - **delete**: Entire paragraph marked as deleted. Use ``delete_next_blanks``
-      to remove trailing blank separator lines along with the deleted clause.
-
-    - **append_after**: New paragraph inserted after the target fragment. The font
-      family, size, and color are automatically inherited from the reference
-      paragraph. Use ``blank_lines_before`` / ``blank_lines_after`` to maintain
-      legal document spacing conventions.
-
-    Table Cell Change Types
-    -----------------------
-
-    - **modify_cell**: Replace cell text (word-level diff on each paragraph).
-      Use ``\n`` to separate multiple paragraphs within the cell. Example:
-      ``"Header\nBody paragraph\nFooter"`` for a 3-paragraph cell.
-
-    - **clear_cell**: Mark all cell content as deleted (cell remains but becomes empty).
-
-    Font Inheritance
-    ----------------
-
-    When appending new paragraphs (``append_after``), the font family, size, and
-    color are automatically copied from the reference paragraph's first text-bearing
-    run. Pseudo-Markdown formatting (``**bold**``, ``_italic_``, ``__underline__``)
-    is applied on top of the inherited base. For example, if the reference paragraph
-    uses Times New Roman 12pt, your appended paragraph will also use Times New Roman
-    12pt, even if you only specify ``**bold**`` in the ``new_text``.
-
-    Blank Line Management
-    ---------------------
-
-    Legal documents typically separate clauses with blank paragraphs (one blank line
-    between sections). When appending new clauses, set ``blank_lines_before=1`` and/or
-    ``blank_lines_after=1`` to maintain this spacing. When deleting a clause that has
-    a trailing blank separator, set ``delete_next_blanks=1`` to remove it along with
-    the clause itself.
-
-    All blank lines are marked as tracked insertions/deletions and appear in the
-    redlined document.
-
-    Error Handling
-    --------------
-
-    Common errors that will cause this tool to fail:
-
-    - ``fragment_id`` out of range (must be 1..N where N is total element count)
-    - ``new_text`` missing when required (modify/append_after/modify_cell)
-    - ``new_text`` provided for delete or clear_cell (must be null/omitted)
-    - ``delete_next_blanks`` targets a non-blank paragraph (only whitespace-only
-      paragraphs can be deleted this way)
-    - ``blank_lines_before`` / ``blank_lines_after`` used with modify, delete, or clear_cell
-      (only valid with append_after)
-    - ``delete_next_blanks`` used with modify, append_after, or table changes (only valid
-      with delete)
-    - Cell ID out of range (must exist in extracted table)
-
-    Example
-    -------
-
-    Applying multiple changes to an NDA with table modification::
+    Example::
 
         changes = [
             {
                 "fragment_id": 1,
                 "change_type": "modify",
-                "new_text": "**MUTUAL NON-DISCLOSURE AGREEMENT** (Revised 2025)",
-                "justification": "Updated title and year"
+                "new_text": "**Updated title**",
+                "justification": "Fixed typo"
             },
             {
                 "cell_id": "2.1.1",
                 "change_type": "modify_cell",
-                "new_text": "**Disclosing Party**",
-                "justification": "Clarified table header"
-            },
-            {
-                "fragment_id": 5,
-                "change_type": "delete",
-                "justification": "Removed Section 7 (proprietary rights legends)",
-                "delete_next_blanks": 1
-            },
-            {
-                "fragment_id": 10,
-                "change_type": "append_after",
-                "new_text": (
-                    "**18. Amendments.** No amendment shall be effective unless "
-                    "in writing and signed by both parties."
-                ),
-                "justification": "Added amendments clause per legal review",
-                "blank_lines_before": 1,
-                "blank_lines_after": 1
+                "new_text": "New header",
+                "justification": "Clarified"
             }
         ]
 
-        result = apply_changes(
-            document_path="/path/to/contract.docx",
-            changes=changes,
-            author="Legal AI",
-            validate=True
-        )
-
-        # Result:
-        # "Applied 4 change(s) (1 modify, 1 modify_cell, 1 delete, 1 append_after) to contract.docx.
-        #  Output saved to /path/to/contract_redlined.docx.
-        #  Validation: passed (0 errors, 0 warnings)."
-
     Args:
         document_path: Absolute path to the input .docx file.
-        changes: List of ``ChangeParam`` objects describing the changes to apply
-            (mix of paragraph and table cell changes).
+        changes: List of change objects (paragraph or table cell changes).
         output_path: Where to save the redlined document. Defaults to
             ``<stem>_redlined.docx`` beside the input file.
-        author: Author name for tracked changes and comments (appears in Word's
-            Review tab). Defaults to "AI Review".
-        validate: Run structural validation after applying changes (default True,
-            recommended). Checks for annotation ID collisions, comment integrity,
-            and tracked-change attributes.
+        author: Author name for tracked changes and comments. Defaults to
+            "AI Review".
 
     Returns:
         Summary string with change counts, output path, and validation result.
     """
-    return _apply_and_save(document_path, changes, output_path, author, validate)
+    return _apply_and_save(document_path, changes, output_path, author)
 
 
 @mcp.tool(
@@ -797,94 +631,29 @@ def apply_changes_from_file(
     changes_file: str,
     output_path: str | None = None,
     author: str = "AI Review",
-    validate: bool = True,
 ) -> str:
-    """Apply tracked changes from a JSON file to a .docx file.
+    """Same as ``apply_changes`` but reads the change list from a JSON file.
 
-    Same behavior as ``apply_changes`` but reads the change list from a JSON file
-    on disk. This is useful when:
+    Useful for large change sets that would exceed token limits in a direct tool
+    call, or for reusing a change set across multiple runs.
 
-    - You have a large change set that would exceed token limits in a direct tool call
-    - You want to save and reuse a change set across multiple runs
-    - You're working with pre-prepared review instructions from another system
-
-    JSON File Format
-    ----------------
-
-    The JSON file must contain either:
-
-    1. A JSON array of change objects (bare array)::
+    The JSON file must contain either a bare array of change objects, or an
+    object with a ``"changes"`` key::
 
          [
-           {
-             "fragment_id": 1,
-             "change_type": "modify",
-             "new_text": "Updated text",
-             "justification": "Reason for change"
-           },
-           {
-             "fragment_id": 5,
-             "change_type": "delete",
-             "justification": "Removed obsolete clause",
-             "delete_next_blanks": 1
-           },
-           {
-             "cell_id": "2.1.1",
-             "change_type": "modify_cell",
-             "new_text": "Updated cell content",
-             "justification": "Corrected table entry"
-           }
+           {"fragment_id": 1, "change_type": "modify", "new_text": "..."},
+           {"cell_id": "2.1.1", "change_type": "modify_cell", "new_text": "..."}
          ]
 
-    2. A JSON object with a ``"changes"`` key containing the array::
-
-         {
-           "changes": [
-             {
-               "fragment_id": 1,
-               "change_type": "modify",
-               "new_text": "Updated text",
-               "justification": "Reason for change"
-             }
-           ]
-         }
-
-    Paragraph Change Parameters
-    ---------------------------
-
-    Each paragraph change object supports:
-
-    - ``fragment_id`` (int, required): 1-based paragraph index
-    - ``change_type`` (string, required): ``"modify"``, ``"delete"``, or ``"append_after"``
-    - ``new_text`` (string or null): Required for modify/append_after, omit for delete
-    - ``justification`` (string, required): Reason for the change
-    - ``blank_lines_before`` (int, optional): Blank paragraphs before (append_after only, default 0)
-    - ``blank_lines_after`` (int, optional): Blank paragraphs after (append_after only, default 0)
-    - ``delete_next_blanks`` (int, optional): Trailing blanks to delete (delete only, default 0)
-
-    Table Cell Change Parameters
-    ----------------------------
-
-    Each table cell change object supports:
-
-    - ``cell_id`` (string, required): Dotted cell reference in format ``"table_id.row.col"``
-      (e.g., ``"2.1.3"`` for table 2, row 1, column 3)
-    - ``change_type`` (string, required): ``"modify_cell"`` or ``"clear_cell"``
-    - ``new_text`` (string or null): Required for modify_cell; use ``\n`` for multiple
-      paragraphs. Omit for clear_cell.
-    - ``justification`` (string, required): Reason for the change
-
-    The file must be UTF-8 encoded. Path separators and spaces in paths are supported.
+    See ``apply_changes`` for change object schema and rules.
 
     Args:
         document_path: Absolute path to the input .docx file.
         changes_file: Absolute path to the JSON file containing changes.
         output_path: Where to save the redlined document. Defaults to
             ``<stem>_redlined.docx`` beside the input file.
-        author: Author name for tracked changes and comments (appears in Word's
-            Review tab). Defaults to "AI Review".
-        validate: Run structural validation after applying changes (default True,
-            recommended).
+        author: Author name for tracked changes and comments. Defaults to
+            "AI Review".
 
     Returns:
         Summary string with change counts, output path, and validation result.
@@ -922,7 +691,7 @@ def apply_changes_from_file(
         msg = f"Invalid changes in {changes_file}:\n{exc}"
         raise ToolError(msg) from exc
 
-    return _apply_and_save(document_path, change_params, output_path, author, validate)
+    return _apply_and_save(document_path, change_params, output_path, author)
 
 
 @mcp.tool(
@@ -999,6 +768,43 @@ def validate_document_tool(document_path: str) -> str:
         "openWorldHint": False,
     },
 )
+def audit_document_tool(
+    document_path: str,
+    format: Literal["text", "json"] = "text",
+) -> str:
+    """Audit a .docx file for structural issues and skipped content.
+
+    Reports headers, footers, images, tables, section breaks, tracked changes,
+    comments, and unsupported elements (footnotes, endnotes, text boxes).
+
+    Args:
+        document_path: Absolute path to the .docx file.
+        format: Output format -- ``"text"`` (default) or ``"json"``.
+
+    Returns:
+        Audit report in the requested format.
+    """
+    from docx_mcp.audit import audit_document
+
+    doc = _load_document(document_path)
+    report = audit_document(doc)
+
+    if format == "json":
+        import json
+
+        return json.dumps(report.to_dict(), indent=2, ensure_ascii=False)
+
+    return report.to_text()
+
+
+@mcp.tool(
+    annotations={
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    },
+)
 def diff_fragments(
     original_path: str,
     modified_path: str,
@@ -1060,11 +866,12 @@ def diff_fragments(
     For tables, each modified cell is shown with its cell ID (table_id.row.col)
     followed by the word-level diff of the cell content.
 
-    Difference from extract_fragments with markup=True
-    --------------------------------------------------
+    Difference from extract_fragments
+    --------------------------------
 
-    - ``extract_fragments`` with ``markup=True`` shows **tracked changes already
-      present in a single document** (existing ``<w:ins>`` / ``<w:del>`` markup)
+    - ``extract_fragments`` shows the **plain text** of a single document
+      (paragraphs, headers, footers, tables). Pre-existing tracked changes
+      cause a hard rejection.
 
     - ``diff_fragments`` **compares two separate documents** and computes the
       differences between their plain text (ignoring any tracked changes)
@@ -1081,25 +888,25 @@ def diff_fragments(
     doc_b = _load_document(modified_path)
 
     # Extract fragments (paragraphs and tables) from both documents
-    items_a = body_to_fragments(doc_a.body_elements)
-    items_b = body_to_fragments(doc_b.body_elements)
+    result_a = full_to_fragments(doc_a)
+    result_b = full_to_fragments(doc_b)
 
     # Build dictionaries mapping fragment_id -> FragmentItem
-    frags_a: dict[int, tuple[int, str] | TableInfo | SkippedTableInfo] = {}
-    for item in items_a:
+    frags_a: dict[str, tuple[str, str] | TableInfo | SkippedTableInfo] = {}
+    for item in result_a.items:
         if isinstance(item, tuple):
             fid, _text = item
             frags_a[fid] = item
         else:  # TableInfo or SkippedTableInfo
-            frags_a[item.table_id] = item
+            frags_a[str(item.table_id)] = item
 
-    frags_b: dict[int, tuple[int, str] | TableInfo | SkippedTableInfo] = {}
-    for item in items_b:
+    frags_b: dict[str, tuple[str, str] | TableInfo | SkippedTableInfo] = {}
+    for item in result_b.items:
         if isinstance(item, tuple):
             fid, _text = item
             frags_b[fid] = item
         else:  # TableInfo or SkippedTableInfo
-            frags_b[item.table_id] = item
+            frags_b[str(item.table_id)] = item
 
     all_ids = sorted(set(frags_a) | set(frags_b))
     if not all_ids:
@@ -1242,8 +1049,8 @@ def get_fragments(document_path: str) -> str:
         ``<cell=id>text</cell=id>`` for table cells.
     """
     doc = _load_document(document_path)
-    items = body_to_fragments(doc.body_elements)
-    return fragments_to_tagged_text_interleaved(items)
+    result = full_to_fragments(doc)
+    return fragments_to_tagged_text_interleaved(result.items)
 
 
 # ---------------------------------------------------------------------------

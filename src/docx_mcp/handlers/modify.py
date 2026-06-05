@@ -25,8 +25,6 @@ Inserted regions are wrapped in ``<w:ins>`` with ``<w:t>``.
    the XML run text, causing cascading alignment failures.
 """
 
-from __future__ import annotations
-
 from lxml import etree
 
 from docx_mcp.converter import pseudo_markdown_to_raw
@@ -152,7 +150,7 @@ def _rebuild_paragraph(
 
         if seg.op == DiffOp.EQUAL:
             # Plain run — no tracked change wrapper
-            r = build_run_element(seg.text, rpr=seg.rpr)
+            r = build_run_element(seg.text, rpr=seg.rpr, hyperlink_rel_id=seg.hyperlink_rel_id)
             paragraph.append(r)
             i += 1
 
@@ -166,7 +164,12 @@ def _rebuild_paragraph(
                 author=author,
                 date_iso=date,
             )
-            r = build_run_element(seg.text, rpr=seg.rpr, is_delete=True)
+            r = build_run_element(
+                seg.text,
+                rpr=seg.rpr,
+                is_delete=True,
+                hyperlink_rel_id=seg.hyperlink_rel_id,
+            )
             del_el.append(r)
 
             # Check if next segment is INSERT (del+ins pair)
@@ -182,7 +185,11 @@ def _rebuild_paragraph(
                     author=author,
                     date_iso=date,
                 )
-                r_ins = build_run_element(ins_seg.text, rpr=ins_seg.rpr)
+                r_ins = build_run_element(
+                    ins_seg.text,
+                    rpr=ins_seg.rpr,
+                    hyperlink_rel_id=ins_seg.hyperlink_rel_id,
+                )
                 ins_el.append(r_ins)
                 paragraph.append(ins_el)
                 i += 2
@@ -200,7 +207,7 @@ def _rebuild_paragraph(
                 author=author,
                 date_iso=date,
             )
-            r = build_run_element(seg.text, rpr=seg.rpr)
+            r = build_run_element(seg.text, rpr=seg.rpr, hyperlink_rel_id=seg.hyperlink_rel_id)
             ins_el.append(r)
             paragraph.append(ins_el)
             i += 1

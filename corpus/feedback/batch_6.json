@@ -1,0 +1,243 @@
+[
+  {
+    "id": "05fbf2a0d628f10fde61e6f5a67d365920459e6903733543426ad2027ecb594c",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/05fbf2a0d628f10fde61e6f5a67d365920459e6903733543426ad2027ecb594c.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "3 header paragraph(s) visible with prefixed IDs",
+        "3 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading",
+        "Many literal tabs (17) in text \u2014 may represent tables or alignment but look odd as plain text"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 22,
+      "header_paragraphs": 3,
+      "footer_paragraphs": 3,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 98,
+      "tagged_lines": 28
+    },
+    "tagged_preview": [
+      "<f=1>**CAUSE NO. \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_**</f=1>",
+      "<f=2></f=2>",
+      "<f=3>\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_ \t\u00a7 \tIN THE JUSTICE COURT</f=3>",
+      "<f=4>Plaintiff\t\u00a7</f=4>",
+      "<f=5>\t\u00a7</f=5>",
+      "<f=6>v.\t\u00a7\tPRECINCT \\_\\_\\_\\_</f=6>",
+      "<f=7>\t\u00a7</f=7>",
+      "<f=8>\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\t\u00a7</f=8>",
+      "<f=9>Defendant\t\u00a7\t\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_ COUNTY, TEXAS</f=9>",
+      "<f=10></f=10>",
+      "<f=11>**ORDER ON MOTION ****FOR NEW TRIAL**</f=11>",
+      "<f=12>After considering Plaintiff\u2019s Defendant\u2019s Motion for New Trial, and information submitted by the parties, if any, the court: </f=12>",
+      "<f=13>**DENIES** the motion.</f=13>",
+      "<f=14>**FINDS** justice was not done in the trial of the case and **GRANTS** the motion. The parties are notified to appear on \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_, 20\\_\\_\\_\\_\\_, or as directed by the court.</f=14>",
+      "<f=15></f=15>",
+      "<f=16>**ISSUED AND SIGNED **on \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_, 20\\_\\_\\_\\_**. **</f=16>",
+      "<f=17>\t\t\t\t\t\t\t</f=17>",
+      "<f=18></f=18>",
+      "<f=19>\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_</f=19>",
+      "<f=20>JUSTICE OF THE PEACE, PRECINCT \\_\\_\\_\\_\\_\\_\\_</f=20>",
+      "<f=21>\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_ COUNTY, TEXAS </f=21>",
+      "<f=22></f=22>",
+      "<f=header_1.1></f=header_1.1>",
+      "<f=header_2.1></f=header_2.1>",
+      "<f=header_3.1></f=header_3.1>",
+      "<f=footer_1.1></f=footer_1.1>",
+      "<f=footer_2.1></f=footer_2.1>",
+      "<f=footer_3.1></f=footer_3.1>"
+    ]
+  },
+  {
+    "id": "bdd19f6512dd99784ff1153a3268b305354a2d72a75bab854b1aa47311b5c8b4",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/bdd19f6512dd99784ff1153a3268b305354a2d72a75bab854b1aa47311b5c8b4.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "low",
+      "strengths": [
+        "1 table(s) extracted with cell coordinates and content",
+        "5 header paragraph(s) visible with prefixed IDs",
+        "4 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading",
+        "Many literal tabs (1470) in text \u2014 may represent tables or alignment but look odd as plain text"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 11293,
+      "header_paragraphs": 5,
+      "footer_paragraphs": 4,
+      "tables": 1,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 274622,
+      "tagged_lines": 11313
+    },
+    "tagged_preview": [
+      "<f=1></f=1>",
+      "<f=2>**CIVIL CODE**</f=2>",
+      "<f=3>**OF THE **</f=3>",
+      "<f=4></f=4>",
+      "<f=5>18 July 2000 No VIII-1864",
+      "</f=5>",
+      "<f=6></f=6>",
+      "<f=7>(Last amended on 21 June 2011 No XI-1484)</f=7>",
+      "<f=8></f=8>",
+      "<f=9>**BOOK ONE**</f=9>",
+      "<f=10>**GENERAL PROVISIONS**</f=10>",
+      "<f=11></f=11>",
+      "<f=12>**Part I **</f=12>",
+      "<f=13>**Civil laws and their applicatION**</f=13>",
+      "<f=14></f=14>",
+      "<f=15>**Chapter I **</f=15>",
+      "<f=16>**Civil laws and the relationshipS theY regulate** </f=16>",
+      "<f=17></f=17>",
+      "<f=18>**Article 1.1. Relationships regulated by the Civil Code of the **</f=18>",
+      "<f=19>1. The Civil Code of the shall govern property relationships and personal non-property relationships related with the aforesaid relations, as well as family relationships. In the cases provided for by laws, other personal non-property relationships shall likewise be regulated by this Code.</f=19>",
+      "<f=20>2. The provisions established by this Code shall apply to property relationships based on the legal subordination of persons to state institutions and directly resultant from their exercise of functions of state power (realization of subordination), or from the performance of persons\u2019 obligations established by laws towards the state, or from the infliction of administrative or criminal sanctions established by laws, including relationships in the field of taxation and other obligatory payments or dues to the state or to its institutions, also in the field of the state budget, as well as to any other relationships governed by the provisions of public law to the extent that these relationships are not regulated by the relevant laws, also in the cases when it is expressly prescribed by this Code. </f=20>",
+      "<f=21>3. Labour relationships shall be regulated by special laws. The provisions of this Code shall apply to labour relations to the extent that they are not regulated by special laws.</f=21>",
+      "<f=22></f=22>",
+      "<f=23>**Article 1.2. Principles of legal regulation of civil relationships**</f=23>",
+      "<f=24>1. Civil relationships shall be regulated in accordance with the principles of equality of their subjects\u2019 rights, inviolability of property, freedom of contract, non-interference in private relations, legal certainty, proportionality, and legitimate expectations, prohibition to abuse a right, as well as the principles of comprehensive judicial protection of civil rights.</f=24>",
+      "<f=25>2. No civil rights may be limited, except in the cases established by laws, or on the basis of a court judgment made in accordance with laws, where such limitation is necessary to protect public order, the principles of good morals, likewise the health and life of people, property of persons, their rights and lawful interests.</f=25>",
+      "<f=26></f=26>",
+      "<f=27>**Article 1.3. Sources of civil law**</f=27>",
+      "<f=28>1. The sources of the Civil law shall be the Constitution of the of , the present Code, other laws and international treaties of the .</f=28>",
+      "<f=29>2. In the eventuality of contradictions between the present Code and other laws, the provisions of this Code shall apply, except in cases where this Code gives priority to the provisions of other laws.</f=29>"
+    ]
+  },
+  {
+    "id": "d7468207cb8b1ebdf5b1e59d815b9ce44b0a54b5d2a00a366769ffcf0c709200",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/d7468207cb8b1ebdf5b1e59d815b9ce44b0a54b5d2a00a366769ffcf0c709200.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "high",
+      "strengths": [
+        "6 footer paragraph(s) visible with prefixed IDs"
+      ],
+      "weaknesses": [],
+      "improvements": []
+    },
+    "stats": {
+      "body_paragraphs": 29,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 6,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 0,
+      "body_words_approx": 677,
+      "tagged_lines": 35
+    },
+    "tagged_preview": [
+      "<f=1>HEALTH AND SAFETY CODE</f=1>",
+      "<f=2>TITLE 4. HEALTH FACILITIES</f=2>",
+      "<f=3>SUBTITLE B. LICENSING OF HEALTH FACILITIES</f=3>",
+      "<f=4>CHAPTER 256. SAFE PATIENT HANDLING, MOVEMENT, AND DISCHARGE PRACTICES</f=4>",
+      "<f=5> </f=5>",
+      "<f=6>Sec. 256.001.\u00a0\u00a0DEFINITIONS. In this chapter:</f=6>",
+      "<f=7>(1)\u00a0\u00a0\"Hospital\" means a general or special hospital, as defined by Section 241.003, a private mental hospital licensed under Chapter 577, or another hospital that is maintained or operated by the state.</f=7>",
+      "<f=8>(2)\u00a0\u00a0\"Nursing home\" means an institution licensed under Chapter 242.</f=8>",
+      "<f=9>Added by Acts 2005, 79th Leg., Ch. 401 (S.B. [1525]), Sec. 1, eff. January 1, 2006.</f=9>",
+      "<f=10> </f=10>",
+      "<f=11>Sec. 256.002.\u00a0\u00a0REQUIRED SAFE PATIENT HANDLING AND MOVEMENT POLICY. (a) The governing body of a hospital or the quality assurance committee of a nursing home shall adopt and ensure implementation of a policy to identify, assess, and develop strategies to control risk of injury to patients and nurses associated with the lifting, transferring, repositioning, or movement of a patient.</f=11>",
+      "<f=12>(b)\u00a0\u00a0The policy shall establish a process that, at a minimum, includes:</f=12>",
+      "<f=13>(1)\u00a0\u00a0analysis of the risk of injury to both patients and nurses posed by the patient handling needs of the patient populations served by the hospital or nursing home and the physical environment in which patient handling and movement occurs;</f=13>",
+      "<f=14>(2)\u00a0\u00a0education of nurses in the identification, assessment, and control of risks of injury to patients and nurses during patient handling;</f=14>",
+      "<f=15>(3)\u00a0\u00a0evaluation of alternative ways to reduce risks associated with patient handling, including evaluation of equipment and the environment;</f=15>",
+      "<f=16>(4)\u00a0\u00a0restriction, to the extent feasible with existing equipment and aids, of manual patient handling or movement of all or most of a patient's weight to emergency, life-threatening, or otherwise exceptional circumstances;</f=16>",
+      "<f=17>(5)\u00a0\u00a0collaboration with and annual report to the nurse staffing committee;</f=17>",
+      "<f=18>(6)\u00a0\u00a0procedures for nurses to refuse to perform or be involved in patient handling or movement that the nurse believes in good faith will expose a patient or a nurse to an unacceptable risk of injury;</f=18>",
+      "<f=19>(7)\u00a0\u00a0submission of an annual report to the governing body or the quality assurance committee on activities related to the identification, assessment, and development of strategies to control risk of injury to patients and nurses associated with the lifting, transferring, repositioning, or movement of a patient; and</f=19>",
+      "<f=20>(8)\u00a0\u00a0in developing architectural plans for constructing or remodeling a hospital or nursing home or a unit of a hospital or nursing home in which patient handling and movement occurs, consideration of the feasibility of incorporating patient handling equipment or the physical space and construction design needed to incorporate that equipment at a later date.</f=20>",
+      "<f=21>Added by Acts 2005, 79th Leg., Ch. 401 (S.B. [1525]), Sec. 1, eff. January 1, 2006.</f=21>",
+      "<f=22> </f=22>",
+      "<f=23>Sec. 256.003.\u00a0\u00a0PROHIBITED DISCHARGE OF PATIENTS TO CERTAIN GROUP-CENTERED FACILITIES. (a)\u00a0\u00a0Subject to Subsection (b), a hospital or other health facility may discharge or otherwise release a patient to the care of a group home, boarding home facility, or similar group-centered facility only if the person who operates the group-centered facility holds a license or permit issued in accordance with applicable state law.</f=23>",
+      "<f=24>(b)\u00a0\u00a0A hospital or other health facility may discharge or otherwise release a patient to the care of a group home, boarding home facility, or similar group-centered facility operated by a person who does not hold a license or permit issued in accordance with applicable state law only if:</f=24>",
+      "<f=25>(1)\u00a0\u00a0no group-centered facility is operated in the county in which the patient is discharged by a person who holds the applicable license or permit; or</f=25>",
+      "<f=26>(2)\u00a0\u00a0the patient voluntarily elects to reside in the group-centered facility of the unlicensed or unpermitted person.</f=26>",
+      "<f=27>(c)\u00a0\u00a0A hospital or other health facility is not liable for damages to a patient resulting from the patient's discharge or release to a group home, boarding home facility, or similar group-centered facility under Subsection (b).</f=27>",
+      "<f=28>(d)\u00a0\u00a0A local health authority may not issue an order authorizing a hospital or health facility to discharge or release a patient to a group-centered facility in a manner that conflicts with this section.</f=28>",
+      "<f=29>Added by Acts 2023, 88th Leg., R.S., Ch. 1045 (S.B. [186]), Sec. 2, eff. September 1, 2023.</f=29>",
+      "<f=footer_1.1></f=footer_1.1>"
+    ]
+  },
+  {
+    "id": "538198048ce7bb227b96299e61d1c63eab1a0c89bbc2539e84d5488e0f708c60",
+    "path": "/home/santiago/Code/docx-mcp/corpus/downloaded/538198048ce7bb227b96299e61d1c63eab1a0c89bbc2539e84d5488e0f708c60.docx",
+    "load_ok": true,
+    "extract_ok": true,
+    "errors": [],
+    "feedback": {
+      "overall_usefulness": "medium",
+      "strengths": [],
+      "weaknesses": [
+        "Empty bold/italic formatting artifacts visible (e.g., '****') \u2014 noisy for LLM reading"
+      ],
+      "improvements": [
+        "Empty paragraphs could be optionally collapsed to reduce visual noise",
+        "Filter out empty formatting runs to reduce artifact noise"
+      ]
+    },
+    "stats": {
+      "body_paragraphs": 27,
+      "header_paragraphs": 0,
+      "footer_paragraphs": 0,
+      "tables": 0,
+      "skipped_tables": 0,
+      "skipped_elements": 1,
+      "body_words_approx": 258,
+      "tagged_lines": 27
+    },
+    "tagged_preview": [
+      "<f=1>**__The Science Fair Application Form__**</f=1>",
+      "<f=2>Name \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_ HR Teacher \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_ </f=2>",
+      "<f=3>Grade \\_\\_\\_ Science Teacher \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_ Period \\_\\_\\_\\_\\_ </f=3>",
+      "<f=4>Project Title \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_ </f=4>",
+      "<f=5>Will you be working alone? \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_ If you are working with someone else, please list here. (**only 1** partner permitted): </f=5>",
+      "<f=6>Partner\u2019s Name \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_H R Teacher\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_Science Teacher\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_ </f=6>",
+      "<f=7></f=7>",
+      "<f=8>We allot each project exhibit a **3ft. x 3 ft.** space; need more space than that? YES NO </f=8>",
+      "<f=9>Do you need access to an **electrical outlet**? YES NO </f=9>",
+      "<f=10></f=10>",
+      "<f=11>If you have any other **special requirements**, please indicate them here: \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_</f=11>",
+      "<f=12></f=12>",
+      "<f=13>**Project Plan**</f=13>",
+      "<f=14>**Define the Problem/Ask a Question**: Write what you want to ___find out___.Be sure it\u2019s a question you\u2019re able to test and measure, notjust a research topic that you can look up. \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_</f=14>",
+      "<f=15></f=15>",
+      "<f=16>**Hypothesis:**Based on your knowledge, what do ___you think___ will happen and why?\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_ </f=16>",
+      "<f=17></f=17>",
+      "<f=18>**Experiment****: **How will you ___test and measure___ your hypothesis?\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_</f=18>",
+      "<f=19>**Materials:**List all the ___materials___ you will need to carry out the experiment. \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_</f=19>",
+      "<f=20></f=20>",
+      "<f=21>**Procedure**: (Number and list the ___steps___ you plan to ___follow___ to carry out the experiment.) \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_</f=21>",
+      "<f=22></f=22>",
+      "<f=23>What kind of ___table____, ____chart____, ____graph____, ____photos___**, **will you use to ___record____/____pres______ent___ your Data? \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_</f=23>",
+      "<f=24></f=24>",
+      "<f=25>**Important Note**: In order for a project to be eligible for judging and a prize, the project must be in school on Tuesday March 5th during the school day. There will be a strict grace period until **4 p.m.** for extenuating circumstances. </f=25>",
+      "<f=26>**Signatures:** I have reviewed this application and guidebook. I give permission for my child to participate in the Science Fair on March 5th and 6th 2013. </f=26>",
+      "<f=27>Parent/Guardian Signature \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_ Date: \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_</f=27>"
+    ]
+  }
+]

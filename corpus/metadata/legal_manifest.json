@@ -1,0 +1,102 @@
+[
+  {
+    "id": "5c0005176c8dbbd8c55ff9adcfb3d7e3b40ecf33dadbd779fc43ff8fdd300fb6",
+    "filename": "getfile.php",
+    "type": "legal",
+    "topic": "legal_judicial",
+    "language": "en",
+    "word_count": 283429,
+    "confidence": 0.9604159593582153,
+    "url": "https://docxcorp.us/documents/5c0005176c8dbbd8c55ff9adcfb3d7e3b40ecf33dadbd779fc43ff8fdd300fb6.docx"
+  },
+  {
+    "id": "75e9cfde740008ef191d8d8fa9acf713c7835f4427ccf673c58d10908e83112e",
+    "filename": "word",
+    "type": "legal",
+    "topic": "government",
+    "language": "en",
+    "word_count": 636,
+    "confidence": 0.8752404451370239,
+    "url": "https://docxcorp.us/documents/75e9cfde740008ef191d8d8fa9acf713c7835f4427ccf673c58d10908e83112e.docx"
+  },
+  {
+    "id": "84553adfd5c9944f7ffe62d7020f9c165f0c38c778b094e2bac4026efa7d0f99",
+    "filename": "source",
+    "type": "legal",
+    "topic": "legal_judicial",
+    "language": "en",
+    "word_count": 2118,
+    "confidence": 0.967755913734436,
+    "url": "https://docxcorp.us/documents/84553adfd5c9944f7ffe62d7020f9c165f0c38c778b094e2bac4026efa7d0f99.docx"
+  },
+  {
+    "id": "38868c65105a768de5969c1d2fc8c42f9f6ca094ec06d8dc48ca7842af39586e",
+    "filename": "1680ad4c46",
+    "type": "legal",
+    "topic": "nonprofit",
+    "language": "en",
+    "word_count": 7688,
+    "confidence": 0.8361166715621948,
+    "url": "https://docxcorp.us/documents/38868c65105a768de5969c1d2fc8c42f9f6ca094ec06d8dc48ca7842af39586e.docx"
+  },
+  {
+    "id": "29a9a0f83dfeac5d61e2ee51352a34e60a00d8863049f2f1d394952473704faa",
+    "filename": "supremecourtcasetemplate.docx",
+    "type": "legal",
+    "topic": "legal_judicial",
+    "language": "en",
+    "word_count": 15,
+    "confidence": 0.9378633499145508,
+    "url": "https://docxcorp.us/documents/29a9a0f83dfeac5d61e2ee51352a34e60a00d8863049f2f1d394952473704faa.docx"
+  },
+  {
+    "id": "122bbf7940df99193c3e8e5132599a5419c928f36b1b58ad67b70228ddf9b69d",
+    "filename": "636275263059000000",
+    "type": "legal",
+    "topic": "finance",
+    "language": "en",
+    "word_count": 23,
+    "confidence": 0.8786895871162415,
+    "url": "https://docxcorp.us/documents/122bbf7940df99193c3e8e5132599a5419c928f36b1b58ad67b70228ddf9b69d.docx"
+  },
+  {
+    "id": "a509c7a0252907c43a9b7ad8e9094549f773436e8180059d60defa552ad87bd9",
+    "filename": "12d41252-5454-4220-8908-de2986fa7659",
+    "type": "legal",
+    "topic": "general",
+    "language": "en",
+    "word_count": 28,
+    "confidence": 0.9687966704368591,
+    "url": "https://docxcorp.us/documents/a509c7a0252907c43a9b7ad8e9094549f773436e8180059d60defa552ad87bd9.docx"
+  },
+  {
+    "id": "05fbf2a0d628f10fde61e6f5a67d365920459e6903733543426ad2027ecb594c",
+    "filename": "Order on Motion for New Trial",
+    "type": "legal",
+    "topic": "legal_judicial",
+    "language": "en",
+    "word_count": 100,
+    "confidence": 0.9761508703231812,
+    "url": "https://docxcorp.us/documents/05fbf2a0d628f10fde61e6f5a67d365920459e6903733543426ad2027ecb594c.docx"
+  },
+  {
+    "id": "bdd19f6512dd99784ff1153a3268b305354a2d72a75bab854b1aa47311b5c8b4",
+    "filename": "unknown.docx",
+    "type": "legal",
+    "topic": "legal_judicial",
+    "language": "en",
+    "word_count": 274461,
+    "confidence": 0.9798523187637329,
+    "url": "https://docxcorp.us/documents/bdd19f6512dd99784ff1153a3268b305354a2d72a75bab854b1aa47311b5c8b4.docx"
+  },
+  {
+    "id": "d7468207cb8b1ebdf5b1e59d815b9ce44b0a54b5d2a00a366769ffcf0c709200",
+    "filename": "HS.256.docx",
+    "type": "legal",
+    "topic": "healthcare",
+    "language": "en",
+    "word_count": 680,
+    "confidence": 0.9038634300231934,
+    "url": "https://docxcorp.us/documents/d7468207cb8b1ebdf5b1e59d815b9ce44b0a54b5d2a00a366769ffcf0c709200.docx"
+  }
+]

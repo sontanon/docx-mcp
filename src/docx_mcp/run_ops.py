@@ -15,8 +15,6 @@ Key responsibilities:
 * **Clone** ``w:rPr`` elements (deep copy).
 """
 
-from __future__ import annotations
-
 import copy
 from dataclasses import dataclass
 
@@ -39,11 +37,14 @@ class RunInfo:
         rpr: The ``<w:rPr>`` element (may be ``None`` if the run has no
             formatting).  This is the *original* element reference.
         element: The original ``<w:r>`` element in the document tree.
+        hyperlink_rel_id: Relationship ID of the parent ``<w:hyperlink>``,
+            or ``None`` for plain runs.
     """
 
     text: str
     rpr: etree._Element | None
     element: etree._Element
+    hyperlink_rel_id: str | None = None
 
 
 @dataclass
@@ -58,11 +59,14 @@ class TaggedSegment:
         op: The diff operation (equal, insert, or delete).
         rpr: The ``<w:rPr>`` to apply (deep-copied).  ``None`` means no
             formatting (plain text).
+        hyperlink_rel_id: Relationship ID for the parent ``<w:hyperlink>``
+            wrapper, or ``None`` for plain runs.
     """
 
     text: str
     op: DiffOp
     rpr: etree._Element | None = None
+    hyperlink_rel_id: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -74,11 +78,13 @@ def extract_runs(paragraph: etree._Element) -> list[RunInfo]:
     """Extract all ``<w:r>`` elements from a paragraph.
 
     Returns a list of :class:`RunInfo` objects preserving document order.
-    Runs with no text content (e.g. field codes, drawing anchors) are
-    included with empty ``text`` so that element references stay valid.
+    Runs inside ``<w:hyperlink>`` wrappers are discovered and carry the
+    parent ``r:id``.  Runs with no text content are included with empty
+    ``text`` so that element references stay valid.
     """
     runs: list[RunInfo] = []
-    for r_el in xpath(paragraph, "w:r"):
+
+    def _process_run(r_el: etree._Element, rel_id: str | None) -> None:
         text_parts: list[str] = []
         for child in r_el:
             tag = etree.QName(child.tag).localname if isinstance(child.tag, str) else None
@@ -90,7 +96,40 @@ def extract_runs(paragraph: etree._Element) -> list[RunInfo]:
                 text_parts.append("\t")
         rpr_list = xpath(r_el, "w:rPr")
         rpr = rpr_list[0] if rpr_list else None
-        runs.append(RunInfo(text="".join(text_parts), rpr=rpr, element=r_el))
+        runs.append(
+            RunInfo(
+                text="".join(text_parts),
+                rpr=rpr,
+                element=r_el,
+                hyperlink_rel_id=rel_id,
+            )
+        )
+
+    def _process_container(container: etree._Element, rel_id: str | None) -> None:
+        for r_el in xpath(container, "w:r"):
+            _process_run(r_el, rel_id)
+
+    for child in paragraph:
+        tag_local = etree.QName(child.tag).localname if isinstance(child.tag, str) else ""
+        if tag_local == "r":
+            _process_run(child, None)
+        elif tag_local == "hyperlink":
+            rel_id = child.get(qn("r", "id"))
+            _process_container(child, rel_id)
+        elif tag_local in ("ins", "del"):
+            # Tracked-change wrappers may contain runs or hyperlinks
+            for grandchild in child:
+                gtag = (
+                    etree.QName(grandchild.tag).localname
+                    if isinstance(grandchild.tag, str)
+                    else ""
+                )
+                if gtag == "r":
+                    _process_run(grandchild, None)
+                elif gtag == "hyperlink":
+                    rel_id = grandchild.get(qn("r", "id"))
+                    _process_container(grandchild, rel_id)
+
     return runs
 
 
@@ -251,31 +290,26 @@ def map_diff_to_runs(
     # normalisation; we map character-by-character.
     segments: list[TaggedSegment] = []
 
-    # Flatten runs into a list of (char, rpr) pairs
-    char_rpr_pairs: list[tuple[str, etree._Element | None]] = []
+    # Flatten runs into a list of (char, rpr, hyperlink_rel_id) tuples
+    char_rpr_pairs: list[tuple[str, etree._Element | None, str | None]] = []
     for run in runs:
         for ch in run.text:
-            char_rpr_pairs.append((ch, run.rpr))
+            char_rpr_pairs.append((ch, run.rpr, run.hyperlink_rel_id))
 
     # Now walk both streams in parallel
     run_pos = 0  # position in char_rpr_pairs
 
-    # Track the last rPr we saw (for INSERT formatting inheritance)
+    # Track the last rPr and hyperlink_rel_id we saw (for INSERT inheritance)
     last_rpr: etree._Element | None = None
+    last_hyperlink: str | None = None
     if char_rpr_pairs:
         last_rpr = char_rpr_pairs[0][1]
+        last_hyperlink = char_rpr_pairs[0][2]
 
     for chunk in diff_chunks:
         if chunk.op == DiffOp.INSERT:
             # Inserted text doesn't exist in the original runs.
             # Inherit formatting from the last seen run.
-            #
-            # After _inject_inter_chunk_spaces, the INSERT text already
-            # has a leading space when needed for left-boundary separation.
-            # However, when original run whitespace is available at the
-            # current position, we prefer to emit it as an EQUAL segment
-            # (preserving the original whitespace character, e.g. a tab)
-            # and strip the synthetic leading space from the INSERT.
             insert_text = chunk.text
             if (
                 insert_text
@@ -285,10 +319,18 @@ def map_diff_to_runs(
             ):
                 # Consume whitespace from the original run text as EQUAL,
                 # and drop the synthetic leading space from the INSERT.
-                ws_char, ws_rpr = char_rpr_pairs[run_pos]
-                segments.append(TaggedSegment(text=ws_char, op=DiffOp.EQUAL, rpr=clone_rpr(ws_rpr)))
+                ws_char, ws_rpr, ws_link = char_rpr_pairs[run_pos]
+                segments.append(
+                    TaggedSegment(
+                        text=ws_char,
+                        op=DiffOp.EQUAL,
+                        rpr=clone_rpr(ws_rpr),
+                        hyperlink_rel_id=ws_link,
+                    )
+                )
                 run_pos += 1
                 last_rpr = ws_rpr
+                last_hyperlink = ws_link
                 insert_text = insert_text[1:]
 
             if insert_text:
@@ -297,6 +339,7 @@ def map_diff_to_runs(
                         text=insert_text,
                         op=DiffOp.INSERT,
                         rpr=clone_rpr(last_rpr),
+                        hyperlink_rel_id=last_hyperlink,
                     )
                 )
             continue
@@ -314,38 +357,44 @@ def map_diff_to_runs(
                         text=remaining,
                         op=chunk.op,
                         rpr=clone_rpr(last_rpr),
+                        hyperlink_rel_id=last_hyperlink,
                     )
                 )
                 chunk_consumed = len(chunk_text)
                 break
 
             # Skip whitespace alignment between diff text and run text.
-            # The diff text has single spaces between words, but the
-            # original runs may have different whitespace.
             diff_char = chunk_text[chunk_consumed]
-            run_char, run_rpr = char_rpr_pairs[run_pos]
+            run_char, run_rpr, run_link = char_rpr_pairs[run_pos]
 
             # If both are the same character, consume both
             if diff_char == run_char:
-                # Find the longest contiguous segment with same rPr and same chunk
+                # Find the longest contiguous segment with same rPr, same hyperlink, and same chunk
                 seg_chars: list[str] = [run_char]
                 chunk_consumed += 1
                 run_pos += 1
                 last_rpr = run_rpr
+                last_hyperlink = run_link
 
                 while chunk_consumed < len(chunk_text) and run_pos < len(char_rpr_pairs):
                     dc = chunk_text[chunk_consumed]
-                    rc, rp = char_rpr_pairs[run_pos]
+                    rc, rp, rl = char_rpr_pairs[run_pos]
 
-                    if dc == rc and rp is run_rpr:
-                        # Same formatting, same character — extend segment
+                    if dc == rc and rp is run_rpr and rl == run_link:
+                        # Same formatting, same hyperlink, same character — extend segment
                         seg_chars.append(rc)
                         chunk_consumed += 1
                         run_pos += 1
-                    elif dc == rc and rp is not run_rpr:
-                        # Character matches but formatting changed — break
+                    elif dc == rc and (rp is not run_rpr or rl != run_link):
+                        # Character matches but formatting or hyperlink changed — break
                         break
-                    elif dc.isspace() and rc.isspace() and dc != rc and rp is run_rpr:
+                    elif (
+                        dc.isspace()
+                        and rc.isspace()
+                        and dc != rc
+                        and rp is run_rpr
+                        and rl == run_link
+                    ):
                         # Both whitespace but different (e.g. diff has ' ',
                         # run has '\t').  Keep the run's original character.
                         seg_chars.append(rc)
@@ -370,6 +419,7 @@ def map_diff_to_runs(
                         text="".join(seg_chars),
                         op=chunk.op,
                         rpr=clone_rpr(run_rpr),
+                        hyperlink_rel_id=run_link,
                     )
                 )
 
@@ -381,11 +431,13 @@ def map_diff_to_runs(
                         text=run_char,
                         op=chunk.op,
                         rpr=clone_rpr(run_rpr),
+                        hyperlink_rel_id=run_link,
                     )
                 )
                 chunk_consumed += 1
                 run_pos += 1
                 last_rpr = run_rpr
+                last_hyperlink = run_link
 
             elif diff_char.isspace() and not run_char.isspace():
                 # Diff whitespace = word boundary, but run has no whitespace
@@ -396,16 +448,17 @@ def map_diff_to_runs(
                 # Run has whitespace that the diff doesn't see (it was
                 # normalised during tokenization).  Consume it into the
                 # current segment as whitespace.
-                # Emit the whitespace as part of the current op
                 segments.append(
                     TaggedSegment(
                         text=run_char,
                         op=chunk.op,
                         rpr=clone_rpr(run_rpr),
+                        hyperlink_rel_id=run_link,
                     )
                 )
                 run_pos += 1
                 last_rpr = run_rpr
+                last_hyperlink = run_link
 
             else:
                 # Characters differ — alignment error.  This shouldn't
@@ -416,10 +469,18 @@ def map_diff_to_runs(
     # If there's remaining run text (e.g. trailing whitespace), emit
     # as EQUAL segments.
     while run_pos < len(char_rpr_pairs):
-        ch, rpr = char_rpr_pairs[run_pos]
-        segments.append(TaggedSegment(text=ch, op=DiffOp.EQUAL, rpr=clone_rpr(rpr)))
+        ch, rpr, link = char_rpr_pairs[run_pos]
+        segments.append(
+            TaggedSegment(
+                text=ch,
+                op=DiffOp.EQUAL,
+                rpr=clone_rpr(rpr),
+                hyperlink_rel_id=link,
+            )
+        )
         run_pos += 1
         last_rpr = rpr
+        last_hyperlink = link
 
     return _merge_tagged_segments(segments)
 
@@ -439,17 +500,22 @@ def _rpr_equal(a: etree._Element | None, b: etree._Element | None) -> bool:
 
 
 def _merge_tagged_segments(segments: list[TaggedSegment]) -> list[TaggedSegment]:
-    """Merge adjacent segments with the same op and structurally equal rPr."""
+    """Merge adjacent segments with the same op, structurally equal rPr, and same hyperlink."""
     if not segments:
         return segments
     merged: list[TaggedSegment] = [segments[0]]
     for seg in segments[1:]:
         prev = merged[-1]
-        if seg.op == prev.op and _rpr_equal(seg.rpr, prev.rpr):
+        if (
+            seg.op == prev.op
+            and _rpr_equal(seg.rpr, prev.rpr)
+            and seg.hyperlink_rel_id == prev.hyperlink_rel_id
+        ):
             merged[-1] = TaggedSegment(
                 text=prev.text + seg.text,
                 op=seg.op,
                 rpr=seg.rpr,
+                hyperlink_rel_id=seg.hyperlink_rel_id,
             )
         else:
             merged.append(seg)
@@ -466,6 +532,7 @@ def build_run_element(
     rpr: etree._Element | None = None,
     *,
     is_delete: bool = False,
+    hyperlink_rel_id: str | None = None,
 ) -> etree._Element:
     """Build a ``<w:r>`` element with text content.
 
@@ -473,9 +540,11 @@ def build_run_element(
         text: The text content for the run.
         rpr: Optional ``<w:rPr>`` element to include (will be deep-copied).
         is_delete: If ``True``, use ``<w:delText>`` instead of ``<w:t>``.
+        hyperlink_rel_id: If provided, wrap the ``<w:r>`` in a
+            ``<w:hyperlink>`` with this ``r:id``.
 
     Returns:
-        A new ``<w:r>`` element.
+        A new ``<w:r>`` element (possibly wrapped in ``<w:hyperlink>``).
     """
     r_el = etree.SubElement(etree.Element("dummy"), qn("w", "r"))
     r_el = _detach(r_el)
@@ -490,6 +559,12 @@ def build_run_element(
     # Preserve leading/trailing whitespace
     if text and (text[0] == " " or text[-1] == " " or "\t" in text):
         t_el.set(f"{{{XML}}}space", "preserve")
+
+    if hyperlink_rel_id is not None:
+        hyperlink_el = etree.Element(qn("w", "hyperlink"))
+        hyperlink_el.set(qn("r", "id"), hyperlink_rel_id)
+        hyperlink_el.append(r_el)
+        return hyperlink_el
 
     return r_el
 

@@ -12,15 +12,15 @@ pseudo-Markdown. Non-simple tables are represented as SkippedTableInfo with a
 reason.
 """
 
-from __future__ import annotations
-
 import re
+from collections.abc import Callable
 
 from lxml import etree
 
+from docx_mcp.document import DocxDocument
 from docx_mcp.models import CellInfo, SkippedTableInfo, TableInfo
 from docx_mcp.namespaces import qn, xpath
-from docx_mcp.table_utils import get_cell_paragraphs, is_simple_table, table_dimensions
+from docx_mcp.table_utils import get_cell_paragraphs, table_dimensions
 
 
 def _has_bool_property(rpr: etree._Element | None, local_name: str) -> bool:
@@ -174,7 +174,7 @@ def _format_run(run: etree._Element, *, include_del_text: bool = False) -> str:
     ``<w:r>`` element.  Returns an empty string if the run has no text.
     """
     text = _extract_run_text(run, include_del_text=include_del_text)
-    if not text:
+    if not text or not text.strip():
         return ""
 
     rpr_list = xpath(run, "w:rPr")
@@ -188,10 +188,45 @@ def _format_run(run: etree._Element, *, include_del_text: bool = False) -> str:
     return _wrap_formatting(escaped, bold=bold, italic=italic, underline=underline)
 
 
+def _collect_formatted_from_container(
+    container: etree._Element,
+    *,
+    include_del_text: bool = False,
+    hyperlink_resolver: Callable[[str], str | None] | None = None,
+) -> list[str]:
+    """Collect formatted text segments from runs and hyperlinks inside *container*.
+
+    Returns a list of formatted strings (already escaped and wrapped).
+    """
+    parts: list[str] = []
+    for child in container:
+        tag = etree.QName(child.tag).localname if isinstance(child.tag, str) else ""
+        if tag == "r":
+            formatted = _format_run(child, include_del_text=include_del_text)
+            if formatted:
+                parts.append(formatted)
+        elif tag == "hyperlink":
+            rel_id = child.get(qn("r", "id"))
+            url = hyperlink_resolver(rel_id) if hyperlink_resolver and rel_id else None
+            link_parts: list[str] = []
+            for run in xpath(child, "w:r"):
+                formatted = _format_run(run, include_del_text=include_del_text)
+                if formatted:
+                    link_parts.append(formatted)
+            if link_parts:
+                link_text = "".join(link_parts)
+                if url:
+                    parts.append(f"[{link_text}]({url})")
+                else:
+                    parts.append(f"[{link_text}]")
+    return parts
+
+
 def paragraph_to_pseudo_markdown(
     paragraph: etree._Element,
     *,
     markup: bool = False,
+    hyperlink_resolver: Callable[[str], str | None] | None = None,
 ) -> str:
     """Convert a single <w:p> element to pseudo-Markdown text.
 
@@ -210,15 +245,20 @@ def paragraph_to_pseudo_markdown(
     This allows round-trip validation of redlined documents.  When
     *markup* is False (the default), only direct ``<w:r>`` children
     of the paragraph are processed, giving the "original" view.
+
+    Args:
+        paragraph: The ``<w:p>`` element to convert.
+        markup: When True, include tracked-change markers.
+        hyperlink_resolver: Optional callable that takes a relationship ID
+            and returns the target URL. If provided, hyperlinks are rendered
+            as ``[text](url)``.
     """
     segments: list[str] = []
 
     if not markup:
-        # Original behaviour: only direct <w:r> children.
-        for run in xpath(paragraph, "w:r"):
-            formatted = _format_run(run)
-            if formatted:
-                segments.append(formatted)
+        segments = _collect_formatted_from_container(
+            paragraph, hyperlink_resolver=hyperlink_resolver
+        )
     else:
         # Tracked-change-aware: walk all children in document order.
         for child in paragraph:
@@ -230,24 +270,38 @@ def paragraph_to_pseudo_markdown(
                 if formatted:
                     segments.append(formatted)
 
-            elif tag == "ins":
-                # Inserted region — collect all runs inside <w:ins>
-                ins_parts: list[str] = []
+            elif tag == "hyperlink":
+                # Direct hyperlink (unchanged text)
+                rel_id = child.get(qn("r", "id"))
+                url = hyperlink_resolver(rel_id) if hyperlink_resolver and rel_id else None
+                link_parts: list[str] = []
                 for run in xpath(child, "w:r"):
                     formatted = _format_run(run)
                     if formatted:
-                        ins_parts.append(formatted)
+                        link_parts.append(formatted)
+                if link_parts:
+                    link_text = "".join(link_parts)
+                    if url:
+                        segments.append(f"[{link_text}]({url})")
+                    else:
+                        segments.append(f"[{link_text}]")
+
+            elif tag == "ins":
+                # Inserted region — collect all runs/hyperlinks inside <w:ins>
+                ins_parts = _collect_formatted_from_container(
+                    child,
+                    hyperlink_resolver=hyperlink_resolver,
+                )
                 if ins_parts:
                     segments.append(f"++{''.join(ins_parts)}++")
 
             elif tag == "del":
-                # Deleted region — collect all runs inside <w:del>
-                # Deleted runs use <w:delText> instead of <w:t>
-                del_parts: list[str] = []
-                for run in xpath(child, "w:r"):
-                    formatted = _format_run(run, include_del_text=True)
-                    if formatted:
-                        del_parts.append(formatted)
+                # Deleted region — collect all runs/hyperlinks inside <w:del>
+                del_parts = _collect_formatted_from_container(
+                    child,
+                    include_del_text=True,
+                    hyperlink_resolver=hyperlink_resolver,
+                )
                 if del_parts:
                     segments.append(f"~~{''.join(del_parts)}~~")
 
@@ -305,47 +359,89 @@ def _extract_table_info(
     table_id: int,
     *,
     markup: bool = False,
+    hyperlink_resolver: Callable[[str], str | None] | None = None,
 ) -> TableInfo | SkippedTableInfo:
     """Extract structured table info from a <w:tbl> element.
+
+    Supports simple tables and tables with clean horizontal/vertical merges.
+    Tables with nested tables or malformed merges are skipped.
 
     Args:
         tbl: A ``<w:tbl>`` element.
         table_id: 1-based table index in document order.
         markup: When True, include tracked-change markers in cell text.
+        hyperlink_resolver: Optional callable to resolve hyperlink URLs.
 
     Returns:
-        TableInfo if the table is simple, or SkippedTableInfo if not.
+        TableInfo if the table is extractable, or SkippedTableInfo if not.
     """
-    is_simple, reason = is_simple_table(tbl)
+    from docx_mcp.table_utils import build_table_grid
 
-    if not is_simple:
-        return SkippedTableInfo(table_id=table_id, reason=reason)
+    # Check for nested tables first (we can't handle these)
+    for row in xpath(tbl, "./w:tr"):
+        for cell in xpath(row, "./w:tc"):
+            nested = xpath(cell, ".//w:tbl")
+            if nested:
+                return SkippedTableInfo(
+                    table_id=table_id,
+                    reason=f"table {table_id}, cell contains nested table",
+                )
+
+    # Try to build a logical grid (handles merges)
+    grid, error = build_table_grid(tbl, table_id=table_id)
+    if error:
+        return SkippedTableInfo(table_id=table_id, reason=error)
 
     rows_count, cols_count = table_dimensions(tbl)
 
     cells: list[list[CellInfo]] = []
-    rows = list(xpath(tbl, "./w:tr"))
-
-    for row_idx, row in enumerate(rows, start=1):
+    for row_idx, grid_row in enumerate(grid, start=1):
         cell_row: list[CellInfo] = []
-        tcs = list(xpath(row, "./w:tc"))
+        for col_idx, grid_cell in enumerate(grid_row, start=1):
+            if grid_cell is None:
+                # Should not happen in a valid grid, but handle gracefully
+                cell_info = CellInfo(
+                    cell_id=f"{table_id}.{row_idx}.{col_idx}",
+                    row=row_idx,
+                    col=col_idx,
+                    text="",
+                    span=0,
+                    vspan=0,
+                )
+                cell_row.append(cell_info)
+                continue
 
-        for col_idx, tc in enumerate(tcs, start=1):
-            cell_id = f"{table_id}.{row_idx}.{col_idx}"
-            paras = get_cell_paragraphs(tc)
+            if grid_cell.is_spanned_over:
+                # Spanned-over cell: empty text, span=0, vspan=0
+                cell_info = CellInfo(
+                    cell_id=f"{table_id}.{row_idx}.{col_idx}",
+                    row=row_idx,
+                    col=col_idx,
+                    text="",
+                    span=grid_cell.span,
+                    vspan=grid_cell.vspan,
+                )
+                cell_row.append(cell_info)
+                continue
 
+            # Real cell: extract text
+            paras = get_cell_paragraphs(grid_cell.element)
             cell_text_parts: list[str] = []
             for para in paras:
-                para_md = paragraph_to_pseudo_markdown(para, markup=markup)
+                para_md = paragraph_to_pseudo_markdown(
+                    para, markup=markup, hyperlink_resolver=hyperlink_resolver
+                )
                 cell_text_parts.append(para_md)
 
             cell_text = "\n".join(cell_text_parts)
 
             cell_info = CellInfo(
-                cell_id=cell_id,
+                cell_id=f"{table_id}.{row_idx}.{col_idx}",
                 row=row_idx,
                 col=col_idx,
                 text=cell_text,
+                span=grid_cell.span,
+                vspan=grid_cell.vspan,
             )
             cell_row.append(cell_info)
 
@@ -359,14 +455,37 @@ def _extract_table_info(
     )
 
 
-FragmentItem = tuple[int, str] | TableInfo | SkippedTableInfo
+FragmentItem = tuple[str, str] | TableInfo | SkippedTableInfo
+
+
+class FragmentResult:
+    """Result of converting body elements to fragments.
+
+    Attributes:
+        items: List of FragmentItem (paragraphs, tables, skipped tables).
+        skipped_elements: List of dicts describing skipped content.
+    """
+
+    def __init__(self) -> None:
+        self.items: list[FragmentItem] = []
+        self.skipped_elements: list[dict] = []
+
+
+def _is_para_empty(para: etree._Element) -> bool:
+    """Check if a <w:p> has no visible text (helper for collapse_empty)."""
+    return all(
+        not (el.text and el.text.strip())
+        for el in xpath(para, ".//w:t") + xpath(para, ".//w:delText")
+    )
 
 
 def body_to_fragments(
     body_elements: list[etree._Element],
     *,
     markup: bool = False,
-) -> list[FragmentItem]:
+    hyperlink_resolver: Callable[[str], str | None] | None = None,
+    collapse_empty: bool = False,
+) -> FragmentResult:
     """Convert mixed <w:p>/<w:tbl> elements to fragment items.
 
     Tables and paragraphs share the same 1-based ID space in document order.
@@ -375,25 +494,165 @@ def body_to_fragments(
         body_elements: List of ``<w:p>`` and ``<w:tbl>`` elements
             (typically from DocxDocument.body_elements).
         markup: When True, include tracked-change markers in text.
+        hyperlink_resolver: Optional callable to resolve hyperlink URLs.
+        collapse_empty: When True, skip empty ``<w:p>`` elements.
 
     Returns:
-        List of FragmentItem (either (id, text) for paragraphs or
-        TableInfo/SkippedTableInfo for tables).
+        :class:`FragmentResult` with ``items`` (FragmentItem list) and
+        ``skipped_elements`` (metadata about skipped content).
     """
-    items: list[FragmentItem] = []
+    result = FragmentResult()
 
-    for i, el in enumerate(body_elements, start=1):
+    idx = 0
+    for el in body_elements:
         tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
 
         if tag_local == "p":
-            md = paragraph_to_pseudo_markdown(el, markup=markup)
-            items.append((i, md))
+            if collapse_empty and _is_para_empty(el):
+                continue
+            idx += 1
+            md = paragraph_to_pseudo_markdown(
+                el, markup=markup, hyperlink_resolver=hyperlink_resolver
+            )
+            result.items.append((str(idx), md))
+            # Check for images in the paragraph (<w:drawing>/<w:pict> are inside <w:r>)
+            if xpath(el, ".//w:drawing") or xpath(el, ".//w:pict"):
+                result.skipped_elements.append(
+                    {
+                        "type": "image",
+                        "location": f"body paragraph {idx}",
+                        "description": "inline image",
+                    }
+                )
 
         elif tag_local == "tbl":
-            table_info = _extract_table_info(el, table_id=i, markup=markup)
-            items.append(table_info)
+            idx += 1
+            table_info = _extract_table_info(
+                el, table_id=idx, markup=markup, hyperlink_resolver=hyperlink_resolver
+            )
+            result.items.append(table_info)
+            if isinstance(table_info, SkippedTableInfo):
+                result.skipped_elements.append(
+                    {
+                        "type": "merged_table"
+                        if "merge" in table_info.reason.lower()
+                        else "skipped_table",
+                        "table_id": table_info.table_id,
+                        "reason": table_info.reason,
+                    }
+                )
+            else:
+                # Check for nested tables
+                nested = xpath(el, ".//w:tbl")
+                if len(nested) > 1:  # includes self
+                    result.skipped_elements.append(
+                        {
+                            "type": "nested_table",
+                            "table_id": table_info.table_id,
+                            "reason": "contains nested table",
+                        }
+                    )
 
-    return items
+    return result
+
+
+def full_to_fragments(
+    doc: DocxDocument,
+    markup: bool = False,
+    hyperlink_resolver: Callable[[str], str | None] | None = None,
+    collapse_empty: bool = False,
+) -> FragmentResult:
+    """Convert all extractable content (body, headers, footers) to fragments.
+
+    Body paragraphs and tables are included with their normal numeric IDs.
+    Header and footer paragraphs use prefixed IDs (``header_1.1``, ``footer_2.1``).
+    Tables inside headers/footers are reported as skipped elements.
+
+    Args:
+        doc: :class:`DocxDocument` instance.
+        markup: When True, include tracked-change markers in text.
+        hyperlink_resolver: Optional callable to resolve hyperlink URLs.
+        collapse_empty: When True, skip empty ``<w:p>`` elements.
+
+    Returns:
+        :class:`FragmentResult` with all fragments and skipped elements.
+    """
+    from docx_mcp.document import DocxDocument
+
+    assert isinstance(doc, DocxDocument)
+
+    # Start with body content
+    result = body_to_fragments(
+        doc.body_elements,
+        markup=markup,
+        hyperlink_resolver=hyperlink_resolver,
+        collapse_empty=collapse_empty,
+    )
+
+    # Header paragraphs
+    for part_idx, (_rel_id, tree) in enumerate(doc.header_trees.items(), start=1):
+        para_idx = 0
+        for child in tree:
+            tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if tag_local == "p":
+                if collapse_empty and _is_para_empty(child):
+                    continue
+                para_idx += 1
+                fid = f"header_{part_idx}.{para_idx}"
+                md = paragraph_to_pseudo_markdown(
+                    child, markup=markup, hyperlink_resolver=hyperlink_resolver
+                )
+                result.items.append((fid, md))
+                # Check for images
+                if xpath(child, ".//w:drawing") or xpath(child, ".//w:pict"):
+                    result.skipped_elements.append(
+                        {
+                            "type": "image",
+                            "location": fid,
+                            "description": "inline image in header",
+                        }
+                    )
+            elif tag_local == "tbl":
+                result.skipped_elements.append(
+                    {
+                        "type": "table",
+                        "location": f"header_{part_idx}",
+                        "reason": "tables in headers are not editable in this version",
+                    }
+                )
+
+    # Footer paragraphs
+    for part_idx, (_rel_id, tree) in enumerate(doc.footer_trees.items(), start=1):
+        para_idx = 0
+        for child in tree:
+            tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            if tag_local == "p":
+                if collapse_empty and _is_para_empty(child):
+                    continue
+                para_idx += 1
+                fid = f"footer_{part_idx}.{para_idx}"
+                md = paragraph_to_pseudo_markdown(
+                    child, markup=markup, hyperlink_resolver=hyperlink_resolver
+                )
+                result.items.append((fid, md))
+                if xpath(child, ".//w:drawing") or xpath(child, ".//w:pict"):
+                    result.skipped_elements.append(
+                        {
+                            "type": "image",
+                            "location": fid,
+                            "description": "inline image in footer",
+                        }
+                    )
+            elif tag_local == "tbl":
+                result.skipped_elements.append(
+                    {
+                        "type": "table",
+                        "location": f"footer_{part_idx}",
+                        "reason": "tables in footers are not editable in this version",
+                    }
+                )
+
+    return result
 
 
 def fragments_to_tagged_text_interleaved(items: list[FragmentItem]) -> str:
@@ -424,7 +683,16 @@ def fragments_to_tagged_text_interleaved(items: list[FragmentItem]) -> str:
             lines.append(f"<table={item.table_id} rows={item.rows} cols={item.cols}>")
             for row in item.cells:
                 for cell in row:
-                    lines.append(f"<cell={cell.cell_id}>{cell.text}</cell={cell.cell_id}>")
+                    if cell.span == 0 or cell.vspan == 0:
+                        continue
+                    attrs = ""
+                    if cell.span != 1:
+                        attrs += f' span="{cell.span}"'
+                    if cell.vspan != 1:
+                        attrs += f' vspan="{cell.vspan}"'
+                    lines.append(
+                        f"<cell={cell.cell_id}{attrs}>{cell.text}</cell={cell.cell_id}>"
+                    )
             lines.append(f"</table={item.table_id}>")
 
     return "\n".join(lines)
@@ -459,18 +727,25 @@ def fragments_to_json_interleaved(items: list[FragmentItem]) -> list[dict]:
             )
 
         elif isinstance(item, TableInfo):
-            cells_json = [
-                [
-                    {
+            cells_json = []
+            for row in item.cells:
+                row_json = []
+                for cell in row:
+                    if cell.span == 0 or cell.vspan == 0:
+                        continue
+                    cell_dict: dict = {
                         "cell_id": cell.cell_id,
                         "row": cell.row,
                         "col": cell.col,
                         "text": cell.text,
                     }
-                    for cell in row
-                ]
-                for row in item.cells
-            ]
+                    if cell.span != 1:
+                        cell_dict["span"] = cell.span
+                    if cell.vspan != 1:
+                        cell_dict["vspan"] = cell.vspan
+                    row_json.append(cell_dict)
+                cells_json.append(row_json)
+
             result.append(
                 {
                     "type": "table",

@@ -1,7 +1,5 @@
 """End-to-end tests for the redliner orchestrator."""
 
-from __future__ import annotations
-
 import io
 import zipfile
 
@@ -88,6 +86,51 @@ class TestValidation:
         doc = apply_redlines(simple_5para_path, [])
         data = doc.to_bytes()
         assert _is_valid_docx(data)
+
+    def test_collapse_empty_changes_id_space(self, simple_5para_path):
+        """With collapse_empty=True, empty paragraphs are skipped in ID space."""
+        doc = DocxDocument(path=simple_5para_path)
+        # Count how many paragraphs are empty
+        empty_count = sum(
+            1 for p in doc.paragraphs
+            if not paragraph_to_pseudo_markdown(p).strip()
+        )
+        if empty_count == 0:
+            pytest.skip("Fixture has no empty paragraphs to test collapse")
+
+        full_map = doc.full_element_map(collapse_empty=False)
+        collapsed_map = doc.full_element_map(collapse_empty=True)
+        assert len(collapsed_map) == len(full_map) - empty_count
+
+    def test_collapse_empty_wrong_id_raises(self, simple_5para_path):
+        """Applying changes with wrong collapse_empty setting raises clear error."""
+        doc = DocxDocument(path=simple_5para_path)
+        empty_count = sum(
+            1 for p in doc.paragraphs
+            if not paragraph_to_pseudo_markdown(p).strip()
+        )
+        if empty_count == 0:
+            pytest.skip("Fixture has no empty paragraphs to test mismatch")
+
+        # If we extract with collapse_empty=True, the last body ID is smaller
+        collapsed_map = doc.full_element_map(collapse_empty=True)
+        max_collapsed = max(
+            int(k) for k in collapsed_map if not k.startswith(("header_", "footer_"))
+        )
+
+        # Try to apply a change with the original (non-collapsed) max ID
+        # but collapse_empty=True — should fail
+        changes = [
+            ParagraphChange(
+                kind="paragraph",
+                fragment_id=str(max_collapsed + empty_count),
+                change_type=ParagraphChangeType.MODIFY,
+                new_text="Updated text.",
+                justification="Should fail with wrong collapse setting.",
+            ),
+        ]
+        with pytest.raises(ValueError, match="fragment_id"):
+            apply_redlines(simple_5para_path, changes, collapse_empty=True)
 
 
 # ===================================================================

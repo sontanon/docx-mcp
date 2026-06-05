@@ -13,8 +13,6 @@ This gives us word-granularity diffs while leveraging DMP's highly optimised
 Myers algorithm and semantic cleanup.
 """
 
-from __future__ import annotations
-
 from typing import Protocol
 
 import diff_match_patch as dmp_module

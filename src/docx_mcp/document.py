@@ -7,8 +7,6 @@ Provides the DocxDocument class which handles:
 - Repacking to .docx
 """
 
-from __future__ import annotations
-
 import contextlib
 import io
 import zipfile
@@ -17,6 +15,24 @@ from pathlib import Path
 from lxml import etree
 
 from docx_mcp.namespaces import qn, xpath
+
+
+def _is_empty_paragraph(element: etree._Element) -> bool:
+    """Check if a <w:p> element has no visible text content.
+
+    A paragraph is considered empty if it contains no <w:t> or <w:delText>
+    children with non-whitespace text anywhere in its descendant runs.
+
+    Args:
+        element: A ``<w:p>`` element.
+
+    Returns:
+        True if the paragraph has no visible text content.
+    """
+    return all(
+        not (el.text and el.text.strip())
+        for el in xpath(element, ".//w:t") + xpath(element, ".//w:delText")
+    )
 
 
 class DocxDocument:
@@ -54,6 +70,10 @@ class DocxDocument:
         self._comments_tree: etree._Element | None = None
         self._content_types_tree: etree._Element | None = None
         self._rels_tree: etree._Element | None = None  # word/_rels/document.xml.rels
+        self._header_trees: dict[str, etree._Element] = {}
+        self._footer_trees: dict[str, etree._Element] = {}
+        self._header_paths: dict[str, str] = {}  # rel_id -> zip entry path
+        self._footer_paths: dict[str, str] = {}  # rel_id -> zip entry path
 
         self._parse_zip(raw)
 
@@ -84,6 +104,36 @@ class DocxDocument:
         rels_xml = self._zip_entries.get("word/_rels/document.xml.rels")
         if rels_xml is not None:
             self._rels_tree = etree.fromstring(rels_xml)
+            self._load_header_footer_trees()
+
+    def _load_header_footer_trees(self) -> None:
+        """Discover and parse header/footer XML parts from relationships."""
+        if self._rels_tree is None:
+            return
+
+        ns = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+        for rel in self._rels_tree:
+            rel_type = rel.get("Type", "")
+            target = rel.get("Target", "")
+            rel_id = rel.get("Id", "")
+            if not target:
+                continue
+
+            # Resolve target path relative to word/
+            target_path = target if not target.startswith("/") else target[1:]
+            if not target_path.startswith("word/"):
+                target_path = f"word/{target_path}"
+
+            if rel_type == f"{ns}/header":
+                xml_bytes = self._zip_entries.get(target_path)
+                if xml_bytes is not None:
+                    self._header_trees[rel_id] = etree.fromstring(xml_bytes)
+                    self._header_paths[rel_id] = target_path
+            elif rel_type == f"{ns}/footer":
+                xml_bytes = self._zip_entries.get(target_path)
+                if xml_bytes is not None:
+                    self._footer_trees[rel_id] = etree.fromstring(xml_bytes)
+                    self._footer_paths[rel_id] = target_path
 
     @property
     def document_tree(self) -> etree._Element:
@@ -147,6 +197,102 @@ class DocxDocument:
         """
         return {i: para for i, para in enumerate(self.paragraphs, start=1)}
 
+    def full_element_map(
+        self,
+        *,
+        collapse_empty: bool = False,
+    ) -> dict[str, etree._Element]:
+        """Build a unified element map for body, headers, and footers.
+
+        Body elements use plain numeric keys (``"1"``, ``"2"``, …).
+        Header paragraphs use ``"header_{part_index}.{element_index}"``.
+        Footer paragraphs use ``"footer_{part_index}.{element_index}"``.
+
+        Only ``<w:p>`` elements are included for headers/footers.
+        Tables inside headers/footers are omitted and should be reported
+        in ``skipped_elements`` by the caller.
+
+        Args:
+            collapse_empty: When True, empty ``<w:p>`` elements (those with
+                no visible text) are omitted from the map. This produces
+                cleaner output for LLM consumption but requires the same
+                setting to be used during redlining.
+
+        Returns:
+            Dict mapping fragment_id (str) to the lxml element.
+        """
+        result: dict[str, etree._Element] = {}
+
+        # Body elements (paragraphs and tables)
+        idx = 0
+        for el in self.body_elements:
+            tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
+            if tag_local == "p" and collapse_empty and _is_empty_paragraph(el):
+                continue
+            idx += 1
+            result[str(idx)] = el
+
+        # Header paragraphs
+        for part_idx, (_rel_id, tree) in enumerate(self._header_trees.items(), start=1):
+            para_idx = 0
+            for child in tree:
+                tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+                if tag_local == "p":
+                    if collapse_empty and _is_empty_paragraph(child):
+                        continue
+                    para_idx += 1
+                    result[f"header_{part_idx}.{para_idx}"] = child
+                elif tag_local == "tbl":
+                    # Tables in headers are not editable; skip
+                    pass
+
+        # Footer paragraphs
+        for part_idx, (_rel_id, tree) in enumerate(self._footer_trees.items(), start=1):
+            para_idx = 0
+            for child in tree:
+                tag_local = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+                if tag_local == "p":
+                    if collapse_empty and _is_empty_paragraph(child):
+                        continue
+                    para_idx += 1
+                    result[f"footer_{part_idx}.{para_idx}"] = child
+                elif tag_local == "tbl":
+                    pass
+
+        return result
+
+    def resolve_fragment_id(
+        self,
+        fragment_id: str,
+        *,
+        collapse_empty: bool = False,
+    ) -> tuple[etree._Element, str]:
+        """Resolve a fragment ID to its element and parent tree type.
+
+        Args:
+            fragment_id: Fragment ID (e.g. ``"5"``, ``"header_1.3"``).
+            collapse_empty: Must match the setting used when the fragment ID
+                was generated.
+
+        Returns:
+            Tuple of (element, tree_type) where tree_type is one of
+            ``"body"``, ``"header"``, ``"footer"``.
+
+        Raises:
+            ValueError: If the fragment_id is unknown or malformed.
+        """
+        element_map = self.full_element_map(collapse_empty=collapse_empty)
+        element = element_map.get(fragment_id)
+        if element is not None:
+            if fragment_id.startswith("header_"):
+                return element, "header"
+            if fragment_id.startswith("footer_"):
+                return element, "footer"
+            return element, "body"
+
+        msg = f"Unknown fragment_id: {fragment_id!r}"
+        raise ValueError(msg)
+
     @property
     def comments_tree(self) -> etree._Element | None:
         """The root element of word/comments.xml, or None if it doesn't exist."""
@@ -167,30 +313,140 @@ class DocxDocument:
         """The root element of word/_rels/document.xml.rels."""
         return self._rels_tree
 
+    @property
+    def header_trees(self) -> dict[str, etree._Element]:
+        """Dict of relationship ID → header XML tree."""
+        return self._header_trees
+
+    @property
+    def footer_trees(self) -> dict[str, etree._Element]:
+        """Dict of relationship ID → footer XML tree."""
+        return self._footer_trees
+
+    def has_tracked_changes(self) -> list[str]:
+        """Check for pre-existing tracked changes in any document part.
+
+        Scans document.xml, all header parts, all footer parts, and
+        comments.xml for ``<w:ins>``, ``<w:del>``, ``<w:moveFrom>``,
+        and ``<w:moveTo>`` elements.
+
+        Returns:
+            List of part names that contain tracked changes.
+            Empty list if the document is clean.
+        """
+        tracked_tags = {"ins", "del", "moveFrom", "moveTo"}
+        dirty_parts: list[str] = []
+
+        def _part_has_changes(tree: etree._Element, part_name: str) -> bool:
+            for el in tree.iter():
+                tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
+                if tag_local in tracked_tags:
+                    return True
+            return False
+
+        if _part_has_changes(self.document_tree, "word/document.xml"):
+            dirty_parts.append("word/document.xml")
+
+        for rel_id, tree in self._header_trees.items():
+            if _part_has_changes(tree, f"header ({rel_id})"):
+                dirty_parts.append(f"word/header ({rel_id})")
+
+        for rel_id, tree in self._footer_trees.items():
+            if _part_has_changes(tree, f"footer ({rel_id})"):
+                dirty_parts.append(f"word/footer ({rel_id})")
+
+        if self._comments_tree is not None and _part_has_changes(
+            self._comments_tree, "word/comments.xml"
+        ):
+            dirty_parts.append("word/comments.xml")
+
+        return dirty_parts
+
     def max_annotation_id(self) -> int:
         """Find the highest annotation ID used in the document.
 
-        Scans all w:id attributes across document.xml and comments.xml
-        to find the maximum. Returns 0 if no annotations exist.
+        Scans all w:id attributes across document.xml, comments.xml,
+        and all header/footer parts to find the maximum. Returns 0 if
+        no annotations exist.
         """
         max_id = 0
 
-        # Scan document.xml for w:id attributes
-        for el in self.document_tree.iter():
-            wid = el.get(qn("w", "id"))
-            if wid is not None:
-                with contextlib.suppress(ValueError):
-                    max_id = max(max_id, int(wid))
-
-        # Also scan comments.xml if it exists
+        trees = [self.document_tree]
+        trees.extend(self._header_trees.values())
+        trees.extend(self._footer_trees.values())
         if self._comments_tree is not None:
-            for el in self._comments_tree.iter():
+            trees.append(self._comments_tree)
+
+        for tree in trees:
+            for el in tree.iter():
                 wid = el.get(qn("w", "id"))
                 if wid is not None:
                     with contextlib.suppress(ValueError):
                         max_id = max(max_id, int(wid))
 
         return max_id
+
+    def resolve_hyperlink_url(self, rel_id: str) -> str | None:
+        """Resolve a hyperlink relationship ID to its target URL.
+
+        Looks up the ``r:id`` in ``word/_rels/document.xml.rels``.
+
+        Args:
+            rel_id: The relationship ID (e.g., ``"rId4"``).
+
+        Returns:
+            The target URL, or ``None`` if the relationship is not found
+            or is not an external hyperlink.
+        """
+        if self._rels_tree is None:
+            return None
+
+        hyperlink_type = (
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
+        )
+        for rel in self._rels_tree:
+            if rel.get("Id") == rel_id:
+                if rel.get("Type") == hyperlink_type:
+                    return rel.get("Target")
+                return None
+        return None
+
+    def create_hyperlink_relationship(self, url: str) -> str:
+        """Create a new hyperlink relationship and return its ``r:id``.
+
+        Appends a new ``<Relationship>`` element to
+        ``word/_rels/document.xml.rels`` with a unique ID.
+
+        Args:
+            url: The target URL for the hyperlink.
+
+        Returns:
+            The newly allocated relationship ID (e.g., ``"rId999"``).
+        """
+        if self._rels_tree is None:
+            msg = "Cannot create hyperlink relationship: document has no rels tree"
+            raise RuntimeError(msg)
+
+        hyperlink_type = (
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
+        )
+
+        # Find the highest existing rId number
+        max_num = 0
+        for rel in self._rels_tree:
+            rid = rel.get("Id", "")
+            if rid.startswith("rId"):
+                with contextlib.suppress(ValueError):
+                    max_num = max(max_num, int(rid[3:]))
+
+        new_rid = f"rId{max_num + 1}"
+        new_rel = etree.SubElement(self._rels_tree, qn("r", "Relationship"))
+        new_rel.set("Id", new_rid)
+        new_rel.set("Type", hyperlink_type)
+        new_rel.set("Target", url)
+        new_rel.set("TargetMode", "External")
+
+        return new_rid
 
     def deepcopy(self) -> DocxDocument:
         """Create a deep copy of this document (for validation comparisons)."""
@@ -227,6 +483,21 @@ class DocxDocument:
             entries["word/_rels/document.xml.rels"] = etree.tostring(
                 self._rels_tree, xml_declaration=True, encoding="UTF-8", standalone=True
             )
+
+        # Re-serialize modified header/footer parts
+        for rel_id, tree in self._header_trees.items():
+            path = self._header_paths.get(rel_id)
+            if path is not None:
+                entries[path] = etree.tostring(
+                    tree, xml_declaration=True, encoding="UTF-8", standalone=True
+                )
+
+        for rel_id, tree in self._footer_trees.items():
+            path = self._footer_paths.get(rel_id)
+            if path is not None:
+                entries[path] = etree.tostring(
+                    tree, xml_declaration=True, encoding="UTF-8", standalone=True
+                )
 
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
             for entry_path, entry_bytes in entries.items():

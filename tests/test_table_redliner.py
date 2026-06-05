@@ -1,7 +1,5 @@
 """Tests for table cell change application."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import pytest
@@ -433,7 +431,8 @@ class TestRoundTrip:
         doc = apply_redlines(simple_table_path, changes)
 
         # Extract with markup=True
-        items = body_to_fragments(doc.body_elements, markup=True)
+        result = body_to_fragments(doc.body_elements, markup=True)
+        items = result.items
         assert len(items) == 3
 
         # Second item is the table

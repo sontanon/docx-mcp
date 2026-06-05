@@ -8,7 +8,7 @@ justification text, and preserved formatting.
 
 ## Installation
 
-Requires Python 3.13+.
+Requires Python 3.14+.
 
 ```bash
 uv sync
@@ -19,40 +19,61 @@ uv sync
 ### Python API
 
 ```python
-from docx_mcp import apply_redlines, Change, ChangeType, RedlineConfig
+from docx_mcp import (
+    ParagraphChange, ParagraphChangeType,
+    TableChange, TableChangeType,
+    RedlineConfig, apply_redlines,
+)
 
 changes = [
-    # Modify a paragraph
-    Change(
-        fragment_id=3,
-        change_type=ChangeType.MODIFY,
+    # Modify a body paragraph
+    ParagraphChange(
+        kind="paragraph",
+        fragment_id="3",              # ← str (was int in v0.1.0)
+        change_type=ParagraphChangeType.MODIFY,
         new_text="The Company **shall** provide written notice.",
         justification="Strengthened obligation language.",
     ),
     # Delete a paragraph
-    Change(
-        fragment_id=5,
-        change_type=ChangeType.DELETE,
+    ParagraphChange(
+        kind="paragraph",
+        fragment_id="5",
+        change_type=ParagraphChangeType.DELETE,
         justification="Removed redundant clause.",
     ),
     # Append a new paragraph
-    Change(
-        fragment_id=7,
-        change_type=ChangeType.APPEND_AFTER,
+    ParagraphChange(
+        kind="paragraph",
+        fragment_id="7",
+        change_type=ParagraphChangeType.APPEND_AFTER,
         new_text="The foregoing shall survive termination.",
         justification="Added survival provision.",
     ),
-    # Modify a table cell (format: "table_id.row.col")
-    Change(
-        cell_id="2.1.1",
-        change_type=ChangeType.MODIFY_CELL,
+    # Modify a header paragraph
+    ParagraphChange(
+        kind="paragraph",
+        fragment_id="header_1.1",
+        change_type=ParagraphChangeType.MODIFY,
+        new_text="CONFIDENTIAL",
+        justification="Updated header text.",
+    ),
+    # Modify a table cell
+    TableChange(
+        kind="table",
+        table_id=2,
+        row=1,
+        col=1,
+        change_type=TableChangeType.MODIFY_CELL,
         new_text="Updated **cell** content",
         justification="Corrected table entry.",
     ),
     # Clear a table cell
-    Change(
-        cell_id="2.3.2",
-        change_type=ChangeType.CLEAR_CELL,
+    TableChange(
+        kind="table",
+        table_id=2,
+        row=3,
+        col=2,
+        change_type=TableChangeType.CLEAR_CELL,
         justification="Removed obsolete data.",
     ),
 ]
@@ -73,7 +94,15 @@ docx-mcp apply input.docx changes.json -o output.docx
 
 # Validate a redlined document
 docx-mcp validate output.docx
+
+# Audit a document for structural issues
+docx-mcp audit input.docx
+docx-mcp audit input.docx --format json
 ```
+
+> **Note:** The CLI `convert` command extracts body content only (no headers,
+> footers, or tables). For full-document extraction, use the MCP
+> `extract_fragments` tool or the Python `full_to_fragments()` function.
 
 ### MCP server
 
@@ -115,11 +144,12 @@ docx-mcp-server
 
 | Tool | Description |
 |------|-------------|
-| `extract_fragments` | Read a `.docx` and return paragraphs as tagged text or JSON |
+| `extract_fragments` | Read a `.docx` and return paragraphs, tables, headers, and footers as tagged text |
 | `apply_changes` | Apply tracked changes from an inline list and save |
 | `apply_changes_from_file` | Apply tracked changes from a JSON file on disk |
 | `validate_document_tool` | Run structural validation checks |
-| `diff_fragments` | Compare two `.docx` files paragraph-by-paragraph |
+| `diff_fragments` | Compare two `.docx` files paragraph-by-paragraph (full document) |
+| `audit_document_tool` | Audit a `.docx` for headers, images, tables, section breaks, and more |
 
 #### Resource
 
@@ -140,22 +170,108 @@ An LLM client would typically:
 
 ### Fragments
 
-Documents are indexed by body elements in document order. **Paragraphs** are
-numbered 1..N, and **tables** (simple rectangular grids without merged cells) are
-also numbered in the same sequence. Each element is a **fragment**, identified by
-its 1-based index.
+Documents are decomposed into **fragments**: paragraphs, tables, headers, and
+footers, all indexed in document order. Each fragment has a **string ID**.
 
-Use `docx-mcp convert` to see the fragment map for any document:
+Fragment IDs:
+
+| Pattern | Meaning | Example |
+|---------|---------|---------|
+| `"1"`, `"2"`, … | Body paragraphs / tables | `<f=1>Introduction.</f=1>` |
+| `"header_P.I"` | Header part P, paragraph I | `<f=header_1.3>Confidential</f=header_1.3>` |
+| `"footer_P.I"` | Footer part P, paragraph I | `<f=footer_2.1>Page 1 of 10</f=footer_2.1>` |
+
+Tables and body paragraphs share the same ID space (they interleave in document
+order). Fragment `"3"` might be a table and fragment `"4"` a paragraph.
+
+Use `extract_fragments` (MCP) or `full_to_fragments()` (Python) to see the
+fragment map for any document:
 
 ```
-1: Introduction paragraph
-2: [Table: 3x3 grid]
-   - Cell ID format: "table_id.row.col" (e.g., "2.1.1" = table 2, row 1, col 1)
-3: Conclusion paragraph
+<f=1>Introduction paragraph.</f=1>
+<f=2>**Definitions.** The following terms shall apply.</f=2>
+<table=3 rows=2 cols=3>
+<cell=3.1.1 span="2">Merged Header</cell=3.1.1>
+<cell=3.1.3>Header C</cell=3.1.3>
+<cell=3.2.1>Data 1</cell=3.2.1>
+<cell=3.2.2>Data 2</cell=3.2.2>
+<cell=3.2.3>Data 3</cell=3.2.3>
+</table=3>
+<f=4>Closing paragraph. See [Section 2](https://example.com).</f=4>
+<f=header_1.1>Confidential</f=header_1.1>
+<f=footer_1.1>Page 1 of 10</f=footer_1.1>
 ```
 
-For tables with merged cells (non-simple), a placeholder `[Unsupported table]` is
-shown in both tagged and JSON output formats.
+### Tables
+
+#### Simple tables
+
+Simple (rectangular) tables are extracted as `<table=N>` blocks. Each cell has
+a `cell_id` in `"table_id.row.col"` format (e.g., `"3.1.2"`).
+
+#### Merged-cell tables
+
+Tables with horizontally or vertically merged cells (`gridSpan` / `vMerge`) are
+now supported. Merge spans are shown as attributes:
+
+- `span="2"` — cell spans 2 columns (horizontal merge)
+- `vspan="3"` — cell spans 3 rows (vertical merge)
+
+Spanned-over cells (positions covered by a merge) are **omitted from output**.
+For example, if `cell=3.1.1` has `span="2"`, then `cell=3.1.2` does not appear.
+
+When targeting merged cells with changes, always target the **originating cell**
+(the one with the `span`/`vspan` attribute). Targeting a spanned-over position
+raises a `ValueError`.
+
+#### Skipped tables
+
+Tables that cannot be processed (nested tables, malformed merges, tables inside
+headers/footers) appear as:
+
+```
+<table=5 skipped reason="table 5, cell 2.3 contains nested table"/>
+```
+
+### Headers and footers
+
+Header and footer paragraphs are extracted with prefixed fragment IDs:
+`header_1.1`, `footer_2.1`, etc. The first number is the 1-based part index
+(usually `1` for the default header/footer), the second is the 1-based
+paragraph index within that part.
+
+Header/footer paragraphs can be modified, deleted, and appended to just like
+body paragraphs. **Tables inside headers/footers are not editable** and are
+reported as skipped elements.
+
+> **Limitation:** Comments on header/footer changes are not attached to the
+> output (Word and LibreOffice do not support comment ranges in those parts).
+> They trigger a `UserWarning` and are dropped.
+
+### Hyperlinks
+
+Hyperlinks are extracted as `[link text](url)` inline within paragraph text.
+Formatting inside links is preserved: `[**bold link**](url)`.
+
+When modifying an existing paragraph, `[text]` without `(url)` **preserves**
+the original hyperlink URL. `[text](new_url)` creates a new link.
+
+When appending new text, `[text](url)` creates a hyperlink. `[text]` without
+`(url)` produces plain text — always specify `(url)` on append if you want a
+hyperlink.
+
+### Tracked changes policy
+
+Documents with pre-existing tracked changes (`<w:ins>`, `<w:del>`,
+`<w:moveFrom>`, `<w:moveTo>`) are **hard-rejected** in both `extract_fragments`
+and `apply_redlines`. Accept or reject all changes in Word before processing.
+
+### `collapse_empty` mode
+
+Optional mode that suppresses empty paragraphs from extraction and redlining.
+Produces cleaner output for LLM consumption. When enabled, it **must** be
+used consistently across extraction and redlining — mismatched values cause
+fragment ID misalignment.
 
 ### Change types
 
@@ -234,23 +350,30 @@ The CLI accepts a JSON file containing either a bare array or a
 ```json
 [
   {
-    "fragment_id": 1,
+    "fragment_id": "1",
     "change_type": "modify",
     "new_text": "The Seller agrees to deliver within **sixty** days.",
     "justification": "Extended delivery window."
   },
   {
-    "fragment_id": 3,
+    "fragment_id": "3",
     "change_type": "delete",
-    "justification": "Removed governing law clause."
+    "justification": "Removed governing law clause.",
+    "delete_next_blanks": 1
   },
   {
-    "fragment_id": 5,
+    "fragment_id": "5",
     "change_type": "append_after",
     "new_text": "This Agreement shall be governed by Delaware law.",
     "justification": "Added Delaware governing law.",
     "blank_lines_before": 1,
     "blank_lines_after": 0
+  },
+  {
+    "fragment_id": "header_1.1",
+    "change_type": "modify",
+    "new_text": "CONFIDENTIAL",
+    "justification": "Updated header marking."
   }
 ]
 ```
@@ -328,8 +451,9 @@ src/docx_mcp/
   comments.py        Comment creation and range marker insertion
   redliner.py        Main orchestrator: apply_redlines()
   table_redliner.py  Table cell change application
+  audit.py           Document structural audit (headers, images, tables, etc.)
   validator.py       Structural validation checks
-  server.py          MCP server (FastMCP 2.x, stdio transport)
+  server.py          MCP server (FastMCP 3.x, stdio transport)
   handlers/
     modify.py        Word-level tracked changes on existing paragraphs
     delete.py        Full paragraph deletion markup
@@ -352,7 +476,7 @@ uvx ruff check src/ tests/ --fix
 uvx ty check src/ tests/
 ```
 
-389 tests covering all modules, handlers, table operations, CLI, validation, and MCP server.
+431 tests covering all modules, handlers, table operations, headers/footers, hyperlinks, tracked-change rejection, merged-cell tables, section breaks, CLI, validation, and MCP server.
 
 ## License
 

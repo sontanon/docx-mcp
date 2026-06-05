@@ -13,8 +13,6 @@ The explicit `kind` field enables Pydantic's discriminated union validation,
 ensuring type-safe processing throughout the pipeline.
 """
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Annotated, Literal
@@ -54,7 +52,9 @@ class ParagraphChange(BaseModel):
 
     Attributes:
         kind: Discriminator field, always "paragraph".
-        fragment_id: 1-based paragraph index identifying the target paragraph.
+        fragment_id: Fragment ID identifying the target paragraph. Body paragraphs
+            use plain integers (e.g. ``"5"``). Headers and footers use prefixed
+            IDs (e.g. ``"header_1.3"``, ``"footer_2.1"``).
         change_type: The type of change (modify, delete, or append_after).
         new_text: The new text content in pseudo-Markdown format.
             Required for MODIFY and APPEND_AFTER. None for DELETE.
@@ -69,8 +69,10 @@ class ParagraphChange(BaseModel):
     """
 
     kind: Literal["paragraph"] = "paragraph"
-    fragment_id: int
+    fragment_id: str
     change_type: ParagraphChangeType
+
+    model_config = {"coerce_numbers_to_str": True}
     new_text: str | None = None
     justification: str
 
@@ -218,6 +220,8 @@ class CellInfo(BaseModel):
     row: int
     col: int
     text: str
+    span: int = 1
+    vspan: int = 1
 
     model_config = {"frozen": True}
 

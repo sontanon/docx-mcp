@@ -1,7 +1,5 @@
 """Tests for the IdManager and run_ops modules."""
 
-from __future__ import annotations
-
 import copy
 
 import pytest

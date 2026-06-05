@@ -9,8 +9,6 @@ handle_delete, handle_append_after) to ensure consistent tracked-change
 formatting.
 """
 
-from __future__ import annotations
-
 from lxml import etree
 
 from docx_mcp.comments import add_comment
@@ -26,7 +24,7 @@ from docx_mcp.table_utils import get_cell_element, get_cell_paragraphs
 def apply_table_changes(
     doc: DocxDocument,
     table_changes: list[TableChange],
-    element_map: dict[int, etree._Element],
+    element_map: dict[str, etree._Element],
     *,
     id_manager: IdManager,
     config: RedlineConfig,
@@ -36,7 +34,7 @@ def apply_table_changes(
     Args:
         doc: The document being modified.
         table_changes: List of table cell changes to apply.
-        element_map: Mapping of element_id → <w:p> or <w:tbl> elements.
+        element_map: Mapping of fragment_id → <w:p> or <w:tbl> elements.
         id_manager: ID allocator for annotation IDs.
         config: Author / date configuration.
 
@@ -46,7 +44,7 @@ def apply_table_changes(
     """
     for change in table_changes:
         # Look up the table element
-        tbl = element_map.get(change.table_id)
+        tbl = element_map.get(str(change.table_id))
         if tbl is None:
             msg = (
                 f"Table change references table_id={change.table_id}, "

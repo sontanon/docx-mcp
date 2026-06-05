@@ -42,8 +42,8 @@ Usage::
     doc.save("output_redlined.docx")
 """
 
-from __future__ import annotations
-
+import warnings
+from collections.abc import Sequence
 from pathlib import Path
 
 from lxml import etree
@@ -63,16 +63,57 @@ from docx_mcp.models import (
 )
 from docx_mcp.namespaces import xpath
 from docx_mcp.table_redliner import apply_table_changes
-from docx_mcp.table_utils import is_simple_table
+from docx_mcp.table_utils import build_table_grid
 
 # Tag names of elements that carry visible text inside a run.
 _TEXT_TAGS = frozenset({"t", "delText"})
 
 
+def _is_header_footer(fragment_id: str) -> bool:
+    """Check if fragment_id refers to a header or footer paragraph."""
+    return fragment_id.startswith("header_") or fragment_id.startswith("footer_")
+
+
+def _add_comment_safe(
+    doc: DocxDocument,
+    paragraph: etree._Element,
+    justification: str,
+    *,
+    id_manager: IdManager,
+    config: RedlineConfig,
+    fragment_id: str,
+    range_elements: list[etree._Element] | None = None,
+) -> None:
+    """Attach a comment to a paragraph, skipping headers/footers with a warning.
+
+    Word and LibreOffice do not support comments in header/footer XML parts.
+    Attaching commentRangeStart/End there causes LibreOffice to reject the file
+    as corrupt. Word silently ignores them.
+    """
+    if _is_header_footer(fragment_id):
+        msg = (
+            f"Comment for fragment {fragment_id} was not attached: "
+            f"comments in headers/footers are not supported by Word/LibreOffice "
+            f"and will be silently dropped."
+        )
+        warnings.warn(msg, stacklevel=2)
+        return
+    add_comment(
+        doc,
+        paragraph,
+        justification,
+        id_manager=id_manager,
+        config=config,
+        range_elements=range_elements,
+    )
+
+
 def apply_redlines(
     source: Path | str | bytes,
-    changes: list[Change],
+    changes: Sequence[Change],
     config: RedlineConfig | None = None,
+    *,
+    collapse_empty: bool = False,
 ) -> DocxDocument:
     """Apply tracked changes to a .docx document.
 
@@ -84,6 +125,8 @@ def apply_redlines(
         changes: List of changes to apply (mix of ParagraphChange and TableChange).
         config: Redline configuration (author, date). Defaults to
             ``RedlineConfig()`` which uses "AI Review" and current time.
+        collapse_empty: When True, empty ``<w:p>`` elements are omitted from
+            the fragment ID space. Must match the setting used during extraction.
 
     Returns:
         A :class:`DocxDocument` with all changes applied as tracked
@@ -100,9 +143,18 @@ def apply_redlines(
     # --- 1. Load ---
     doc = DocxDocument(data=source) if isinstance(source, bytes) else DocxDocument(path=source)
 
-    # --- 2. Element map (interleaved paragraphs and tables) ---
-    element_map = doc.interleaved_element_map()
-    max_id = max(element_map.keys()) if element_map else 0
+    # --- 1b. Reject documents with pre-existing tracked changes ---
+    dirty_parts = doc.has_tracked_changes()
+    if dirty_parts:
+        locations = ", ".join(dirty_parts)
+        msg = (
+            f"Document contains pre-existing tracked changes in {locations}. "
+            "Please accept or reject all changes before redlining."
+        )
+        raise ValueError(msg)
+
+    # --- 2. Element map (body, headers, footers) ---
+    element_map = doc.full_element_map(collapse_empty=collapse_empty)
 
     # --- 3. Split changes by type ---
     paragraph_changes: list[ParagraphChange] = []
@@ -115,17 +167,18 @@ def apply_redlines(
             table_changes.append(change)
 
     # --- 4. Validate changes ---
-    _validate_paragraph_changes(paragraph_changes, max_id, element_map)
-    _validate_table_changes(table_changes, max_id, element_map)
+    _validate_paragraph_changes(paragraph_changes, element_map)
+    _validate_table_changes(table_changes, element_map)
 
     # --- 5. ID manager ---
     id_manager = IdManager(start_after=doc.max_annotation_id())
 
     # --- 6. Sort and apply paragraph changes ---
-    sorted_para_changes = _sort_paragraph_changes(paragraph_changes)
+    sorted_para_changes = _sort_paragraph_changes(paragraph_changes, element_map)
 
     for change in sorted_para_changes:
-        paragraph = element_map[change.fragment_id]
+        fid = str(change.fragment_id)
+        paragraph = element_map[fid]
 
         if change.change_type == ParagraphChangeType.MODIFY:
             assert change.new_text is not None
@@ -138,12 +191,13 @@ def apply_redlines(
             # Comment spans tracked-change elements in the paragraph
             if annotation_ids:
                 range_els = _get_tracked_change_elements(paragraph)
-                add_comment(
+                _add_comment_safe(
                     doc,
                     paragraph,
                     change.justification,
                     id_manager=id_manager,
                     config=config,
+                    fragment_id=fid,
                     range_elements=range_els if range_els else None,
                 )
 
@@ -155,12 +209,13 @@ def apply_redlines(
                 preserve_paragraph_mark=False,
             )
             # Comment spans the whole paragraph
-            add_comment(
+            _add_comment_safe(
                 doc,
                 paragraph,
                 change.justification,
                 id_manager=id_manager,
                 config=config,
+                fragment_id=fid,
             )
 
             # Also delete trailing blank paragraphs if requested
@@ -168,7 +223,7 @@ def apply_redlines(
                 _delete_trailing_blanks(
                     paragraph,
                     count=change.delete_next_blanks,
-                    fragment_id=change.fragment_id,
+                    fragment_id=fid,
                     id_manager=id_manager,
                     config=config,
                 )
@@ -182,14 +237,16 @@ def apply_redlines(
                 config=config,
                 blank_lines_before=change.blank_lines_before,
                 blank_lines_after=change.blank_lines_after,
+                hyperlink_creator=doc.create_hyperlink_relationship,
             )
             # Comment on the new paragraph
-            add_comment(
+            _add_comment_safe(
                 doc,
                 new_p,
                 change.justification,
                 id_manager=id_manager,
                 config=config,
+                fragment_id=fid,
             )
 
     # --- 7. Apply table changes ---
@@ -207,34 +264,33 @@ def apply_redlines(
 
 def _validate_paragraph_changes(
     changes: list[ParagraphChange],
-    max_id: int,
-    element_map: dict[int, etree._Element],
+    element_map: dict[str, etree._Element],
 ) -> None:
     """Validate all paragraph changes before applying any.
 
     Args:
         changes: List of paragraph changes.
-        max_id: Maximum valid element ID.
-        element_map: Mapping of element_id → element.
+        element_map: Mapping of fragment_id → element.
 
     Raises:
         ValueError: If a change is invalid or targets the wrong element type.
     """
     for change in changes:
-        if change.fragment_id < 1 or change.fragment_id > max_id:
+        fid = str(change.fragment_id)
+        if fid not in element_map:
             msg = (
                 f"Paragraph change references fragment_id={change.fragment_id}, "
-                f"but document has elements 1..{max_id}"
+                f"but no such fragment exists in the document"
             )
             raise ValueError(msg)
 
         # Verify it targets a paragraph, not a table
-        el = element_map[change.fragment_id]
+        el = element_map[fid]
         tag_local = el.tag.split("}")[-1] if "}" in el.tag else el.tag
         if tag_local != "p":
             msg = (
                 f"Paragraph change references fragment_id={change.fragment_id}, "
-                f"but element {change.fragment_id} is a <w:{tag_local}>, not <w:p>. "
+                f"but element is a <w:{tag_local}>, not <w:p>. "
                 f"Use TableChange with cell_id for table changes."
             )
             raise ValueError(msg)
@@ -242,29 +298,20 @@ def _validate_paragraph_changes(
 
 def _validate_table_changes(
     table_changes: list[TableChange],
-    max_id: int,
-    element_map: dict[int, etree._Element],
+    element_map: dict[str, etree._Element],
 ) -> None:
     """Validate all table changes before applying any.
 
     Args:
         table_changes: List of table cell changes.
-        max_id: Maximum valid element ID.
-        element_map: Mapping of element_id → element.
+        element_map: Mapping of fragment_id → element.
 
     Raises:
         ValueError: If a table change is invalid or targets the wrong element type.
     """
     for change in table_changes:
-        if change.table_id < 1 or change.table_id > max_id:
-            msg = (
-                f"Table change references table_id={change.table_id} (cell_id={change.cell_id}), "
-                f"but document has elements 1..{max_id}"
-            )
-            raise ValueError(msg)
-
-        # Verify it targets a table, not a paragraph
-        el = element_map.get(change.table_id)
+        table_key = str(change.table_id)
+        el = element_map.get(table_key)
         if el is None:
             msg = (
                 f"Table change references table_id={change.table_id} (cell_id={change.cell_id}), "
@@ -276,17 +323,17 @@ def _validate_table_changes(
         if tag_local != "tbl":
             msg = (
                 f"Table change references table_id={change.table_id} (cell_id={change.cell_id}), "
-                f"but element {change.table_id} is a <w:{tag_local}>, not <w:tbl>. "
+                f"but element is a <w:{tag_local}>, not <w:tbl>. "
                 f"Use ParagraphChange with fragment_id for paragraph changes."
             )
             raise ValueError(msg)
 
-        # Check if table is simple
-        is_simple, reason = is_simple_table(el)
-        if not is_simple:
+        # Check if table is processable (build_table_grid handles merged cells)
+        _grid, error = build_table_grid(el, table_id=change.table_id)
+        if error:
             msg = (
                 f"Table change for cell_id={change.cell_id} targets "
-                f"a non-simple table (table_id={change.table_id}): {reason}"
+                f"a non-simple table: {error}"
             )
             raise ValueError(msg)
 
@@ -299,14 +346,19 @@ def _validate_table_changes(
             raise ValueError(msg)
 
 
-def _sort_paragraph_changes(changes: list[ParagraphChange]) -> list[ParagraphChange]:
+def _sort_paragraph_changes(
+    changes: list[ParagraphChange],
+    element_map: dict[str, etree._Element],
+) -> list[ParagraphChange]:
     """Sort paragraph changes for correct processing order.
 
     Ordering rules:
     - Modify changes first (they need original text for diffing).
     - Then delete changes.
-    - Then append_after changes (in reverse fragment order, so later
+    - Then append_after changes (in reverse document order, so later
       appends don't shift earlier targets).
+    - Within append_after changes to the same fragment, reverse the order
+      so the first user-listed append ends up first in the document.
     """
     type_order = {
         ParagraphChangeType.MODIFY: 0,
@@ -314,13 +366,30 @@ def _sort_paragraph_changes(changes: list[ParagraphChange]) -> list[ParagraphCha
         ParagraphChangeType.APPEND_AFTER: 2,
     }
 
-    def sort_key(c: ParagraphChange) -> tuple[int, int]:
-        order = type_order[c.change_type]
-        # For append_after, reverse fragment order (high IDs first)
-        fid = -c.fragment_id if c.change_type == ParagraphChangeType.APPEND_AFTER else c.fragment_id
-        return (order, fid)
+    from itertools import groupby
 
-    return sorted(changes, key=sort_key)
+    # Build position index for document-order sorting
+    position_index = {fid: idx for idx, fid in enumerate(element_map.keys())}
+
+    def _group_key(c: ParagraphChange) -> tuple[int, int]:
+        order = type_order[c.change_type]
+        pos = position_index.get(str(c.fragment_id), 0)
+        if c.change_type == ParagraphChangeType.APPEND_AFTER:
+            return (order, -pos)
+        return (order, pos)
+
+    sorted_by_key = sorted(changes, key=_group_key)
+
+    result: list[ParagraphChange] = []
+    for (_order, _pos), group in groupby(sorted_by_key, key=_group_key):
+        group_list = list(group)
+        if _order == type_order[ParagraphChangeType.APPEND_AFTER]:
+            # Reverse within the group so first-listed append is processed last
+            # and ends up closest to the reference paragraph
+            group_list = list(reversed(group_list))
+        result.extend(group_list)
+
+    return result
 
 
 def _get_tracked_change_elements(paragraph: etree._Element) -> list[etree._Element]:
@@ -371,7 +440,7 @@ def _delete_trailing_blanks(
     paragraph: etree._Element,
     *,
     count: int,
-    fragment_id: int,
+    fragment_id: str,
     id_manager: IdManager,
     config: RedlineConfig,
 ) -> None:

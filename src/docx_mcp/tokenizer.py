@@ -8,8 +8,6 @@ Non-breaking spaces (``\\u00a0``) are treated as whitespace by ``\\S+`` and
 thus act as word boundaries, which is the correct behaviour for diffing.
 """
 
-from __future__ import annotations
-
 import re
 
 _WORD_RE = re.compile(r"\S+")
